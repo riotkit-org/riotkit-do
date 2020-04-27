@@ -1,0 +1,6 @@
+language: python
+if: branch = master or tag IS present
+python: 3.6
+
+script:
+    - make test
