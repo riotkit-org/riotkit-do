@@ -1,13 +1,13 @@
 
-from rkd.syntax import Component, Task
+from rkd.syntax import Task, TaskAlias
 from rkd.standardlib.pypublish import PyPublishTask
 from rkd.standardlib.shell import ShellCommand
 
-COMPONENTS = [
-    Component(PyPublishTask()),
-    Component(ShellCommand())
+IMPORTS = [
+    Task(PyPublishTask()),
+    Task(ShellCommand())
 ]
 
 TASKS = [
-    Task(':env:test', [':py:publish', '--username=...', '--password=...'])
+    TaskAlias(':env:test', [':py:publish', '--username=...', '--password=...'])
 ]

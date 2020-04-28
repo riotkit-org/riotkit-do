@@ -52,7 +52,7 @@ class CommandlineParsingHelper:
             # new task
             elif is_task:
                 if current_task_name != 'rkd:initialize':
-                    tasks.append(TaskArguments(current_task_name[1:], current_group_elements))
+                    tasks.append(TaskArguments(current_task_name, current_group_elements))
 
                 current_task_name = part
                 current_group_elements = []
@@ -60,6 +60,6 @@ class CommandlineParsingHelper:
                 raise Exception('Unknown task "%s"' % part)
 
             if cursor + 1 == max_cursor:
-                tasks.append(TaskArguments(current_task_name[1:], current_group_elements))
+                tasks.append(TaskArguments(current_task_name, current_group_elements))
 
         return tasks
