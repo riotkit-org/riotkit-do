@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import sys
-from .argparsing import CommandlineParsingHelper, TaskArguments
+from .argparsing import CommandlineParsingHelper
 from .context import ContextFactory, Context
-from .task import TaskGroup
+from .resolver import TaskResolver
+from .validator import TaskDeclarationValidator
+from .executor import Executor
 
 
 class RiotKitDoApplication:
@@ -14,19 +16,16 @@ class RiotKitDoApplication:
 
         # load context of components
         self._ctx = ContextFactory().create_unified_context()
+        resolver = TaskResolver(self._ctx)
 
         # iterate over each task, parse commandline arguments
         requested_tasks = CommandlineParsingHelper.create_grouped_arguments(sys.argv[1:])
 
-        for task_request in requested_tasks:
-            self._resolve(task_request)
+        # validate all tasks
+        resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
 
-    def _resolve(self, task_request: TaskArguments):
-        declaration = self._ctx.find_task_by_name(task_request.name())
-        task = declaration.get_task_to_execute()
-
-        if isinstance(task, TaskGroup):
-            print(task)
+        # execute all tasks
+        resolver.resolve(requested_tasks, Executor.execute)
 
 
 if __name__ == '__main__':

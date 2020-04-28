@@ -2,15 +2,15 @@
 # Base RKD Makefile, contains basic commands such as :help, :clean or :version
 #
 
-from rkd.syntax import Task, TaskAlias
+from rkd.syntax import TaskDeclaration, TaskAliasDeclaration
 from rkd.standardlib.pypublish import PyPublishTask
 from rkd.standardlib.shell import ShellCommand
 
 IMPORTS = [
-    Task(PyPublishTask()),
-    Task(ShellCommand())
+    TaskDeclaration(PyPublishTask()),
+    TaskDeclaration(ShellCommand())
 ]
 
 TASKS = [
-    TaskAlias(':env:test', [':py:publish', '--username=...', '--password=...'], env={'DB_PASSWORD': '123'})
+    TaskAliasDeclaration(':env:test', [':py:publish', '--username=...', '--password=...'], env={'DB_PASSWORD': '123'})
 ]

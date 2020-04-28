@@ -18,7 +18,7 @@ class TaskArguments:
         return self._name
 
     def args(self):
-        return self.args
+        return self._args
 
 
 class CommandlineParsingHelper:

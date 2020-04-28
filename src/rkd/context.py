@@ -1,8 +1,7 @@
 
 import os
-from typing import Dict, List
-from .syntax import Task, TaskAlias
-from .task import TaskGroup
+from typing import Dict, List, Union
+from .syntax import TaskDeclaration, TaskAliasDeclaration, GroupDeclaration
 from .argparsing import CommandlineParsingHelper
 from importlib.machinery import SourceFileLoader
 
@@ -10,11 +9,11 @@ CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class Context:
-    _imported_tasks: Dict[str, Task]
-    _task_aliases: Dict[str, TaskAlias]
-    _compiled: Dict[str, Task]
+    _imported_tasks: Dict[str, TaskDeclaration]
+    _task_aliases: Dict[str, TaskAliasDeclaration]
+    _compiled: Dict[str, Union[TaskDeclaration, GroupDeclaration]]
 
-    def __init__(self, tasks: List[Task], aliases: List[TaskAlias]):
+    def __init__(self, tasks: List[TaskDeclaration], aliases: List[TaskAliasDeclaration]):
         self._imported_tasks = {}
         self._task_aliases = {}
 
@@ -49,20 +48,20 @@ class Context:
         for name, details in self._task_aliases.items():
             self._compiled[name] = self._resolve_alias(details)
 
-    def find_task_by_name(self, name: str) -> Task:
+    def find_task_by_name(self, name: str) -> Union[TaskDeclaration, GroupDeclaration]:
         try:
             return self._compiled[name]
         except KeyError:
             raise Exception(('Task "%s" is not defined. Check if it is defined, or' +
                             ' imported, or if the spelling is correct.') % name)
 
-    def _add_component(self, component: Task) -> None:
+    def _add_component(self, component: TaskDeclaration) -> None:
         self._imported_tasks[component.to_full_name()] = component
 
-    def _add_task(self, task: TaskAlias) -> None:
+    def _add_task(self, task: TaskAliasDeclaration) -> None:
         self._task_aliases[task.get_name()] = task
 
-    def _resolve_alias(self, alias: TaskAlias) -> Task:
+    def _resolve_alias(self, alias: TaskAliasDeclaration) -> GroupDeclaration:
         """ Parse commandline args to fetch list of tasks to join into a group """
 
         args = CommandlineParsingHelper.create_grouped_arguments(alias.get_arguments())
@@ -75,7 +74,7 @@ class Context:
 
             resolved_tasks[argument_group.name()] = resolved_task
 
-        return Task(TaskGroup(resolved_tasks))
+        return GroupDeclaration(resolved_tasks)
 
 
 class ContextFactory:

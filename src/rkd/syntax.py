@@ -2,10 +2,8 @@
 from typing import List, Dict
 from .task import TaskInterface
 
-# @todo: Zmienić nazwę Component -> Task, Task -> TaskAlias i dodać sam Component jako grupę tasków
 
-
-class Task:
+class TaskDeclaration:
     _task: TaskInterface
     _env: Dict[str, str]
     _args: List[str]
@@ -24,11 +22,27 @@ class Task:
     def set_args(self, args: List[str]):
         self._args = args
 
+    def get_args(self) -> List[str]:
+        return self._args
+
     def get_task_to_execute(self) -> TaskInterface:
         return self._task
 
+    def to_dict(self) -> dict:
+        return {self.to_full_name(): self}
 
-class TaskAlias:
+
+class GroupDeclaration:
+    _declarations: Dict[str, TaskDeclaration]
+
+    def __init__(self, declarations: Dict[str, TaskDeclaration]):
+        self._declarations = declarations
+
+    def get_declarations(self) -> Dict[str, TaskDeclaration]:
+        return self._declarations
+
+
+class TaskAliasDeclaration:
     _name: str
     _arguments: List[str]
     _env: Dict[str, str]

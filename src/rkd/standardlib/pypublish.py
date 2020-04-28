@@ -11,7 +11,8 @@ class PyPublishTask(TaskInterface):
         return ':py'
 
     def configure_argparse(self, parser: ArgumentParser):
-        pass
+        parser.add_argument('--username', help='Username')
+        parser.add_argument('--password', help='Password')
 
     def execute(self, task_name: str, options: dict, env: dict):
-        pass
+        print('Publishing')
