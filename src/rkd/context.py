@@ -69,6 +69,9 @@ class Context(ContextInterface):
             raise Exception(('Task "%s" is not defined. Check if it is defined, or' +
                             ' imported, or if the spelling is correct.') % name)
 
+    def find_all_tasks(self) -> Dict[str, Union[TaskDeclaration, GroupDeclaration]]:
+        return self._compiled
+
     def _add_component(self, component: TaskDeclaration) -> None:
         self._imported_tasks[component.to_full_name()] = component
 

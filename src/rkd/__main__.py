@@ -28,6 +28,8 @@ class RiotKitDoApplication:
         # execute all tasks
         resolver.resolve(requested_tasks, executor.execute)
 
+        # todo: Collect tasks status codes and do sys.exit() here - executor can know the code
+
 
 if __name__ == '__main__':
     app = RiotKitDoApplication()

@@ -45,6 +45,9 @@ class ContextInterface(AbstractClass):
     def find_task_by_name(self, name: str) -> Union[TaskDeclarationInterface, GroupDeclarationInterface]:
         pass
 
+    def find_all_tasks(self) -> Dict[str, Union[TaskDeclarationInterface, GroupDeclarationInterface]]:
+        pass
+
 
 class ExecutorInterface(AbstractClass):
     @abstractmethod
