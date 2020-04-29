@@ -17,6 +17,10 @@ class OneByOneTaskExecutor(ExecutorInterface):
     def execute(self, task: TaskDeclaration, parent: Union[GroupDeclaration, None] = None, args: list = []):
         print(' >> Executing ' + task.to_full_name())
 
+        # @todo: Do not overwrite arguments of original task by alias task
+        # @todo: Add output recording to file
+        # @todo: Add IO class
+
         task.get_task_to_execute().execute(
             ExecutionContext(
                 ctx=self._ctx,
