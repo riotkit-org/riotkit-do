@@ -12,6 +12,12 @@ CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 class Context(ContextInterface):
     """
     Application context - collects all tasks together
+
+    Each Context() is collecting tasks from selected directory.
+    merge() static method is merging two Context() objects
+    eg. merge(Context(), Context()) selecting second as a priority
+
+    ContextFactory() is controlling the order.
     """
 
     _imported_tasks: Dict[str, TaskDeclaration]
