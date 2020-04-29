@@ -15,7 +15,7 @@ THIS PROJECT IS A WORK IN PROGRESS.
 
 Tasks are prefixed always with ":". Each task can handle it's own arguments.
 
-### Tasks arguments
+### Tasks arguments usage
 
 
 *makefile.py*
@@ -40,7 +40,7 @@ TASKS = [
 Notes for this example: The "username" parameter is a default defined in `makefile.py` in this case.
 
 ```bash
-$ python -m rkd :my:test --password=first :my:test --password=second
+$ rkd :my:test --password=first :my:test --password=second
  >> Executing :py:publish
 Publishing
 {'username': '...', 'password': 'first'}
@@ -56,7 +56,7 @@ Publishing
 In this example the argument values "..." are taken from `makefile.py`
 
 ```bash
-$ python -m rkd :my:test :my:test
+$ rkd :my:test :my:test
  >> Executing :py:publish
 Publishing
 {'username': '...', 'password': '...'}
@@ -65,4 +65,16 @@ Publishing
 Publishing
 {'username': '...', 'password': '...'}
 
+```
+
+**Example of --help per command:**
+
+```bash
+$ rkd :env:test :env:test --help
+usage: :py:publish [-h] [--username USERNAME] [--password PASSWORD]
+
+optional arguments:
+  -h, --help           show this help message and exit
+  --username USERNAME  Username
+  --password PASSWORD  Password
 ```
