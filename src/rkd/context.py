@@ -2,13 +2,18 @@
 import os
 from typing import Dict, List, Union
 from .syntax import TaskDeclaration, TaskAliasDeclaration, GroupDeclaration
+from .contract import ContextInterface
 from .argparsing import CommandlineParsingHelper
 from importlib.machinery import SourceFileLoader
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
-class Context:
+class Context(ContextInterface):
+    """
+    Application context - collects all tasks together
+    """
+
     _imported_tasks: Dict[str, TaskDeclaration]
     _task_aliases: Dict[str, TaskAliasDeclaration]
     _compiled: Dict[str, Union[TaskDeclaration, GroupDeclaration]]
@@ -62,7 +67,11 @@ class Context:
         self._task_aliases[task.get_name()] = task
 
     def _resolve_alias(self, alias: TaskAliasDeclaration) -> GroupDeclaration:
-        """ Parse commandline args to fetch list of tasks to join into a group """
+        """
+        Parse commandline args to fetch list of tasks to join into a group
+
+        Produced result will be available to fetch via find_task_by_name()
+        """
 
         args = CommandlineParsingHelper.create_grouped_arguments(alias.get_arguments())
         resolved_tasks = {}

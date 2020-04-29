@@ -1,9 +1,9 @@
 
 from typing import List, Dict
-from .task import TaskInterface
+from .contract import TaskDeclarationInterface, GroupDeclarationInterface, TaskInterface
 
 
-class TaskDeclaration:
+class TaskDeclaration(TaskDeclarationInterface):
     _task: TaskInterface
     _env: Dict[str, str]
     _args: List[str]
@@ -31,8 +31,11 @@ class TaskDeclaration:
     def to_dict(self) -> dict:
         return {self.to_full_name(): self}
 
+    def get_env(self):
+        return self._env
 
-class GroupDeclaration:
+
+class GroupDeclaration(GroupDeclarationInterface):
     _declarations: Dict[str, TaskDeclaration]
 
     def __init__(self, declarations: Dict[str, TaskDeclaration]):

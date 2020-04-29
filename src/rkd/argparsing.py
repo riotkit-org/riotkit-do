@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 from typing import List
+from argparse import ArgumentParser
+from .contract import TaskDeclarationInterface
 
 
 class TaskArguments:
@@ -63,3 +65,10 @@ class CommandlineParsingHelper:
                 tasks.append(TaskArguments(current_task_name, current_group_elements))
 
         return tasks
+
+    @staticmethod
+    def get_parsed_vars_for_task(task: TaskDeclarationInterface, args: list):
+        argparse = ArgumentParser(task.to_full_name())
+        task.get_task_to_execute().configure_argparse(argparse)
+
+        return vars(argparse.parse_args(args))

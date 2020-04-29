@@ -46,4 +46,14 @@ class TaskResolver:
             raise Exception('Cannot resolve task - unknown type "%s"' % str(ctx_declaration))
 
         for task_name, declaration in declarations.items():
-            callback(declaration, parent, task_request.args() + declaration.get_args())
+            callback(
+                declaration,
+                parent,
+                # the arguments there will be mixed in order:
+                #  - first: defined in Makefile
+                #  - second: commandline arguments
+                #
+                #  The argparse in Python will take the second one as priority.
+                #  We do not try to remove duplications there to not increase complexity of the solution - it works now.
+                declaration.get_args() + task_request.args()
+            )

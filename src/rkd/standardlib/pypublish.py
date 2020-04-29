@@ -1,6 +1,6 @@
 
 from argparse import ArgumentParser
-from ..task import TaskInterface
+from ..contract import TaskInterface, ExecutionContext
 
 
 class PyPublishTask(TaskInterface):
@@ -14,5 +14,7 @@ class PyPublishTask(TaskInterface):
         parser.add_argument('--username', help='Username')
         parser.add_argument('--password', help='Password')
 
-    def execute(self, task_name: str, options: dict, env: dict):
+    def execute(self, context: ExecutionContext):
         print('Publishing')
+        print(context.args)
+        print("")

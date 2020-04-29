@@ -1,6 +1,6 @@
 
 from argparse import ArgumentParser
-from ..task import TaskInterface
+from ..contract import TaskInterface, ExecutionContext
 
 
 class ShellCommand(TaskInterface):
@@ -13,5 +13,5 @@ class ShellCommand(TaskInterface):
     def configure_argparse(self, parser: ArgumentParser):
         pass
 
-    def execute(self, task_name: str, options: dict, env: dict):
+    def execute(self, context: ExecutionContext):
         pass

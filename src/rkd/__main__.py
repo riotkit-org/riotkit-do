@@ -5,7 +5,7 @@ from .argparsing import CommandlineParsingHelper
 from .context import ContextFactory, Context
 from .resolver import TaskResolver
 from .validator import TaskDeclarationValidator
-from .executor import Executor
+from .executor import OneByOneTaskExecutor
 
 
 class RiotKitDoApplication:
@@ -17,6 +17,7 @@ class RiotKitDoApplication:
         # load context of components
         self._ctx = ContextFactory().create_unified_context()
         resolver = TaskResolver(self._ctx)
+        executor = OneByOneTaskExecutor(self._ctx)
 
         # iterate over each task, parse commandline arguments
         requested_tasks = CommandlineParsingHelper.create_grouped_arguments(sys.argv[1:])
@@ -25,7 +26,7 @@ class RiotKitDoApplication:
         resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
 
         # execute all tasks
-        resolver.resolve(requested_tasks, Executor.execute)
+        resolver.resolve(requested_tasks, executor.execute)
 
 
 if __name__ == '__main__':
