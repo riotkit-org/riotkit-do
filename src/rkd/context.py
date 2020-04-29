@@ -141,5 +141,6 @@ class ContextFactory:
 
         ctx.compile()
         ctx.io = SystemIO()
+        ctx.io.silent = True
 
         return ctx

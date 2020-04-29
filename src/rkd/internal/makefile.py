@@ -5,12 +5,15 @@
 from rkd.syntax import TaskDeclaration, TaskAliasDeclaration
 from rkd.standardlib.pypublish import PyPublishTask
 from rkd.standardlib.shell import ShellCommand
+from rkd.standardlib import InitTask
 
 IMPORTS = [
     TaskDeclaration(PyPublishTask()),
-    TaskDeclaration(ShellCommand())
+    TaskDeclaration(ShellCommand()),
+    TaskDeclaration(InitTask())
 ]
 
 TASKS = [
-    TaskAliasDeclaration(':env:test', [':py:publish', '--username=...', '--password=...'], env={'DB_PASSWORD': '123'})
+    # example:
+    # TaskAliasDeclaration(':env:test', [':py:publish', '--username=...', '--password=...'], env={'DB_PASSWORD': '123'})
 ]

@@ -20,7 +20,7 @@ class RiotKitDoApplication:
         executor = OneByOneTaskExecutor(self._ctx)
 
         # iterate over each task, parse commandline arguments
-        requested_tasks = CommandlineParsingHelper.create_grouped_arguments(sys.argv[1:])
+        requested_tasks = CommandlineParsingHelper.create_grouped_arguments([':init'] + sys.argv[1:])
 
         # validate all tasks
         resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
