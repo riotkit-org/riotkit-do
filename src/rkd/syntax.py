@@ -1,5 +1,6 @@
 
 from typing import List, Dict
+from copy import deepcopy
 from .contract import TaskDeclarationInterface, GroupDeclarationInterface, TaskInterface
 
 
@@ -16,11 +17,21 @@ class TaskDeclaration(TaskDeclarationInterface):
     def to_full_name(self):
         return self._task.get_full_name()
 
-    def set_env(self, envs: Dict[str, str]):
-        self._env = envs
+    def with_env(self, envs: Dict[str, str]):
+        """ Immutable environment setter. Produces new object each time. """
 
-    def set_args(self, args: List[str]):
-        self._args = args
+        copy = deepcopy(self)
+        copy._env = envs
+
+        return copy
+
+    def with_args(self, args: List[str]):
+        """ Immutable arguments setter. Produces new object each time """
+
+        copy = deepcopy(self)
+        copy._args = args
+
+        return copy
 
     def get_args(self) -> List[str]:
         return self._args
@@ -36,13 +47,18 @@ class TaskDeclaration(TaskDeclarationInterface):
 
 
 class GroupDeclaration(GroupDeclarationInterface):
+    _name: str
     _declarations: Dict[str, TaskDeclaration]
 
-    def __init__(self, declarations: Dict[str, TaskDeclaration]):
+    def __init__(self, name: str, declarations: Dict[str, TaskDeclaration]):
+        self._name = name
         self._declarations = declarations
 
     def get_declarations(self) -> Dict[str, TaskDeclaration]:
         return self._declarations
+
+    def get_name(self) -> str:
+        return self._name
 
 
 class TaskAliasDeclaration:

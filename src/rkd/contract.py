@@ -2,6 +2,7 @@
 from abc import abstractmethod, ABC as AbstractClass
 from typing import Dict, List, Union
 from argparse import ArgumentParser
+from .inputoutput import IO
 
 
 class TaskDeclarationInterface(AbstractClass):
@@ -56,6 +57,7 @@ class ExecutionContext:
     Defines which objects could be accessed by Task. It's a scope of a single task execution.
     """
 
+    io: IO
     declaration: TaskDeclarationInterface
     parent: Union[GroupDeclarationInterface, None]
     args: Dict[str, str]
@@ -63,9 +65,10 @@ class ExecutionContext:
     ctx: ContextInterface
     executor: ExecutorInterface
 
-    def __init__(self, ctx: ContextInterface, executor: ExecutorInterface, declaration: TaskDeclarationInterface,
+    def __init__(self, io: IO, ctx: ContextInterface, executor: ExecutorInterface, declaration: TaskDeclarationInterface,
                  parent: Union[GroupDeclarationInterface, None] = None, args: Dict[str, str] = {},
                  env: Dict[str, str] = {}):
+        self.io = io
         self.ctx = ctx
         self.executor = executor
         self.declaration = declaration

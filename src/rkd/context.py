@@ -1,10 +1,12 @@
 
 import os
 from typing import Dict, List, Union
+from importlib.machinery import SourceFileLoader
 from .syntax import TaskDeclaration, TaskAliasDeclaration, GroupDeclaration
 from .contract import ContextInterface
 from .argparsing import CommandlineParsingHelper
-from importlib.machinery import SourceFileLoader
+from .inputoutput import SystemIO
+
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -23,6 +25,7 @@ class Context(ContextInterface):
     _imported_tasks: Dict[str, TaskDeclaration]
     _task_aliases: Dict[str, TaskAliasDeclaration]
     _compiled: Dict[str, Union[TaskDeclaration, GroupDeclaration]]
+    io: SystemIO
 
     def __init__(self, tasks: List[TaskDeclaration], aliases: List[TaskAliasDeclaration]):
         self._imported_tasks = {}
@@ -57,7 +60,7 @@ class Context(ContextInterface):
         self._compiled = self._imported_tasks
 
         for name, details in self._task_aliases.items():
-            self._compiled[name] = self._resolve_alias(details)
+            self._compiled[name] = self._resolve_alias(name, details)
 
     def find_task_by_name(self, name: str) -> Union[TaskDeclaration, GroupDeclaration]:
         try:
@@ -72,7 +75,7 @@ class Context(ContextInterface):
     def _add_task(self, task: TaskAliasDeclaration) -> None:
         self._task_aliases[task.get_name()] = task
 
-    def _resolve_alias(self, alias: TaskAliasDeclaration) -> GroupDeclaration:
+    def _resolve_alias(self, name: str, alias: TaskAliasDeclaration) -> GroupDeclaration:
         """
         Parse commandline args to fetch list of tasks to join into a group
 
@@ -84,12 +87,11 @@ class Context(ContextInterface):
 
         for argument_group in args:
             resolved_task = self.find_task_by_name(argument_group.name())
-            resolved_task.set_env(alias.get_env())
-            resolved_task.set_args(argument_group.args())
+            resolved_tasks[argument_group.name()] = resolved_task\
+                .with_env(alias.get_env()) \
+                .with_args(argument_group.args())
 
-            resolved_tasks[argument_group.name()] = resolved_task
-
-        return GroupDeclaration(resolved_tasks)
+        return GroupDeclaration(name, resolved_tasks)
 
 
 class ContextFactory:
@@ -138,4 +140,6 @@ class ContextFactory:
                 ctx = Context.merge(ctx, self._load_context_from_directory(path))
 
         ctx.compile()
+        ctx.io = SystemIO()
+
         return ctx

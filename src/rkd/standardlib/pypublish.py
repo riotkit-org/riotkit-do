@@ -15,6 +15,5 @@ class PyPublishTask(TaskInterface):
         parser.add_argument('--password', help='Password')
 
     def execute(self, context: ExecutionContext):
-        print('Publishing')
-        print(context.args)
-        print("")
+        context.io.info('LOG test')
+        context.io.out('STDOUT test')

@@ -41,7 +41,7 @@ class TaskResolver:
             parent = None
         elif isinstance(ctx_declaration, GroupDeclaration):
             declarations = ctx_declaration.get_declarations()
-            parent = GroupDeclaration
+            parent = ctx_declaration
         else:
             raise Exception('Cannot resolve task - unknown type "%s"' % str(ctx_declaration))
 
