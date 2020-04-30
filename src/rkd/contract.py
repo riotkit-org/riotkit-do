@@ -27,25 +27,30 @@ class TaskDeclarationInterface(AbstractClass):
     def get_env(self):
         pass
 
-    def get_group_name(self):
-        split = self.to_full_name().split(':')
-        return split[1] if len(split) >= 3 else ''
+    @abstractmethod
+    def get_group_name(self) -> str:
+        pass
 
-    def get_task_name(self):
-        split = self.to_full_name().split(':')
-
-        if len(split) >= 3:
-            return split[2]
-
-        try:
-            return split[1]
-        except KeyError:
-            return self.to_full_name()
+    @abstractmethod
+    def get_task_name(self) -> str:
+        pass
 
 
 class GroupDeclarationInterface(AbstractClass):
     @abstractmethod
     def get_declarations(self) -> Dict[str, TaskDeclarationInterface]:
+        pass
+
+    @abstractmethod
+    def get_group_name(self) -> str:
+        pass
+
+    @abstractmethod
+    def get_task_name(self) -> str:
+        pass
+
+    @abstractmethod
+    def to_full_name(self):
         pass
 
 
@@ -136,3 +141,7 @@ class TaskInterface(AbstractClass):
             return
 
         return check_output(cmd, shell=True).decode('utf-8')
+
+    def is_silent_in_observer(self) -> bool:
+        """ Internally used property """
+        return False

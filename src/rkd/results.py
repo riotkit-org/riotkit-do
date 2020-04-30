@@ -61,20 +61,22 @@ class ProgressObserver:
         self._set_status(declaration, STATUS_FAILURE)
         self._failed_count += 1
 
-        self._io.print_opt_line()
-        self._io.error_msg('The task "%s" ended with a failure' % declaration.to_full_name())
-        self._io.print_separator()
-        self._io.print_opt_line()
+        if not declaration.get_task_to_execute().is_silent_in_observer():
+            self._io.print_opt_line()
+            self._io.error_msg('The task "%s" ended with a failure' % declaration.to_full_name())
+            self._io.print_separator()
+            self._io.print_opt_line()
 
     def task_succeed(self, declaration: TaskDeclaration):
         """ When task success """
 
         self._set_status(declaration, STATUS_SUCCEED)
 
-        self._io.print_opt_line()
-        self._io.success_msg('The task "%s" succeed.' % declaration.to_full_name())
-        self._io.print_separator()
-        self._io.print_opt_line()
+        if not declaration.get_task_to_execute().is_silent_in_observer():
+            self._io.print_opt_line()
+            self._io.success_msg('The task "%s" succeed.' % declaration.to_full_name())
+            self._io.print_separator()
+            self._io.print_opt_line()
 
     def execution_finished(self):
         """ When all tasks were executed """

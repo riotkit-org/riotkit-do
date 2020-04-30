@@ -45,6 +45,21 @@ class TaskDeclaration(TaskDeclarationInterface):
     def get_env(self):
         return self._env
 
+    def get_group_name(self) -> str:
+        split = self.to_full_name().split(':')
+        return split[1] if len(split) >= 3 else ''
+
+    def get_task_name(self) -> str:
+        split = self.to_full_name().split(':')
+
+        if len(split) >= 3:
+            return split[2]
+
+        try:
+            return split[1]
+        except KeyError:
+            return self.to_full_name()
+
 
 class GroupDeclaration(GroupDeclarationInterface):
     _name: str
@@ -59,6 +74,24 @@ class GroupDeclaration(GroupDeclarationInterface):
 
     def get_name(self) -> str:
         return self._name
+
+    def get_group_name(self) -> str:
+        split = self._name.split(':')
+        return split[1] if len(split) >= 3 else ''
+
+    def get_task_name(self) -> str:
+        split = self._name.split(':')
+
+        if len(split) >= 3:
+            return split[2]
+
+        try:
+            return split[1]
+        except KeyError:
+            return self._name
+
+    def to_full_name(self):
+        return self.get_name()
 
 
 class TaskAliasDeclaration:
