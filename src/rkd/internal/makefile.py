@@ -3,16 +3,18 @@
 #
 
 from rkd.syntax import TaskDeclaration, TaskAliasDeclaration
-from rkd.standardlib.pypublish import PyPublishTask
+from rkd.standardlib.python import PublishTask, BuildTask
 from rkd.standardlib.shell import ShellCommand
 from rkd.standardlib import InitTask, TasksListingTask, CallableTask
 
 
 IMPORTS = [
-    TaskDeclaration(PyPublishTask()),
     TaskDeclaration(ShellCommand()),
     TaskDeclaration(InitTask()),
-    TaskDeclaration(TasksListingTask())
+    TaskDeclaration(TasksListingTask()),
+
+    TaskDeclaration(PublishTask()),
+    TaskDeclaration(BuildTask())
 ]
 
 TASKS = [

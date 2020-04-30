@@ -4,6 +4,10 @@ from ..contract import TaskInterface, ExecutionContext
 
 
 class ShellCommand(TaskInterface):
+    """
+    Executes shell commands
+    """
+
     def get_name(self) -> str:
         return ':sh'
 

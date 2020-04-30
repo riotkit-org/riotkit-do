@@ -123,10 +123,13 @@ class TaskInterface(AbstractClass):
 
         return self.get_group_name() + self.get_name()
 
-    def sh(self, cmd: str, capture: bool = False) -> Union[str, None]:
+    def sh(self, cmd: str, capture: bool = False, verbose: bool = False) -> Union[str, None]:
         """ Executes a shell command. Throws exception on error.
             To capture output set capture=True
         """
+
+        if verbose:
+            cmd = 'set -x; ' + cmd
 
         if not capture:
             check_call(cmd, shell=True)
