@@ -6,6 +6,6 @@ IMPORTS = [] + PythonImports()
 
 TASKS = [
     TaskAliasDeclaration(':release', [
-        ':py:build', ':py:publish --username=__token__ --password=${PYPI_PASSWORD}'
+        ':py:build', ':py:publish', '--username=__token__', '--password=${PYPI_PASSWORD}'
     ])
 ]
