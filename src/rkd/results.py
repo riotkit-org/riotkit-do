@@ -1,5 +1,5 @@
 
-from typing import Union, OrderedDict as OrderedDictType
+from typing import Union
 from collections import OrderedDict
 from .syntax import TaskDeclaration, GroupDeclaration
 from .inputoutput import SystemIO
@@ -22,7 +22,7 @@ class QueueItem:
 
 class ProgressObserver:
     _io: SystemIO
-    _tasks: OrderedDictType[str, QueueItem]
+    _tasks: OrderedDict  # OrderedDict[str, QueueItem]
     _failed_count: int
 
     def __init__(self, io: SystemIO):
