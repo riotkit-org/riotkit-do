@@ -1,6 +1,7 @@
 
 from argparse import ArgumentParser
 from ..contract import TaskInterface, ExecutionContext
+from typing import Callable
 
 
 class InitTask(TaskInterface):
@@ -57,3 +58,23 @@ class TasksListingTask(TaskInterface):
 
             io.print_line()
 
+
+class CallableTask(TaskInterface):
+    _callable: Callable[[ExecutionContext], any]
+    _name: str
+
+    def __init__(self, name: str, callback: Callable[[ExecutionContext], any]):
+        self._name = name
+        self._callable = callback
+
+    def get_name(self) -> str:
+        return self._name
+
+    def get_group_name(self) -> str:
+        return ''
+
+    def configure_argparse(self, parser: ArgumentParser):
+        pass
+
+    def execute(self, context: ExecutionContext) -> any:
+        return self._callable(context)

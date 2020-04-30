@@ -11,6 +11,11 @@ THIS PROJECT IS A WORK IN PROGRESS.
 - Simple configuration in Python
 
 
+## Rules
+
+- No hooks eg. task.executeAfter(otherTask), no complex dependencies
+- No dynamic tasks names eg. by turning on Publish component it should not create tasks eg. :publishIWAToDockerRegistry (where IWA is the project name)
+
 ## Usage in shell
 
 Tasks are prefixed always with ":". Each task can handle it's own arguments.
