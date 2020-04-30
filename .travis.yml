@@ -1,6 +1,6 @@
 language: python
 if: branch = master or tag IS present
-python: 3.7
+python: 3.8
 
 before_script:
     pip install rkd  # todo: set fixed version
