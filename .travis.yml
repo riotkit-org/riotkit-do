@@ -2,5 +2,8 @@ language: python
 if: branch = master or tag IS present
 python: 3.6
 
+before_script:
+    pip install rkd  # todo: set fixed version
+
 script:
-    - make unit_test
+    - rkd :py:build :py:publish --username=__token__ --password="${PYPI_TOKEN}"
