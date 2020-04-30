@@ -36,5 +36,24 @@ class TasksListingTask(TaskInterface):
     def execute(self, context: ExecutionContext):
         io = context.io
 
+        groups = {}
+
         for name, declaration in context.ctx.find_all_tasks().items():
-            io.out(name)
+            group_name = declaration.get_group_name()
+
+            if group_name not in groups:
+                groups[group_name] = {}
+
+            groups[group_name][declaration.to_full_name()] = declaration
+
+        for group_name, tasks in groups.items():
+            if not group_name:
+                group_name = 'global'
+
+            io.print_group(group_name)
+
+            for task_name, declaration in tasks.items():
+                io.outln(task_name)
+
+            io.print_line()
+

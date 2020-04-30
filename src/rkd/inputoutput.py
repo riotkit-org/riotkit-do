@@ -57,14 +57,47 @@ class IO:
         this.IS_CAPTURING_DESCRIPTORS = False
 
     def out(self, text):
-        print(text)
+        """ Standard output """
+        sys.stdout.write(text)
+
+    def outln(self, text):
+        """ Standard output + newline """
+        self.out(text)
+        sys.stdout.write("\n")
+
+    def err(self, text):
+        """ Standard error """
+        sys.stderr.write(text)
+
+    def errln(self, text):
+        """ Standard error + newline """
+        self.err(text)
+        sys.stderr.write("\n")
+
+    def opt_out(self, text):
+        """ Optional output - fancy output skipped in --silent mode """
+
+        if not self.silent:
+            self.out(text)
+
+    def opt_outln(self, text):
+        """ Optional output - fancy output skipped in --silent mode + newline """
+
+        if not self.silent:
+            self.outln(text)
 
     def info(self, text):
         self.log(text)
 
     def log(self, text):
         if not self.silent:
-            print(text)
+            self.outln(text)
+
+    def print_group(self, text):
+        self.opt_outln("\x1B[33m[%s]\x1B[0m" % text)
+
+    def print_line(self):
+        self.outln('')
 
 
 class SystemIO(IO):

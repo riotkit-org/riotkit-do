@@ -26,6 +26,21 @@ class TaskDeclarationInterface(AbstractClass):
     def get_env(self):
         pass
 
+    def get_group_name(self):
+        split = self.to_full_name().split(':')
+        return split[1] if len(split) >= 3 else ''
+
+    def get_task_name(self):
+        split = self.to_full_name().split(':')
+
+        if len(split) >= 3:
+            return split[2]
+
+        try:
+            return split[1]
+        except KeyError:
+            return self.to_full_name()
+
 
 class GroupDeclarationInterface(AbstractClass):
     @abstractmethod
