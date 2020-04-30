@@ -6,4 +6,4 @@ before_script:
     pip install rkd  # todo: set fixed version
 
 script:
-    - rkd :py:build :py:publish --username=__token__ --password="${PYPI_TOKEN}"
+    - rkd :py:release
