@@ -6,4 +6,4 @@ before_script:
     pip install rkd  # todo: set fixed version
 
 script:
-    - rkd :py:release
+    - rkd :release
