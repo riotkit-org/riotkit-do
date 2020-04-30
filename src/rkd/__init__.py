@@ -6,6 +6,7 @@ from .context import ContextFactory, Context
 from .resolver import TaskResolver
 from .validator import TaskDeclarationValidator
 from .executor import OneByOneTaskExecutor
+from .exception import TaskNotFoundException
 
 
 class RiotKitDoApplication:
@@ -13,20 +14,25 @@ class RiotKitDoApplication:
     _tasks_to_execute = []
 
     def main(self):
+        try:
+            # load context of components
+            self._ctx = ContextFactory().create_unified_context()
 
-        # load context of components
-        self._ctx = ContextFactory().create_unified_context()
-        resolver = TaskResolver(self._ctx)
-        executor = OneByOneTaskExecutor(self._ctx)
+            resolver = TaskResolver(self._ctx)
+            executor = OneByOneTaskExecutor(self._ctx)
 
-        # iterate over each task, parse commandline arguments
-        requested_tasks = CommandlineParsingHelper.create_grouped_arguments([':init'] + sys.argv[1:])
+            # iterate over each task, parse commandline arguments
+            requested_tasks = CommandlineParsingHelper.create_grouped_arguments([':init'] + sys.argv[1:])
 
-        # validate all tasks
-        resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
+            # validate all tasks
+            resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
 
-        # execute all tasks
-        resolver.resolve(requested_tasks, executor.execute)
+            # execute all tasks
+            resolver.resolve(requested_tasks, executor.execute)
+
+        except TaskNotFoundException as e:
+            print(e)
+            sys.exit(1)
 
         executor.get_observer().execution_finished()
 

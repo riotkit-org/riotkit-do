@@ -6,6 +6,7 @@ from .syntax import TaskDeclaration, TaskAliasDeclaration, GroupDeclaration
 from .contract import ContextInterface
 from .argparsing import CommandlineParsingHelper
 from .inputoutput import SystemIO
+from .exception import TaskNotFoundException
 
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -66,8 +67,8 @@ class Context(ContextInterface):
         try:
             return self._compiled[name]
         except KeyError:
-            raise Exception(('Task "%s" is not defined. Check if it is defined, or' +
-                            ' imported, or if the spelling is correct.') % name)
+            raise TaskNotFoundException(('Task "%s" is not defined. Check if it is defined, or' +
+                                         ' imported, or if the spelling is correct.') % name)
 
     def find_all_tasks(self) -> Dict[str, Union[TaskDeclaration, GroupDeclaration]]:
         return self._compiled
