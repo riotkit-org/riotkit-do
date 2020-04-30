@@ -5,6 +5,12 @@ import sys
 this = sys.modules[__name__]
 this.IS_CAPTURING_DESCRIPTORS = False
 
+LEVEL_DEBUG = 37
+LEVEL_INFO = 36
+LEVEL_WARNING = 33
+LEVEL_ERROR = 31
+LEVEL_FATAL = 41
+
 
 class StandardOutputReplication(object):
     _out_streams: list
@@ -25,6 +31,7 @@ class StandardOutputReplication(object):
 
 class IO:
     silent = False
+    log_level = LEVEL_ERROR
 
     @contextmanager
     def capture_descriptors(self, target_file: str = None):
@@ -94,8 +101,25 @@ class IO:
     # Logs
     #
 
+    def debug(self, text):
+        if self.log_level >= LEVEL_DEBUG:
+            self.log(text)
+
     def info(self, text):
-        self.log(text)
+        if self.log_level >= LEVEL_INFO:
+            self.log(text)
+
+    def warn(self, text):
+        if self.log_level >= LEVEL_WARNING:
+            self.log(text)
+
+    def error(self, text):
+        if self.log_level >= LEVEL_ERROR:
+            self.log(text)
+
+    def critical(self, text):
+        if self.log_level >= LEVEL_FATAL:
+            self.log(text)
 
     def log(self, text):
         if not self.silent:
