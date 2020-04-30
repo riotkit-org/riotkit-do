@@ -104,7 +104,7 @@ class TaskInterface(AbstractClass):
         pass
 
     @abstractmethod
-    def execute(self, context: ExecutionContext):
+    def execute(self, context: ExecutionContext) -> bool:
         pass
 
     @abstractmethod

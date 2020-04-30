@@ -14,6 +14,8 @@ class PyPublishTask(TaskInterface):
         parser.add_argument('--username', help='Username')
         parser.add_argument('--password', help='Password')
 
-    def execute(self, context: ExecutionContext):
+    def execute(self, context: ExecutionContext) -> bool:
         context.io.info('LOG test')
-        context.io.out('STDOUT test')
+        context.io.outln('STDOUT test')
+
+        return True

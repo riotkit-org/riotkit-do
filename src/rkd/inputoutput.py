@@ -56,6 +56,10 @@ class IO:
 
         this.IS_CAPTURING_DESCRIPTORS = False
 
+    #
+    # Standard output/error
+    #
+
     def out(self, text):
         """ Standard output """
         sys.stdout.write(text)
@@ -86,6 +90,10 @@ class IO:
         if not self.silent:
             self.outln(text)
 
+    #
+    # Logs
+    #
+
     def info(self, text):
         self.log(text)
 
@@ -96,8 +104,31 @@ class IO:
     def print_group(self, text):
         self.opt_outln("\x1B[33m[%s]\x1B[0m" % text)
 
+    #
+    # Lines and separators
+    #
+
     def print_line(self):
         self.outln('')
+
+    def print_opt_line(self):
+        self.opt_outln('')
+
+    def print_separator(self):
+        self.opt_outln("\x1B[37m%s\x1B[0m" % '-----------------------------------')
+
+    #
+    #  Statuses
+    #
+
+    def success_msg(self, text):
+        self.opt_outln("\x1B[92m%s\x1B[0m" % text)
+
+    def error_msg(self, text):
+        self.opt_outln("\x1B[91m%s\x1B[0m" % text)
+
+    def info_msg(self, text):
+        self.opt_outln("\x1B[93m%s\x1B[0m" % text)
 
 
 class SystemIO(IO):

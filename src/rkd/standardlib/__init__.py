@@ -20,8 +20,10 @@ class InitTask(TaskInterface):
     def configure_argparse(self, parser: ArgumentParser):
         pass
 
-    def execute(self, context: ExecutionContext):
+    def execute(self, context: ExecutionContext) -> bool:
         context.ctx.io.silent = context.args['silent']
+
+        return True
 
 
 class TasksListingTask(TaskInterface):
@@ -34,9 +36,8 @@ class TasksListingTask(TaskInterface):
     def configure_argparse(self, parser: ArgumentParser):
         pass
 
-    def execute(self, context: ExecutionContext):
+    def execute(self, context: ExecutionContext) -> bool:
         io = context.io
-
         groups = {}
 
         for name, declaration in context.ctx.find_all_tasks().items():
@@ -56,7 +57,9 @@ class TasksListingTask(TaskInterface):
             for task_name, declaration in tasks.items():
                 io.outln(task_name)
 
-            io.print_line()
+            io.print_opt_line()
+
+        return True
 
 
 class CallableTask(TaskInterface):
@@ -76,5 +79,5 @@ class CallableTask(TaskInterface):
     def configure_argparse(self, parser: ArgumentParser):
         pass
 
-    def execute(self, context: ExecutionContext) -> any:
+    def execute(self, context: ExecutionContext) -> bool:
         return self._callable(context)

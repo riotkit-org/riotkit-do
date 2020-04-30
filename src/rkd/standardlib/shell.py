@@ -13,5 +13,5 @@ class ShellCommand(TaskInterface):
     def configure_argparse(self, parser: ArgumentParser):
         pass
 
-    def execute(self, context: ExecutionContext):
+    def execute(self, context: ExecutionContext) -> bool:
         pass

@@ -28,7 +28,9 @@ class RiotKitDoApplication:
         # execute all tasks
         resolver.resolve(requested_tasks, executor.execute)
 
-        # todo: Collect tasks status codes and do sys.exit() here - executor can know the code
+        executor.get_observer().execution_finished()
+
+        sys.exit(1 if executor.get_observer().has_at_least_one_failed_task() else 0)
 
 
 if __name__ == '__main__':
