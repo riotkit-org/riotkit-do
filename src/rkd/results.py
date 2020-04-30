@@ -30,14 +30,15 @@ class ProgressObserver:
         self._tasks = OrderedDict()
         self._failed_count = False
 
-    def task_started(self, declaration: TaskDeclaration, parent: Union[GroupDeclaration, None]):
+    def task_started(self, declaration: TaskDeclaration, parent: Union[GroupDeclaration, None], args: list):
         """ When task is just started """
 
         self._tasks[declaration.to_full_name()] = QueueItem(declaration, STATUS_STARTED)
 
-        self._io.info_msg(' >> Executing %s %s' % (
+        self._io.info_msg(' >> Executing %s %s %s' % (
             declaration.to_full_name(),
-            ('[parent: ' + parent.get_name() + ']') if parent else ''
+            ' '.join(args),
+            ('[parent of ' + parent.get_name() + ']') if parent else ''
         ))
 
     def task_errored(self, declaration: TaskDeclaration, exception: Exception):

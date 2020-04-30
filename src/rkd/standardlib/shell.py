@@ -11,7 +11,9 @@ class ShellCommand(TaskInterface):
         return ''
 
     def configure_argparse(self, parser: ArgumentParser):
-        pass
+        parser.add_argument('--cmd', '-c', help='Shell command', required=True)
 
     def execute(self, context: ExecutionContext) -> bool:
-        pass
+        self.sh(context.args['cmd'], capture=False)
+
+        return True

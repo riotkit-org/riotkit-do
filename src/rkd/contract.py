@@ -2,7 +2,8 @@
 from abc import abstractmethod, ABC as AbstractClass
 from typing import Dict, List, Union
 from argparse import ArgumentParser
-from .inputoutput import IO, SystemIO
+from subprocess import check_call, check_output
+from .inputoutput import IO
 
 
 class TaskDeclarationInterface(AbstractClass):
@@ -97,19 +98,38 @@ class ExecutionContext:
 class TaskInterface(AbstractClass):
     @abstractmethod
     def get_name(self) -> str:
+        """ Task name  eg. ":sh" """
         pass
 
     @abstractmethod
     def get_group_name(self) -> str:
+        """ Group name where the task belongs eg. ":publishing", can be empty. """
+
         pass
 
     @abstractmethod
     def execute(self, context: ExecutionContext) -> bool:
+        """ Executes a task. True/False should be returned as return """
         pass
 
     @abstractmethod
     def configure_argparse(self, parser: ArgumentParser):
+        """ Allows a task to configure ArgumentParser (argparse) """
+
         pass
 
     def get_full_name(self):
+        """ Returns task full name, including group name """
+
         return self.get_group_name() + self.get_name()
+
+    def sh(self, cmd: str, capture: bool = False) -> Union[str, None]:
+        """ Executes a shell command. Throws exception on error.
+            To capture output set capture=True
+        """
+
+        if not capture:
+            check_call(cmd, shell=True)
+            return
+
+        return check_output(cmd, shell=True).decode('utf-8')

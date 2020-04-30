@@ -28,7 +28,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
         is_exception = False
 
         # 1. notify
-        self._observer.task_started(task, parent)
+        self._observer.task_started(task, parent, args)
 
         # 2. execute
         parsed_args = CommandlineParsingHelper.get_parsed_vars_for_task(task, args)
