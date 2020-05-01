@@ -5,9 +5,9 @@ from rkd.standardlib.python import imports as PythonImports
 IMPORTS = [] + PythonImports()
 
 TASKS = [
-    Task(':release', [
+    Task(':release', description='Release RKD to PyPI (snapshot when on master, release on tag)', to_execute=[
         ':py:build', ':py:publish', '--username=__token__', '--password=${PYPI_TOKEN}'
     ]),
 
-    Task(':test', [':py:unittest'])
+    Task(':test', [':py:unittest'], description='Run unit tests')
 ]

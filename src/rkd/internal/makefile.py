@@ -1,5 +1,5 @@
 #
-# Base RKD Makefile, contains basic commands such as :help, :clean or :version
+# Base RKD Makefile, contains basic commands such as :tasks, :clean or :version
 #
 
 from rkd.syntax import TaskDeclaration, TaskAliasDeclaration

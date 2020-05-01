@@ -66,8 +66,8 @@ class TasksListingTask(TaskInterface):
                 declaration: TaskDeclarationInterface
 
                 try:
-                    description = declaration.get_task_to_execute().__doc__.strip().split("\n")[0]
-                    text_description = "\t\t# " + description if description else ""
+                    description = declaration.get_description()
+                    text_description = "\t\t\t# " + description if description else ""
                 except AttributeError:
                     text_description = ""
 

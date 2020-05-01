@@ -36,6 +36,10 @@ class TaskDeclarationInterface(AbstractClass):
     def get_task_name(self) -> str:
         pass
 
+    @abstractmethod
+    def get_description(self) -> str:
+        pass
+
 
 class GroupDeclarationInterface(AbstractClass):
     @abstractmethod
@@ -52,6 +56,10 @@ class GroupDeclarationInterface(AbstractClass):
 
     @abstractmethod
     def to_full_name(self):
+        pass
+
+    @abstractmethod
+    def get_description(self) -> str:
         pass
 
 

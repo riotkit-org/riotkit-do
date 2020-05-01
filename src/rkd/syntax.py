@@ -60,14 +60,21 @@ class TaskDeclaration(TaskDeclarationInterface):
         except KeyError:
             return self.to_full_name()
 
+    def get_description(self) -> str:
+        return self.get_task_to_execute().__doc__.strip().split("\n")[0]
+
 
 class GroupDeclaration(GroupDeclarationInterface):
+    """ Internal DTO: Processed definition of TaskAliasDeclaration into TaskDeclaration """
+
     _name: str
     _declarations: Dict[str, TaskDeclaration]
+    _description: str
 
-    def __init__(self, name: str, declarations: Dict[str, TaskDeclaration]):
+    def __init__(self, name: str, declarations: Dict[str, TaskDeclaration], description: str):
         self._name = name
         self._declarations = declarations
+        self._description = description
 
     def get_declarations(self) -> Dict[str, TaskDeclaration]:
         return self._declarations
@@ -93,16 +100,23 @@ class GroupDeclaration(GroupDeclarationInterface):
     def to_full_name(self):
         return self.get_name()
 
+    def get_description(self) -> str:
+        return self._description
+
 
 class TaskAliasDeclaration:
+    """ Allows to define a custom task name that triggers other tasks in proper order """
+
     _name: str
     _arguments: List[str]
     _env: Dict[str, str]
+    _description: str
 
-    def __init__(self, name: str, to_execute: List[str], env: Dict[str, str] = []):
+    def __init__(self, name: str, to_execute: List[str], env: Dict[str, str] = [], description: str = ''):
         self._name = name
         self._arguments = to_execute
         self._env = env
+        self._description = description
 
     def get_name(self):
         return self._name
@@ -112,3 +126,6 @@ class TaskAliasDeclaration:
 
     def get_env(self) -> Dict[str, str]:
         return self._env
+
+    def get_description(self) -> str:
+        return self._description

@@ -22,7 +22,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
         self._observer = ProgressObserver(ctx.io)
 
     def execute(self, task: TaskDeclaration, parent: Union[GroupDeclaration, None] = None, args: list = []):
-        """ Executes a single task """
+        """ Executes a single task passing the arguments, redirecting/capturing the output and handling the errors """
 
         result = False
         is_exception = False

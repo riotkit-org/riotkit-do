@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 from .argparsing import CommandlineParsingHelper
 from .context import ContextFactory, Context
 from .resolver import TaskResolver
@@ -14,6 +15,9 @@ class RiotKitDoApplication:
     _tasks_to_execute = []
 
     def main(self):
+        if not sys.argv[1:]:
+            self.print_banner_and_exit()
+
         try:
             # load context of components
             self._ctx = ContextFactory().create_unified_context()
@@ -38,6 +42,12 @@ class RiotKitDoApplication:
 
         sys.exit(1 if executor.get_observer().has_at_least_one_failed_task() else 0)
 
+    @staticmethod
+    def print_banner_and_exit():
+        with open(os.path.dirname(os.path.realpath(__file__)) + '/misc/banner.txt', 'rb') as banner_file:
+            print(banner_file.read().replace(b'\\x1B', b'\x1B').decode('utf-8'))
+
+        sys.exit(0)
 
 def main():
     app = RiotKitDoApplication()

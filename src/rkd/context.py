@@ -95,7 +95,7 @@ class Context(ContextInterface):
                 .with_env(alias.get_env()) \
                 .with_args(argument_group.args())
 
-        return GroupDeclaration(name, resolved_tasks)
+        return GroupDeclaration(name, resolved_tasks, alias.get_description())
 
 
 class ContextFactory:
