@@ -45,15 +45,14 @@ custom options.
         Task(':test', [':py:unittest'], description='Run unit tests')
     ]\x1B[0m
 
-\x1B[33m
-See \x1B[93mhttps://github.com/riotkit-org/riotkit-do\x1B[0m\x1B[33m for more documentation.
+See \x1B[93mhttps://github.com/riotkit-org/riotkit-do\x1B[0m for more documentation.
 
 \x1B[0mCheck out also those fantastic initiatives we created this tool in mind for:\x1B[33m
-\x1B[0m-\x1B[33m International Workers Association (\x1B[93mhttps://iwa-ait.org\x1B[0m\x1B[33m)
-\x1B[0m-\x1B[33m Federacja Anarchistyczna (\x1B[93mhttp://federacja-anarchistyczna.pl\x1B[0m\x1B[33m)
-\x1B[0m-\x1B[33m Związek Syndykalistów Polski (\x1B[93mhttps://zsp.net.pl\x1B[0m\x1B[33m) (Polish section of IWA-AIT)
-\x1B[0m-\x1B[33m Komitet Obrony Praw Lokatorów (\x1B[93mhttps://lokatorzy.info.pl\x1B[0m\x1B[33m)
-\x1B[0m-\x1B[33m Solidarity Federation (\x1B[93mhttps://solfed.org.uk\x1B[0m\x1B[33m)
-\x1B[0m-\x1B[33m Priama Akcia (\x1B[93mhttps://priamaakcia.sk\x1B[0m\x1B[33m)
-\x1B[0m-\x1B[33m Anarchist Black Cross Philadelphia (\x1B[93mhttps://pl-pl.facebook.com/PhillyABC/\x1B[0m\x1B[33m)
+\x1B[0m- International Workers Association (\x1B[93mhttps://iwa-ait.org\x1B[0m)
+\x1B[0m- Federacja Anarchistyczna (\x1B[93mhttp://federacja-anarchistyczna.pl\x1B[0m)
+\x1B[0m- Związek Syndykalistów Polski (\x1B[93mhttps://zsp.net.pl\x1B[0m) \x1B[0m-(Polish section of IWA-AIT)
+\x1B[0m- Komitet Obrony Praw Lokatorów (\x1B[93mhttps://lokatorzy.info.pl\x1B[0m)
+\x1B[0m- Solidarity Federation (\x1B[93mhttps://solfed.org.uk\x1B[0m)
+\x1B[0m- Priama Akcia (\x1B[93mhttps://priamaakcia.sk\x1B[0m
+\x1B[0m- Anarchist Black Cross Philadelphia (\x1B[93mhttps://pl-pl.facebook.com/PhillyABC/\x1B[0m)
 \x1B[0m
