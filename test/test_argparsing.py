@@ -12,7 +12,7 @@ class ArgParsingTest(unittest.TestCase):
             ':harbor:start', '--profile=test', '--fast-fail', ':status'
         ])
 
-        self.assertEqual("[Task<harbor:start (['--profile=test', '--fast-fail'])>, Task<status ([])>]", str(parsed))
+        self.assertEqual("[Task<:harbor:start (['--profile=test', '--fast-fail'])>, Task<:status ([])>]", str(parsed))
 
     def test_creates_grouped_arguments_into_tasks__raises_exception_on_unknown_part(self):
         """ The task name should begin with ':' """
@@ -26,11 +26,11 @@ class ArgParsingTest(unittest.TestCase):
             '--help'
         ])
 
-        self.assertEqual("[Task<kd:initialize (['--help'])>]", str(parsed))
+        self.assertEqual("[Task<rkd:initialize (['--help'])>]", str(parsed))
 
     def test_creates_grouped_arguments_into_tasks__tasks_only(self):
         parsed = CommandlineParsingHelper.create_grouped_arguments([
             ':harbor:start', ':harbor:status', ':harbor:stop'
         ])
 
-        self.assertEqual("[Task<harbor:start ([])>, Task<harbor:status ([])>, Task<harbor:stop ([])>]", str(parsed))
+        self.assertEqual("[Task<:harbor:start ([])>, Task<:harbor:status ([])>, Task<:harbor:stop ([])>]", str(parsed))
