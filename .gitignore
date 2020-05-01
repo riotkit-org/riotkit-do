@@ -1,0 +1,5 @@
+/.venv/
+/build/
+/dist/
+/src/rkd.egg-info/
+*.pyc
