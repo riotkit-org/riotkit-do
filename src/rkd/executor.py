@@ -60,10 +60,10 @@ class OneByOneTaskExecutor(ExecutorInterface):
 
         finally:
             if result is True:
-                self._observer.task_succeed(task)
+                self._observer.task_succeed(task, parent)
             else:
                 if not is_exception:  # do not do double summary
-                    self._observer.task_failed(task)
+                    self._observer.task_failed(task, parent)
 
     def get_observer(self) -> ProgressObserver:
         return self._observer

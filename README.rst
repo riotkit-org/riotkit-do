@@ -32,10 +32,10 @@ Tasks arguments usage
 
 
     from rkd.syntax import TaskDeclaration, TaskAliasDeclaration
-    from rkd.standardlib.python import PyPublishTask
+    from rkd.standardlib.python import PublishTask
 
     IMPORTS = [
-        TaskDeclaration(PyPublishTask())
+        TaskDeclaration(PublishTask())
     ]
 
     TASKS = [
@@ -77,7 +77,7 @@ In this example the argument values "..." are taken from ``makefile.py``
 
 .. code:: bash
 
-    $ rkd :env:test :env:test --help
+    $ rkd :my:test :my:test --help
     usage: :py:publish [-h] [--username USERNAME] [--password PASSWORD]
 
     optional arguments:

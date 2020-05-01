@@ -30,6 +30,10 @@ class ProgressObserver:
         self._tasks = OrderedDict()
         self._failed_count = False
 
+    @staticmethod
+    def _format_parent_task(parent: Union[GroupDeclaration, None]) -> str:
+        return ('[part of ' + parent.get_name() + ']') if parent else ''
+
     def task_started(self, declaration: TaskDeclaration, parent: Union[GroupDeclaration, None], args: list):
         """ When task is just started """
 
@@ -38,7 +42,7 @@ class ProgressObserver:
         self._io.info_msg(' >> Executing %s %s %s' % (
             declaration.to_full_name(),
             ' '.join(args),
-            ('[parent of ' + parent.get_name() + ']') if parent else ''
+            self._format_parent_task(parent)
         ))
 
     def task_errored(self, declaration: TaskDeclaration, exception: Exception):
@@ -55,7 +59,7 @@ class ProgressObserver:
         self._io.print_separator()
         self._io.print_opt_line()
 
-    def task_failed(self, declaration: TaskDeclaration):
+    def task_failed(self, declaration: TaskDeclaration, parent: Union[GroupDeclaration, None]):
         """ When task returns False """
 
         self._set_status(declaration, STATUS_FAILURE)
@@ -63,18 +67,24 @@ class ProgressObserver:
 
         if not declaration.get_task_to_execute().is_silent_in_observer():
             self._io.print_opt_line()
-            self._io.error_msg('The task "%s" ended with a failure' % declaration.to_full_name())
+            self._io.error_msg('The task "%s" %s ended with a failure' % (
+                declaration.to_full_name(),
+                self._format_parent_task(parent)
+            ))
             self._io.print_separator()
             self._io.print_opt_line()
 
-    def task_succeed(self, declaration: TaskDeclaration):
+    def task_succeed(self, declaration: TaskDeclaration, parent: Union[GroupDeclaration, None]):
         """ When task success """
 
         self._set_status(declaration, STATUS_SUCCEED)
 
         if not declaration.get_task_to_execute().is_silent_in_observer():
             self._io.print_opt_line()
-            self._io.success_msg('The task "%s" succeed.' % declaration.to_full_name())
+            self._io.success_msg('The task "%s" %s succeed.' % (
+                declaration.to_full_name(),
+                self._format_parent_task(parent)
+            ))
             self._io.print_separator()
             self._io.print_opt_line()
 

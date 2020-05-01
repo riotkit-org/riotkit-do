@@ -1,4 +1,5 @@
 
+import os
 from abc import abstractmethod, ABC as AbstractClass
 from typing import Dict, List, Union
 from argparse import ArgumentParser
@@ -128,19 +129,28 @@ class TaskInterface(AbstractClass):
 
         return self.get_group_name() + self.get_name()
 
-    def sh(self, cmd: str, capture: bool = False, verbose: bool = False) -> Union[str, None]:
+    def sh(self, cmd: str, capture: bool = False, verbose: bool = False, strict: bool = True) -> Union[str, None]:
         """ Executes a shell command. Throws exception on error.
             To capture output set capture=True
         """
 
+        # set strict mode, it can be disabled manually
+        if strict:
+            cmd = 'set -euo pipefail; ' + cmd
+
         if verbose:
             cmd = 'set -x; ' + cmd
 
+        bash_script = "#!/bin/bash -eopipefail \n" + cmd
+        read, write = os.pipe()
+        os.write(write, bash_script.encode('utf-8'))
+        os.close(write)
+
         if not capture:
-            check_call(cmd, shell=True)
+            check_call('bash', shell=True, stdin=read)
             return
 
-        return check_output(cmd, shell=True).decode('utf-8')
+        return check_output('bash', shell=True, stdin=read).decode('utf-8')
 
     def is_silent_in_observer(self) -> bool:
         """ Internally used property """
