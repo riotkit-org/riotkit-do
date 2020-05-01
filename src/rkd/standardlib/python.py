@@ -1,5 +1,6 @@
 import os
 from abc import ABC
+from subprocess import CalledProcessError
 from argparse import ArgumentParser
 from ..contract import TaskInterface, ExecutionContext
 from ..syntax import TaskDeclaration
@@ -104,10 +105,44 @@ class CleanTask(BasePythonTask):
         return ':clean'
 
 
+class UnitTestTask(BasePythonTask):
+    """ Runs unit tests using standard Python framework "unittest" """
+
+    def execute(self, context: ExecutionContext) -> bool:
+        cmd = ''
+
+        if context.args['src_dir']:
+            cmd += 'cd %s && ' % context.args['src_dir']
+
+        cmd += '%s -m unittest discover -s %s ' % (
+            context.args['python_bin'],
+            context.args['tests_dir']
+        )
+
+        try:
+            self.sh(cmd, verbose=True, strict=True)
+        except CalledProcessError as e:
+            return False
+
+        return True
+
+    def configure_argparse(self, parser: ArgumentParser):
+        parser.add_argument('--src-dir', default='src', help='Directory where packages are placed')
+        parser.add_argument('--tests-dir', default='../test',
+                            help='Relative directory to --src-dir where to look for tests')
+        parser.add_argument('--pattern', help='Pattern to match tests, default test*.py', default='test*.py')
+        parser.add_argument('--filter', '-p', help='Pattern to filter tests')
+        parser.add_argument('--python-bin', default='python3', help='Python binary name (if in PATH) or path')
+
+    def get_name(self) -> str:
+        return ':unittest'
+
+
 def imports():
     return [
         TaskDeclaration(CleanTask()),
         TaskDeclaration(PublishTask()),
         TaskDeclaration(BuildTask()),
-        TaskDeclaration(InstallTask())
+        TaskDeclaration(InstallTask()),
+        TaskDeclaration(UnitTestTask())
     ]

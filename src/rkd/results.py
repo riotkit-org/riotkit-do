@@ -92,7 +92,9 @@ class ProgressObserver:
         """ When all tasks were executed """
 
         if self.has_at_least_one_failed_task():
-            self._io.error_msg('Execution failed with %i/%i failed tasks' % (self._failed_count, len(self._tasks)))
+            self._io.error_msg('Execution failed with %i failed tasks of %i total tasks scheduled for execution' % (
+                self._failed_count, len(self._tasks)
+            ))
         else:
             self._io.success_msg('Successfully executed %i tasks.' % len(self._tasks))
 

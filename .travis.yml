@@ -1,9 +1,28 @@
 language: python
+os: linux
 if: branch = master or tag IS present
-python: 3.8
+python: 3.6
 
 before_script:
     pip install rkd  # todo: set fixed version
 
-script:
-    - rkd :release
+jobs:
+    include:
+        - stage: Test on Python 3.6
+          script:
+              - rkd :test
+
+        - stage: Test on Python 3.7
+          python: 3.6
+          script:
+              - rkd :test
+
+        - stage: Test on Python 3.8
+          python: 3.8
+          script:
+              - rkd :test
+
+        - stage: Release
+          python: 3.6
+          script:
+              - rkd :release
