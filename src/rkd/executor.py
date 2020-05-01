@@ -1,12 +1,13 @@
 
 from typing import Union
+from traceback import print_exc
 from .argparsing import CommandlineParsingHelper
 from .syntax import TaskDeclaration, GroupDeclaration
 from .context import Context
 from .contract import ExecutorInterface, ExecutionContext
 from .inputoutput import IO, SystemIO
 from .results import ProgressObserver
-from traceback import print_exc
+from .exception import InterruptExecution
 
 
 class OneByOneTaskExecutor(ExecutorInterface):
@@ -54,6 +55,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
             # allows to keep going on, even if task fails
             if not parsed_args['keep_going']:
                 print_exc()
+                raise InterruptExecution()
 
             self._observer.task_errored(task, e)
             is_exception = True
@@ -64,6 +66,9 @@ class OneByOneTaskExecutor(ExecutorInterface):
             else:
                 if not is_exception:  # do not do double summary
                     self._observer.task_failed(task, parent)
+
+                if not parsed_args['keep_going']:
+                    raise InterruptExecution()
 
     def get_observer(self) -> ProgressObserver:
         return self._observer

@@ -3,7 +3,7 @@ import os
 from abc import abstractmethod, ABC as AbstractClass
 from typing import Dict, List, Union
 from argparse import ArgumentParser
-from subprocess import check_call, check_output
+from subprocess import check_call, check_output, Popen, DEVNULL
 from .inputoutput import IO
 
 
@@ -138,7 +138,7 @@ class TaskInterface(AbstractClass):
         return self.get_group_name() + self.get_name()
 
     def sh(self, cmd: str, capture: bool = False, verbose: bool = False, strict: bool = True) -> Union[str, None]:
-        """ Executes a shell command. Throws exception on error.
+        """ Executes a shell script in bash. Throws exception on error.
             To capture output set capture=True
         """
 
@@ -159,6 +159,24 @@ class TaskInterface(AbstractClass):
             return
 
         return check_output('bash', shell=True, stdin=read).decode('utf-8')
+
+    def exec(self, cmd: str, capture: bool = False, background: bool = False) -> Union[str, None]:
+        """ Starts a process in shell. Throws exception on error.
+            To capture output set capture=True
+        """
+
+        if background:
+            if capture:
+                raise Exception('Cannot capture output from a background process')
+
+            Popen(cmd, shell=True, stdout=DEVNULL, stderr=DEVNULL)
+            return
+
+        if not capture:
+            check_call(cmd, shell=True)
+            return
+
+        return check_output(cmd, shell=True).decode('utf-8')
 
     def is_silent_in_observer(self) -> bool:
         """ Internally used property """

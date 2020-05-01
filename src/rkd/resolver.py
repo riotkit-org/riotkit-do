@@ -3,6 +3,7 @@ from typing import List, Callable, Union
 from .argparsing import TaskArguments
 from .syntax import TaskDeclaration, GroupDeclaration
 from .context import Context
+from .exception import InterruptExecution
 
 
 CALLBACK_DEF = Callable[[TaskDeclaration, Union[GroupDeclaration, None], list], None]
@@ -31,7 +32,10 @@ class TaskResolver:
         """
 
         for task_request in requested_tasks:
-            self._resolve_element(task_request, callback)
+            try:
+                self._resolve_element(task_request, callback)
+            except InterruptExecution:
+                return
 
     def _resolve_element(self, task_request: TaskArguments, callback: CALLBACK_DEF):
         ctx_declaration = self._ctx.find_task_by_name(task_request.name())

@@ -7,3 +7,6 @@ class ContextException(Exception):
 class TaskNotFoundException(ContextException):
     pass
 
+
+class InterruptExecution(Exception):
+    pass
