@@ -6,7 +6,6 @@ from typing import Callable
 from subprocess import CalledProcessError
 from ..contract import TaskInterface, ExecutionContext
 from ..syntax import TaskDeclaration
-from ..inputoutput import IO
 
 
 class DockerBaseTask(TaskInterface, ABC):
