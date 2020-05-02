@@ -3,8 +3,9 @@ os: linux
 if: branch = master or tag IS present
 python: 3.6
 
-before_script:
-    pip install rkd  # todo: set fixed version
+before_script: ./setup.py install
+    #pip install rkd  # todo: set fixed version
+
 
 jobs:
     include:
