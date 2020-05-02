@@ -85,3 +85,28 @@ In this example the argument values "..." are taken from ``makefile.py``
       --username USERNAME  Username
       --password PASSWORD  Password
 
+Paths and inheritance
+~~~~~~~~~~~~~~~~~~~~~
+
+RKD by default search for .rkd directory in current execution directory - `./.rkd`.
+
+
+**The search order is following (from lower to higher load priority):**
+
+1. RKD's internals (we provide a standard tasks like `:tasks`, `:init`, `:sh`, `:exec` and more)
+2. `/usr/lib/rkd`
+3. User's home `~/.rkd`
+4. Current directory `./.rkd`
+5. `RKD_PATH`
+
+**Custom path defined via environment variable**
+
+RKD_PATH allows to define multiple paths that would be considered in priority.
+
+`RKD_PATH="/some/path:/some/other/path:/home/user/riotkit/.rkd-second"`
+
+**How the makefile.py are loaded?**
+
+Each makefile.py is loaded in order, next makefile.py can override tasks of previous.
+That's why we at first load internals, then your tasks.
+

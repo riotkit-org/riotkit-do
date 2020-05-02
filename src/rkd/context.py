@@ -137,6 +137,9 @@ class ContextFactory:
             chdir + './.rkd'
         ]
 
+        if os.getenv('RKD_PATH'):
+            paths += os.getenv('RKD_PATH', '').split(':')
+
         ctx = Context([], [])
 
         for path in paths:

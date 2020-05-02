@@ -16,9 +16,20 @@ class ContextTest(unittest.TestCase):
         self.assertTrue(isinstance(ctx, Context))
 
     def test_loads_internal_context_in_unified_context(self) -> None:
-        discovery = ContextFactory()
-        ctx = discovery.create_unified_context()
+        """
+        Check if application loads context including paths from RKD_PATH
+        :return:
+        """
 
-        print(ctx._imported_tasks)
+        os.environ['RKD_PATH'] = CURRENT_SCRIPT_PATH + '/../docs/examples/makefile-like/.rkd'
 
-        print(ctx)
+        try:
+            discovery = ContextFactory()
+            ctx = discovery.create_unified_context()
+
+            # :find-images is defined in docs/examples/makefile-like/.rkd/makefile.py as an alias type task
+            self.assertIn(':find-images', ctx.find_all_tasks().keys())
+        except:
+            raise
+        finally:
+            os.environ['RKD_PATH'] = ''
