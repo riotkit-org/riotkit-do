@@ -11,6 +11,8 @@ from ..inputoutput import IO
 
 class DockerBaseTask(TaskInterface, ABC):
     def calculate_images(self, image: str, latest_per_version: bool, global_latest: bool, allowed_meta: str, io: IO):
+        """ Calculate tags propagation """
+
         meta = allowed_meta.replace(' ', '').replace(',', '|')
         tag = image.split(':')[-1]
 
@@ -38,28 +40,28 @@ class DockerBaseTask(TaskInterface, ABC):
 
             if latest_per_version:
                 output_tags = self._generate_for_each_version(
-                    image, original_tag, base_version, output_tags,
-                    lambda original_tag, base_version, version: original_tag.replace(base_version + meta + meta_number, version + '-latest%s' % meta)
+                    image, original_tag, output_tags,
+                    lambda version: original_tag.replace(base_version + meta + meta_number, version + '-latest%s' % meta)
                 )
         elif meta and not meta_number:
             output_tags.append(image.replace(original_tag, base_version + '-latest%s' % meta))
 
             if latest_per_version:
                 output_tags = self._generate_for_each_version(
-                    image, original_tag, base_version, output_tags,
-                    lambda original_tag, base_version, version: original_tag.replace(base_version + meta, version + '-latest%s' % meta)
+                    image, original_tag, output_tags,
+                    lambda version: original_tag.replace(base_version + meta, version + '-latest%s' % meta)
                 )
         # release
         elif not meta:
             output_tags = self._generate_for_each_version(
-                image, original_tag, base_version, output_tags,
-                lambda original_tag, base_version, version: original_tag.replace(base_version, version)
+                image, original_tag, output_tags,
+                lambda version: original_tag.replace(base_version, version)
             )
 
         return output_tags
 
-    def _generate_for_each_version(self, image: str, original_tag: str,
-                                   base_version: str, output_tags: list, callback: Callable) -> list:
+    @staticmethod
+    def _generate_for_each_version(image: str, original_tag: str, output_tags: list, callback: Callable) -> list:
         parts = original_tag.split('.')
 
         for part_num in range(0, len(parts)):
@@ -71,20 +73,26 @@ class DockerBaseTask(TaskInterface, ABC):
             output_tags.append(
                 image.replace(
                     original_tag,
-                    callback(original_tag, base_version, version)
+                    callback(version)
                 )
             )
 
         return output_tags
+
+    @staticmethod
+    def _print_images(images: list, action: str, io: IO):
+        for image in images:
+            io.info(' -> Going to %s image "%s"' % (action, image))
 
     def get_group_name(self) -> str:
         return ':docker'
 
     def configure_argparse(self, parser: ArgumentParser):
         parser.add_argument('--image', '-i', help='Image name', required=True)
-        parser.add_argument('--without-latest', help='Do not tag latest per version', action='store_true')
-        parser.add_argument('--without-global-latest', help='Do not tag :latest', action='store_true')
-        parser.add_argument('--allowed-meta', help='Allowed meta part eg. rc, alpha, beta',
+        parser.add_argument('--without-latest', '-wl', help='Do not tag latest per version', action='store_true')
+        parser.add_argument('--without-global-latest', '-wgl', help='Do not tag :latest', action='store_true')
+        parser.add_argument('--propagate', '-p', help='Propagate tags? eg. 1.0.0 -> 1.0 -> 1 -> latest', action='store_true')
+        parser.add_argument('--allowed-meta', '-m', help='Allowed meta part eg. rc, alpha, beta',
                             default='rc,alpha,stable,dev,prod,test,beta,build,b,snapshot')
 
 
@@ -101,13 +109,19 @@ class TagImageTask(DockerBaseTask):
 
     def execute(self, context: ExecutionContext) -> bool:
         original_image = context.args['image']
-        images = self.calculate_images(
-            image=original_image,
-            latest_per_version=not context.args['without_latest'],
-            global_latest=not context.args['without_global_latest'],
-            allowed_meta=context.args['allowed_meta'],
-            io=context.io
-        )
+
+        if context.args['propagate']:
+            images = self.calculate_images(
+                image=original_image,
+                latest_per_version=not context.args['without_latest'],
+                global_latest=not context.args['without_global_latest'],
+                allowed_meta=context.args['allowed_meta'],
+                io=context.io
+            )
+        else:
+            images = [original_image]
+
+        self._print_images(images, 'tag', context.io)
 
         for image in images:
             try:
@@ -141,6 +155,8 @@ class PushTask(DockerBaseTask):
         else:
             images = [original_image]
 
+        self._print_images(images, 'push', context.io)
+
         for image in images:
             try:
                 self.exec('docker push %s' % image)
@@ -149,10 +165,6 @@ class PushTask(DockerBaseTask):
                 return False
 
         return True
-
-    def configure_argparse(self, parser: ArgumentParser):
-        parser.add_argument('--propagate', help='Propagate tags? eg. 1.0.0 -> 1.0 -> 1 -> latest', action='store_true')
-        super().configure_argparse(parser)
 
 
 def imports():

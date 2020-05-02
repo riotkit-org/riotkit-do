@@ -5,7 +5,7 @@ from importlib.machinery import SourceFileLoader
 from .syntax import TaskDeclaration, TaskAliasDeclaration, GroupDeclaration
 from .contract import ContextInterface
 from .argparsing import CommandlineParsingHelper
-from .inputoutput import SystemIO
+from .inputoutput import SystemIO, LEVEL_WARNING as LOG_LEVEL_WARNING
 from .exception import TaskNotFoundException
 
 
@@ -144,7 +144,10 @@ class ContextFactory:
                 ctx = Context.merge(ctx, self._load_context_from_directory(path))
 
         ctx.compile()
+
+        # system wide IO instance with defaults, the :init task should override those settings
         ctx.io = SystemIO()
         ctx.io.silent = True
+        ctx.io.log_level = LOG_LEVEL_WARNING
 
         return ctx

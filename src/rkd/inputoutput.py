@@ -11,6 +11,14 @@ LEVEL_WARNING = 33
 LEVEL_ERROR = 31
 LEVEL_FATAL = 41
 
+LOG_LEVELS = {
+    'debug': LEVEL_DEBUG,
+    'info': LEVEL_INFO,
+    'warning': LEVEL_WARNING,
+    'error': LEVEL_ERROR,
+    'fatal': LEVEL_FATAL
+}
+
 
 class StandardOutputReplication(object):
     _out_streams: list
@@ -30,6 +38,8 @@ class StandardOutputReplication(object):
 
 
 class IO:
+    """ Interacting with input and output - stdout/stderr/stdin, logging """
+
     silent = False
     log_level = LEVEL_ERROR
 
@@ -38,6 +48,7 @@ class IO:
         """ Capture stdout and stderr per task """
 
         if this.IS_CAPTURING_DESCRIPTORS:
+            self.warn('Deep call to capture_descriptors() will be ignored')
             return False
 
         this.IS_CAPTURING_DESCRIPTORS = True
@@ -62,6 +73,22 @@ class IO:
             log_file.close()
 
         this.IS_CAPTURING_DESCRIPTORS = False
+
+    #
+    # Log level - mutable setting
+    #
+    def set_log_level(self, desired_level_name: str):
+        if desired_level_name not in LOG_LEVELS:
+            raise Exception('Invalid log level name')
+
+        self.log_level = LOG_LEVELS[desired_level_name]
+
+    def get_log_level(self) -> str:
+        for name, severity in LOG_LEVELS.items():
+            if severity == self.log_level:
+                return name
+
+        raise Exception('Unset log level')
 
     #
     # Standard output/error

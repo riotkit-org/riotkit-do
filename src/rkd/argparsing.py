@@ -69,10 +69,11 @@ class CommandlineParsingHelper:
     @staticmethod
     def get_parsed_vars_for_task(task: TaskDeclarationInterface, args: list):
         argparse = ArgumentParser(task.to_full_name())
-        argparse.add_argument('--log-to-file', '-l', help='Capture stdout and stderr to file')
-        argparse.add_argument('--keep-going', '-k', help='Allow going to next task, even if this one fails',
+        argparse.add_argument('--log-to-file', '-rf', help='Capture stdout and stderr to file')
+        argparse.add_argument('--log-level', '-rl', help='Log level: debug,info,warning,error,fatal')
+        argparse.add_argument('--keep-going', '-rk', help='Allow going to next task, even if this one fails',
                               action='store_true')
-        argparse.add_argument('--silent', '-s', help='Do not print logs, just task output', action='store_true')
+        argparse.add_argument('--silent', '-rs', help='Do not print logs, just task output', action='store_true')
 
         task.get_task_to_execute().configure_argparse(argparse)
 

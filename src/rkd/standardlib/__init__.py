@@ -2,6 +2,7 @@
 from argparse import ArgumentParser
 from typing import Callable
 from ..contract import TaskInterface, ExecutionContext, TaskDeclarationInterface
+from ..inputoutput import SystemIO
 
 
 class InitTask(TaskInterface):
@@ -21,13 +22,26 @@ class InitTask(TaskInterface):
         pass
 
     def execute(self, context: ExecutionContext) -> bool:
+        """
+        :init task is setting user-defined global defaults on runtime
+        It allows user to call eg. rkd --log-level debug :task1 :task2
+        to set global settings such as log level
+
+        :param context:
+        :return:
+        """
+
+        context.ctx.io  # type: SystemIO
         context.ctx.io.silent = context.args['silent']
+
+        # log level is optional to be set
+        if context.args['log_level']:
+            context.ctx.io.set_log_level(context.args['log_level'])
 
         return True
 
     def is_silent_in_observer(self) -> bool:
         return True
-
 
 
 class TasksListingTask(TaskInterface):

@@ -35,6 +35,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
         parsed_args = CommandlineParsingHelper.get_parsed_vars_for_task(task, args)
         try:
             io = IO()
+            io.set_log_level(parsed_args['log_level'] if parsed_args['log_level'] else self.io.get_log_level())
             io.silent = parsed_args['silent'] if parsed_args['silent'] else self.io.silent  # fallback to system-wide
 
             with io.capture_descriptors(target_file=parsed_args['log_to_file']):
