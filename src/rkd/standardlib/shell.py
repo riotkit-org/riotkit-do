@@ -22,7 +22,7 @@ class ShellCommand(TaskInterface):
         try:
             self.sh(context.args['cmd'], capture=False)
         except CalledProcessError as e:
-            context.io.error_msg(str(e))
+            self._io.error_msg(str(e))
             return False
 
         return True
@@ -47,7 +47,7 @@ class ExecProcessCommand(TaskInterface):
         try:
             self.exec(context.args['cmd'], capture=False, background=bool(context.args['background']))
         except CalledProcessError as e:
-            context.io.error_msg(str(e))
+            self._io.error_msg(str(e))
             return False
 
         return True

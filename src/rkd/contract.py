@@ -5,6 +5,7 @@ from typing import Dict, List, Union
 from argparse import ArgumentParser
 from subprocess import check_call, check_output, Popen, DEVNULL
 from .inputoutput import IO
+from .exception import UndefinedEnvironmentVariableUsageError
 
 
 class TaskDeclarationInterface(AbstractClass):
@@ -97,19 +98,31 @@ class ExecutionContext:
     ctx: ContextInterface
     executor: ExecutorInterface
 
-    def __init__(self, io: IO, ctx: ContextInterface, executor: ExecutorInterface, declaration: TaskDeclarationInterface,
+    def __init__(self, declaration: TaskDeclarationInterface,
                  parent: Union[GroupDeclarationInterface, None] = None, args: Dict[str, str] = {},
                  env: Dict[str, str] = {}):
-        self.io = io
-        self.ctx = ctx
-        self.executor = executor
         self.declaration = declaration
         self.parent = parent
         self.args = args
         self.env = env
 
+    def getenv(self, name: str):
+        """ Get environment variable value """
+        return self.declaration.get_task_to_execute().internal_getenv(name, self.env)
+
 
 class TaskInterface(AbstractClass):
+    _io: IO
+    _ctx: ContextInterface
+    _executor: ExecutorInterface
+
+    def internal_inject_dependencies(self, io: IO, ctx: ContextInterface, executor: ExecutorInterface):
+        """ Internal method to inject services (do not confuse with current execution context) """
+
+        self._io = io
+        self._ctx = ctx
+        self._executor = executor
+
     @abstractmethod
     def get_name(self) -> str:
         """ Task name  eg. ":sh" """
@@ -136,6 +149,25 @@ class TaskInterface(AbstractClass):
         """ Returns task full name, including group name """
 
         return self.get_group_name() + self.get_name()
+
+    def get_declared_envs(self) -> Dict[str, str]:
+        """ Dictionary of allowed envs to override: KEY -> DEFAULT VALUE """
+        return {}
+
+    def internal_getenv(self, env_name: str, envs: Dict[str, str]) -> str:
+        declared_envs = self.get_declared_envs()
+
+        if env_name not in declared_envs:
+            raise UndefinedEnvironmentVariableUsageError(
+                'Attempt to use not declared environment variable. ' +
+                'Please report the problem to the maintainers of this task, not to RKD (unless it is a core task)'
+            )
+
+        # return default value
+        if env_name not in envs:
+            return declared_envs[env_name]
+
+        return envs[env_name]
 
     def sh(self, cmd: str, capture: bool = False, verbose: bool = False, strict: bool = True) -> Union[str, None]:
         """ Executes a shell script in bash. Throws exception on error.

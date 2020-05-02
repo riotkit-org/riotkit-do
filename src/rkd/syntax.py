@@ -1,4 +1,5 @@
 
+import os
 from typing import List, Dict
 from copy import deepcopy
 from .contract import TaskDeclarationInterface, GroupDeclarationInterface, TaskInterface
@@ -6,13 +7,18 @@ from .contract import TaskDeclarationInterface, GroupDeclarationInterface, TaskI
 
 class TaskDeclaration(TaskDeclarationInterface):
     _task: TaskInterface
-    _env: Dict[str, str]
+    _env: Dict[str, str]       # environment at all
+    _user_defined_env: list    # list of env variables overridden by user
     _args: List[str]
 
-    def __init__(self, task: TaskInterface, env: Dict[str, str] = [], args: List[str] = []):
+    def __init__(self, task: TaskInterface, env: Dict[str, str] = {}, args: List[str] = []):
+        merged_env = dict(os.environ)
+        merged_env.update(env)
+
         self._task = task
-        self._env = env
+        self._env = merged_env
         self._args = args
+        self._user_defined_env = list(env.keys())
 
     def to_full_name(self):
         return self._task.get_full_name()
@@ -33,6 +39,14 @@ class TaskDeclaration(TaskDeclarationInterface):
 
         return copy
 
+    def with_user_overridden_env(self, env_list: list):
+        """ Immutable arguments setter. Produces new object each time """
+
+        copy = deepcopy(self)
+        copy._user_defined_env = env_list
+
+        return copy
+
     def get_args(self) -> List[str]:
         return self._args
 
@@ -44,6 +58,11 @@ class TaskDeclaration(TaskDeclarationInterface):
 
     def get_env(self):
         return self._env
+
+    def get_user_overridden_envs(self) -> list:
+        """ Lists environment variables which were overridden by user """
+
+        return self._user_defined_env
 
     def get_group_name(self) -> str:
         split = self.to_full_name().split(':')
@@ -110,12 +129,17 @@ class TaskAliasDeclaration:
     _name: str
     _arguments: List[str]
     _env: Dict[str, str]
+    _user_defined_env: list  # list of env variables overridden by user
     _description: str
 
-    def __init__(self, name: str, to_execute: List[str], env: Dict[str, str] = [], description: str = ''):
+    def __init__(self, name: str, to_execute: List[str], env: Dict[str, str] = {}, description: str = ''):
+        merged_env = dict(os.environ)
+        merged_env.update(env)
+
         self._name = name
         self._arguments = to_execute
-        self._env = env
+        self._env = merged_env
+        self._user_defined_env = list(env.keys())
         self._description = description
 
     def get_name(self):
@@ -126,6 +150,11 @@ class TaskAliasDeclaration:
 
     def get_env(self) -> Dict[str, str]:
         return self._env
+
+    def get_user_overridden_envs(self) -> list:
+        """ Lists environment variables which were overridden by user """
+
+        return self._user_defined_env
 
     def get_description(self) -> str:
         return self._description

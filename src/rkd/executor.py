@@ -22,32 +22,32 @@ class OneByOneTaskExecutor(ExecutorInterface):
         self.io = ctx.io
         self._observer = ProgressObserver(ctx.io)
 
-    def execute(self, task: TaskDeclaration, parent: Union[GroupDeclaration, None] = None, args: list = []):
+    def execute(self, declaration: TaskDeclaration, parent: Union[GroupDeclaration, None] = None, args: list = []):
         """ Executes a single task passing the arguments, redirecting/capturing the output and handling the errors """
 
         result = False
         is_exception = False
 
         # 1. notify
-        self._observer.task_started(task, parent, args)
+        self._observer.task_started(declaration, parent, args)
 
         # 2. execute
-        parsed_args = CommandlineParsingHelper.get_parsed_vars_for_task(task, args)
+        parsed_args = CommandlineParsingHelper.get_parsed_vars_for_task(declaration, args)
         try:
             io = IO()
             io.set_log_level(parsed_args['log_level'] if parsed_args['log_level'] else self.io.get_log_level())
             io.silent = parsed_args['silent'] if parsed_args['silent'] else self.io.silent  # fallback to system-wide
 
             with io.capture_descriptors(target_file=parsed_args['log_to_file']):
-                result = task.get_task_to_execute().execute(
+                task = declaration.get_task_to_execute()
+                task.internal_inject_dependencies(io, self._ctx, self)
+
+                result = task.execute(
                     ExecutionContext(
-                        io=io,
-                        ctx=self._ctx,
-                        executor=self,
-                        declaration=task.to_full_name(),
+                        declaration=declaration,
                         parent=parent,
                         args=parsed_args,
-                        env=task.get_env()
+                        env=declaration.get_env()
                     )
                 )
 
@@ -58,15 +58,15 @@ class OneByOneTaskExecutor(ExecutorInterface):
                 print_exc()
                 raise InterruptExecution()
 
-            self._observer.task_errored(task, e)
+            self._observer.task_errored(declaration, e)
             is_exception = True
 
         finally:
             if result is True:
-                self._observer.task_succeed(task, parent)
+                self._observer.task_succeed(declaration, parent)
             else:
                 if not is_exception:  # do not do double summary
-                    self._observer.task_failed(task, parent)
+                    self._observer.task_failed(declaration, parent)
 
                 if not parsed_args['keep_going']:
                     raise InterruptExecution()

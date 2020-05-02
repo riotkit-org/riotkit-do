@@ -10,7 +10,7 @@ from ..inputoutput import IO
 
 
 class DockerBaseTask(TaskInterface, ABC):
-    def calculate_images(self, image: str, latest_per_version: bool, global_latest: bool, allowed_meta: str, io: IO):
+    def calculate_images(self, image: str, latest_per_version: bool, global_latest: bool, allowed_meta: str):
         """ Calculate tags propagation """
 
         meta = allowed_meta.replace(' ', '').replace(',', '|')
@@ -22,7 +22,7 @@ class DockerBaseTask(TaskInterface, ABC):
         matches = re.match('([0-9.]+)(-(' + meta + '))?([0-9]+)?', tag, re.IGNORECASE)
 
         if not matches:
-            io.warn('No release version found, possibly it\'s a not versioned development snapshot')
+            self._io.warn('No release version found, possibly it\'s a not versioned development snapshot')
             return output_tags
 
         original_tag = matches.group(0)
@@ -79,10 +79,9 @@ class DockerBaseTask(TaskInterface, ABC):
 
         return output_tags
 
-    @staticmethod
-    def _print_images(images: list, action: str, io: IO):
+    def _print_images(self, images: list, action: str):
         for image in images:
-            io.info(' -> Going to %s image "%s"' % (action, image))
+            self._io.info(' -> Going to %s image "%s"' % (action, image))
 
     def get_group_name(self) -> str:
         return ':docker'
@@ -115,13 +114,12 @@ class TagImageTask(DockerBaseTask):
                 image=original_image,
                 latest_per_version=not context.args['without_latest'],
                 global_latest=not context.args['without_global_latest'],
-                allowed_meta=context.args['allowed_meta'],
-                io=context.io
+                allowed_meta=context.args['allowed_meta']
             )
         else:
             images = [original_image]
 
-        self._print_images(images, 'tag', context.io)
+        self._print_images(images, 'tag')
 
         for image in images:
             try:
@@ -149,13 +147,12 @@ class PushTask(DockerBaseTask):
                 image=original_image,
                 latest_per_version=not context.args['without_latest'],
                 global_latest=not context.args['without_global_latest'],
-                allowed_meta=context.args['allowed_meta'],
-                io=context.io
+                allowed_meta=context.args['allowed_meta']
             )
         else:
             images = [original_image]
 
-        self._print_images(images, 'push', context.io)
+        self._print_images(images, 'push')
 
         for image in images:
             try:

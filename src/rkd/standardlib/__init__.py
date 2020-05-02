@@ -32,12 +32,12 @@ class InitTask(TaskInterface):
         :return:
         """
 
-        context.ctx.io  # type: SystemIO
-        context.ctx.io.silent = context.args['silent']
+        self._ctx.io  # type: SystemIO
+        self._ctx.io.silent = context.args['silent']
 
         # log level is optional to be set
         if context.args['log_level']:
-            context.ctx.io.set_log_level(context.args['log_level'])
+            self._ctx.io.set_log_level(context.args['log_level'])
 
         return True
 
@@ -58,11 +58,11 @@ class TasksListingTask(TaskInterface):
         pass
 
     def execute(self, context: ExecutionContext) -> bool:
-        io = context.io
+        io = self._io
         groups = {}
 
         # collect into groups
-        for name, declaration in context.ctx.find_all_tasks().items():
+        for name, declaration in self._ctx.find_all_tasks().items():
             group_name = declaration.get_group_name()
 
             if group_name not in groups:
@@ -129,11 +129,11 @@ class VersionTask(TaskInterface):
         pass
 
     def execute(self, context: ExecutionContext) -> bool:
-        context.io.outln('RKD version %s' % pkg_resources.get_distribution("rkd").version)
-        context.io.print_opt_line()
-        context.io.print_separator()
+        self._io.outln('RKD version %s' % pkg_resources.get_distribution("rkd").version)
+        self._io.print_opt_line()
+        self._io.print_separator()
 
-        for name, declaration in context.ctx.find_all_tasks().items():
+        for name, declaration in self._ctx.find_all_tasks().items():
             if not isinstance(declaration, TaskDeclarationInterface):
                 continue
 
@@ -146,7 +146,7 @@ class VersionTask(TaskInterface):
 
                 try:
                     version = pkg_resources.get_distribution(try_module_name).version
-                    context.io.outln('- %s version %s' % (name, version))
+                    self._io.outln('- %s version %s' % (name, version))
 
                     break
                 except pkg_resources.DistributionNotFound:

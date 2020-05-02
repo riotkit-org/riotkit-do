@@ -93,7 +93,7 @@ class CleanTask(BasePythonTask):
     """ Clean up the built Python modules """
 
     def execute(self, context: ExecutionContext) -> bool:
-        context.io.info('Cleaning up the built packages')
+        self._io.info('Cleaning up the built packages')
         self.sh('rm -rf pbr.egg.info .eggs dist build', verbose=True)
 
         return not os.path.isdir('pbr.egg.info') and not os.path.isdir('.eggs')

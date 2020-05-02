@@ -1,7 +1,9 @@
 
 import os
+import sys
 from typing import Dict, List, Union
 from importlib.machinery import SourceFileLoader
+from traceback import print_exc
 from .syntax import TaskDeclaration, TaskAliasDeclaration, GroupDeclaration
 from .contract import ContextInterface
 from .argparsing import CommandlineParsingHelper
@@ -91,9 +93,17 @@ class Context(ContextInterface):
 
         for argument_group in args:
             resolved_task = self.find_task_by_name(argument_group.name())
-            resolved_tasks[argument_group.name()] = resolved_task\
-                .with_env(alias.get_env()) \
-                .with_args(argument_group.args())
+
+            # preserve original task env, and append alias env in priority
+            merged_env = resolved_task.get_env()
+            merged_env.update(alias.get_env())
+
+            resolved_tasks[argument_group.name()] = resolved_task \
+                .with_env(merged_env) \
+                .with_args(argument_group.args()) \
+                .with_user_overridden_env(
+                    alias.get_user_overridden_envs() + resolved_task.get_user_overridden_envs()
+                )
 
         return GroupDeclaration(name, resolved_tasks, alias.get_description())
 
@@ -113,7 +123,12 @@ class ContextFactory:
         if not os.path.isfile(makefile_path):
             raise Exception('makefile.py not found at path "%s"' % makefile_path)
 
-        makefile = SourceFileLoader("Makefile", makefile_path).load_module()
+        try:
+            makefile = SourceFileLoader("Makefile", makefile_path).load_module()
+        except ImportError as e:
+            print_exc()
+            print("\n==> Your Makefile contains a reference to not available or not installed Python module")
+            sys.exit(1)
 
         return Context(
             tasks=makefile.IMPORTS if "IMPORTS" in dir(makefile) else [],
