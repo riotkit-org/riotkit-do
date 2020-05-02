@@ -41,7 +41,7 @@ class TaskResolver:
         ctx_declaration = self._ctx.find_task_by_name(task_request.name())
 
         if isinstance(ctx_declaration, TaskDeclaration):
-            declarations = ctx_declaration.to_dict()
+            declarations = ctx_declaration.to_list()
             parent = None
         elif isinstance(ctx_declaration, GroupDeclaration):
             declarations = ctx_declaration.get_declarations()
@@ -49,7 +49,7 @@ class TaskResolver:
         else:
             raise Exception('Cannot resolve task - unknown type "%s"' % str(ctx_declaration))
 
-        for task_name, declaration in declarations.items():
+        for declaration in declarations:
             callback(
                 declaration,
                 parent,

@@ -53,8 +53,8 @@ class TaskDeclaration(TaskDeclarationInterface):
     def get_task_to_execute(self) -> TaskInterface:
         return self._task
 
-    def to_dict(self) -> dict:
-        return {self.to_full_name(): self}
+    def to_list(self) -> list:
+        return [self]
 
     def get_env(self):
         return self._env
@@ -87,15 +87,15 @@ class GroupDeclaration(GroupDeclarationInterface):
     """ Internal DTO: Processed definition of TaskAliasDeclaration into TaskDeclaration """
 
     _name: str
-    _declarations: Dict[str, TaskDeclaration]
+    _declarations: List[TaskDeclaration]
     _description: str
 
-    def __init__(self, name: str, declarations: Dict[str, TaskDeclaration], description: str):
+    def __init__(self, name: str, declarations: List[TaskDeclaration], description: str):
         self._name = name
         self._declarations = declarations
         self._description = description
 
-    def get_declarations(self) -> Dict[str, TaskDeclaration]:
+    def get_declarations(self) -> List[TaskDeclaration]:
         return self._declarations
 
     def get_name(self) -> str:

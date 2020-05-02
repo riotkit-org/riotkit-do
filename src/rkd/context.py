@@ -89,7 +89,7 @@ class Context(ContextInterface):
         """
 
         args = CommandlineParsingHelper.create_grouped_arguments(alias.get_arguments())
-        resolved_tasks = {}
+        resolved_tasks = []
 
         for argument_group in args:
             resolved_task = self.find_task_by_name(argument_group.name())
@@ -98,12 +98,14 @@ class Context(ContextInterface):
             merged_env = resolved_task.get_env()
             merged_env.update(alias.get_env())
 
-            resolved_tasks[argument_group.name()] = resolved_task \
+            new_task = resolved_task \
                 .with_env(merged_env) \
                 .with_args(argument_group.args()) \
                 .with_user_overridden_env(
                     alias.get_user_overridden_envs() + resolved_task.get_user_overridden_envs()
                 )
+
+            resolved_tasks.append(new_task)
 
         return GroupDeclaration(name, resolved_tasks, alias.get_description())
 

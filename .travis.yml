@@ -10,6 +10,7 @@ before_script: ./setup.py install
 jobs:
     include:
         - stage: Test on Python 3.6
+          python: 3.6
           script:
               - rkd :test
 

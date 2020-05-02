@@ -22,7 +22,7 @@ class TaskDeclarationInterface(AbstractClass):
         pass
 
     @abstractmethod
-    def to_dict(self) -> dict:
+    def to_list(self) -> list:
         pass
 
     @abstractmethod
