@@ -1,4 +1,5 @@
 
+import pkg_resources
 from argparse import ArgumentParser
 from typing import Callable
 from ..contract import TaskInterface, ExecutionContext, TaskDeclarationInterface
@@ -113,3 +114,43 @@ class CallableTask(TaskInterface):
 
     def execute(self, context: ExecutionContext) -> bool:
         return self._callable(context)
+
+
+class VersionTask(TaskInterface):
+    """ Shows version of RKD and of all loaded tasks """
+
+    def get_name(self) -> str:
+        return ':version'
+
+    def get_group_name(self) -> str:
+        return ''
+
+    def configure_argparse(self, parser: ArgumentParser):
+        pass
+
+    def execute(self, context: ExecutionContext) -> bool:
+        context.io.outln('RKD version %s' % pkg_resources.get_distribution("rkd").version)
+        context.io.print_opt_line()
+        context.io.print_separator()
+
+        for name, declaration in context.ctx.find_all_tasks().items():
+            if not isinstance(declaration, TaskDeclarationInterface):
+                continue
+
+            task = declaration.get_task_to_execute()
+            module = task.__class__.__module__
+            parts = module.split('.')
+
+            for num in range(0, len(parts) + 1):
+                try_module_name = ".".join(parts)
+
+                try:
+                    version = pkg_resources.get_distribution(try_module_name).version
+                    context.io.outln('- %s version %s' % (name, version))
+
+                    break
+                except pkg_resources.DistributionNotFound:
+                    parts = parts[:-1]
+
+        return True
+
