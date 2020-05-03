@@ -33,3 +33,17 @@ Please read the documentation_ here_.
 
 .. _documentation: https://riotkit-do.readthedocs.io/en/latest/
 .. _here: https://riotkit-do.readthedocs.io/en/latest/
+
+From authors
+------------
+
+We are grassroot activists for social change, so we created RKD especially in mind for those fantastic initiatives:
+
+- RiotKit (https://riotkit.org)
+- International Workers Association (https://iwa-ait.org)
+- Anarchistyczne FAQ (http://anarchizm.info) a translation of Anarchist FAQ (https://theanarchistlibrary.org/library/the-anarchist-faq-editorial-collective-an-anarchist-faq)
+- Federacja Anarchistyczna (http://federacja-anarchistyczna.pl)
+- Związek Syndykalistów Polski (https://zsp.net.pl) (Polish section of IWA-AIT)
+- Komitet Obrony Praw Lokatorów (https://lokatorzy.info.pl)
+- Solidarity Federation (https://solfed.org.uk)
+- Priama Akcia (https://priamaakcia.sk)
