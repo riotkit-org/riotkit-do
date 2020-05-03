@@ -3,6 +3,8 @@ RKD - RiotKit DO
 
 Task executor - balance between Makefile and Gradle [see documentation_]
 
+.. image:: docs/makefile.png
+
 NOTICE: This project is in testing stage. There is no stable release yet, but it will come very soon.
 
 **Goals:**

@@ -23,6 +23,11 @@ Each task specified to be run is treated like a separate application - has it's 
     rkd --silent :sh -c "ps aux"
 
 
+.. image:: ../../tasks.png
+
+.. image:: ../../python.png
+
+
 Usage in shell
 --------------
 

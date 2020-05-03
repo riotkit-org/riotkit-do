@@ -3,6 +3,7 @@ Python
 
 Set of Python-related tasks for building, testing and publishing Python packages.
 
+.. image:: ../../python.png
 
 :py:publish
 ~~~~~~~~~~~
