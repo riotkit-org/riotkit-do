@@ -16,6 +16,7 @@ RKD is delivered as a Python Package. All externally provided tasks should be al
     #echo "rkd==0.1" > requirements.txt  # better choose a stable tag and use fixed version for stability
 
     pip install -r requirements.txt
+    rkd :rkd:create-structure
 
 Conception
 ----------
