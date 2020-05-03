@@ -1,13 +1,16 @@
 RKD - RiotKit DO
 ================
 
-Task executor - balance between Makefile and Gradle.
+Task executor - balance between Makefile and Gradle [see documentation_]
 
 THIS PROJECT IS A WORK IN PROGRESS.
 
-**Goals:** - Define tasks as simple as in Makefile - Reuse code as
-simple as in Gradle (using extensions that provides tasks. Extensions
-are installable from PIP) - Simple configuration in Python
+**Goals:**
+
+- Define tasks as simple as in Makefile
+- Reuse code as simple as in Gradle (using extensions that provides tasks. Extensions are installable from PIP)
+- Simple configuration in Python
+- Write tasks code in Python as simple as possible
 
 Rules
 -----
@@ -16,97 +19,14 @@ Rules
 -  No dynamic tasks names eg. by turning on Publish component it should
    not create tasks eg. :publishIWAToDockerRegistry (where IWA is the
    project name)
+-  Don't pack too many features into the core, do this in external modules. Keep the RKD core clean!
+-  Full static analysis, you can work on makefile.py and on task's code in PyCharm with full code completion!
+-  Do early validation. Runtime validation for long running builds is a pain-in-the-ass for the user.
 
-Usage in shell
---------------
+Documentation
+-------------
 
-Tasks are prefixed always with ":". Each task can handle it's own
-arguments.
+Please read the documentation_ here_.
 
-Tasks arguments usage
-~~~~~~~~~~~~~~~~~~~~~
-
-*makefile.py*
-
-.. code:: python
-
-
-    from rkd.syntax import TaskDeclaration, TaskAliasDeclaration
-    from rkd.standardlib.python import PublishTask
-
-    IMPORTS = [
-        TaskDeclaration(PublishTask())
-    ]
-
-    TASKS = [
-        TaskAliasDeclaration(':my:test', [':py:publish', '--username=...', '--password=...'])
-    ]
-
-**Example of calling same task twice, but with different input**
-
-Notes for this example: The "username" parameter is a default defined in
-``makefile.py`` in this case.
-
-.. code:: bash
-
-    $ rkd :my:test --password=first :my:test --password=second
-     >> Executing :py:publish
-    Publishing
-    {'username': '...', 'password': 'first'}
-
-     >> Executing :py:publish
-    Publishing
-    {'username': '...', 'password': 'second'}
-
-**Example of calling same task twice, with no extra arguments**
-
-In this example the argument values "..." are taken from ``makefile.py``
-
-.. code:: bash
-
-    $ rkd :my:test :my:test
-     >> Executing :py:publish
-    Publishing
-    {'username': '...', 'password': '...'}
-
-     >> Executing :py:publish
-    Publishing
-    {'username': '...', 'password': '...'}
-
-**Example of --help per command:**
-
-.. code:: bash
-
-    $ rkd :my:test :my:test --help
-    usage: :py:publish [-h] [--username USERNAME] [--password PASSWORD]
-
-    optional arguments:
-      -h, --help           show this help message and exit
-      --username USERNAME  Username
-      --password PASSWORD  Password
-
-Paths and inheritance
-~~~~~~~~~~~~~~~~~~~~~
-
-RKD by default search for .rkd directory in current execution directory - `./.rkd`.
-
-
-**The search order is following (from lower to higher load priority):**
-
-1. RKD's internals (we provide a standard tasks like `:tasks`, `:init`, `:sh`, `:exec` and more)
-2. `/usr/lib/rkd`
-3. User's home `~/.rkd`
-4. Current directory `./.rkd`
-5. `RKD_PATH`
-
-**Custom path defined via environment variable**
-
-RKD_PATH allows to define multiple paths that would be considered in priority.
-
-`RKD_PATH="/some/path:/some/other/path:/home/user/riotkit/.rkd-second"`
-
-**How the makefile.py are loaded?**
-
-Each makefile.py is loaded in order, next makefile.py can override tasks of previous.
-That's why we at first load internals, then your tasks.
-
+.. _documentation: https://riotkit-do.readthedocs.io/en/latest/
+.. _here: https://riotkit-do.readthedocs.io/en/latest/
