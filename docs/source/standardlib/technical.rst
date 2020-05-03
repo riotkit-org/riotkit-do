@@ -26,3 +26,9 @@ to create a task by defining a simple method as a callback.
 
 .. literalinclude:: ../../examples/callback/.rkd/makefile.py
 
+
+:rkd:create-structure
+~~~~~~~~~~~~~~~~~~~~~
+
+Creates a template structure used by RKD in current directory.
+

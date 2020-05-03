@@ -1,5 +1,6 @@
 
 import pkg_resources
+import os
 from argparse import ArgumentParser
 from typing import Callable
 from ..contract import TaskInterface, ExecutionContext, TaskDeclarationInterface
@@ -154,3 +155,26 @@ class VersionTask(TaskInterface):
 
         return True
 
+
+class CreateStructureTask(TaskInterface):
+    """ Creates a file structure in current directory """
+
+    def get_name(self) -> str:
+        return ':create-structure'
+
+    def get_group_name(self) -> str:
+        return ':rkd'
+
+    def configure_argparse(self, parser: ArgumentParser):
+        pass
+
+    def execute(self, context: ExecutionContext) -> bool:
+        if os.path.isdir('.rkd'):
+            self._io.error_msg('Structure already created - ".rkd" directory is present')
+            return False
+
+        self._io.info_msg('Creating a folder structure at %s' % os.getcwd())
+        template_structure_path = os.path.dirname(os.path.realpath(__file__)) + '/../misc/initial-structure'
+        self.sh('cp -pr %s/.rkd ./' % template_structure_path, verbose=True)
+
+        return True
