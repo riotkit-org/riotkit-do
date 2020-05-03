@@ -7,7 +7,7 @@ from traceback import print_exc
 from .syntax import TaskDeclaration, TaskAliasDeclaration, GroupDeclaration
 from .contract import ContextInterface
 from .argparsing import CommandlineParsingHelper
-from .inputoutput import SystemIO, LEVEL_WARNING as LOG_LEVEL_WARNING
+from .inputoutput import SystemIO, LEVEL_INFO as LOG_LEVEL_INFO
 from .exception import TaskNotFoundException
 
 
@@ -168,6 +168,6 @@ class ContextFactory:
         # system wide IO instance with defaults, the :init task should override those settings
         ctx.io = SystemIO()
         ctx.io.silent = True
-        ctx.io.log_level = LOG_LEVEL_WARNING
+        ctx.io.log_level = LOG_LEVEL_INFO
 
         return ctx

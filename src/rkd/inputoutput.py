@@ -41,7 +41,7 @@ class IO:
     """ Interacting with input and output - stdout/stderr/stdin, logging """
 
     silent = False
-    log_level = LEVEL_ERROR
+    log_level = LEVEL_INFO
 
     @contextmanager
     def capture_descriptors(self, target_file: str = None):
