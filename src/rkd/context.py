@@ -126,7 +126,9 @@ class ContextFactory:
             raise Exception('makefile.py not found at path "%s"' % makefile_path)
 
         try:
+            sys.path.append(path)
             makefile = SourceFileLoader("Makefile", makefile_path).load_module()
+
         except ImportError as e:
             print_exc()
             print("\n==> Your Makefile contains a reference to not available or not installed Python module")
