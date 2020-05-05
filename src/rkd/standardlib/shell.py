@@ -101,6 +101,6 @@ class BaseShellCommandWithArgumentParsingTask(TaskInterface):
             )
 
         # would raise an exception on failure
-        self.sh(self._command)
+        self.sh(arguments_exported + "\n" + self._command)
 
         return True
