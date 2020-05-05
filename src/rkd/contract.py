@@ -134,6 +134,9 @@ class TaskInterface(AbstractClass):
 
         pass
 
+    def get_description(self) -> str:
+        return ''
+
     @abstractmethod
     def execute(self, context: ExecutionContext) -> bool:
         """ Executes a task. True/False should be returned as return """
@@ -209,6 +212,13 @@ class TaskInterface(AbstractClass):
             return
 
         return check_output(cmd, shell=True).decode('utf-8')
+
+    def rkd(self, args: list) -> str:
+        """ Spawns an RKD subprocess
+        """
+
+        args_str = ' '.join(args)
+        return self.exec('rkd --silent %s' % args_str, capture=True, background=False)
 
     def is_silent_in_observer(self) -> bool:
         """ Internally used property """

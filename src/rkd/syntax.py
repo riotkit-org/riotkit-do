@@ -80,7 +80,12 @@ class TaskDeclaration(TaskDeclarationInterface):
             return self.to_full_name()
 
     def get_description(self) -> str:
-        return self.get_task_to_execute().__doc__.strip().split("\n")[0]
+        task = self.get_task_to_execute()
+
+        if task.get_description():
+            return task.get_description()
+
+        return task.__doc__.strip().split("\n")[0]
 
 
 class GroupDeclaration(GroupDeclarationInterface):

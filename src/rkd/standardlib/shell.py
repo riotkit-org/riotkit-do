@@ -1,6 +1,7 @@
 
 from argparse import ArgumentParser
 from subprocess import CalledProcessError
+from typing import Callable
 from ..contract import TaskInterface, ExecutionContext
 
 
@@ -49,5 +50,57 @@ class ExecProcessCommand(TaskInterface):
         except CalledProcessError as e:
             self._io.error_msg(str(e))
             return False
+
+        return True
+
+
+class BaseShellCommandWithArgumentParsingTask(TaskInterface):
+    """ Shell command with argument parsing. Set "description" parameter to change this description. """
+
+    _name: str
+    _command: str
+    _group: str
+    _arguments_definition: Callable
+    _description = ''
+
+    def __init__(self, name: str, command: str, group: str = '', description: str = '',
+                 arguments_definition: Callable[[ArgumentParser], None] = None):
+
+        if not name:
+            raise Exception('Name cannot be empty')
+
+        if not command:
+            raise Exception('Command must be specified')
+
+        self._name = name
+        self._command = command
+        self._group = group
+        self._arguments_definition = arguments_definition
+        self._description = description
+
+    def get_name(self) -> str:
+        return self._name
+
+    def get_description(self) -> str:
+        return self._description
+
+    def get_group_name(self) -> str:
+        return self._group
+
+    def configure_argparse(self, parser: ArgumentParser):
+        if self._arguments_definition:
+            self._arguments_definition(parser)
+
+    def execute(self, context: ExecutionContext) -> bool:
+        arguments_exported = ''
+
+        for arg, arg_value in context.args.items():
+            arguments_exported += "export ARG_%s='%s';\n" % (
+                arg.upper(),
+                arg_value.replace("'", "\'") if arg_value else ''
+            )
+
+        # would raise an exception on failure
+        self.sh(self._command)
 
         return True
