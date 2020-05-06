@@ -123,14 +123,28 @@ class TaskInterface(AbstractClass):
         self._ctx = ctx
         self._executor = executor
 
+    def copy_internal_dependencies(self, task):
+        """
+        Allows to execute a task-in-task, by copying dependent services from one task to other task
+        :api 0.2
+        """
+
+        task.internal_inject_dependencies(self._io, self._ctx, self._executor)
+
     @abstractmethod
     def get_name(self) -> str:
-        """ Task name  eg. ":sh" """
+        """
+        Task name  eg. ":sh"
+        :api 0.2
+        """
         pass
 
     @abstractmethod
     def get_group_name(self) -> str:
-        """ Group name where the task belongs eg. ":publishing", can be empty. """
+        """
+        Group name where the task belongs eg. ":publishing", can be empty.
+        :api 0.2
+        """
 
         pass
 
