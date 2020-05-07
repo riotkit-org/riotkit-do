@@ -4,13 +4,14 @@ import unittest
 import os
 from rkd.context import ContextFactory
 from rkd.context import Context
+from rkd.inputoutput import NullSystemIO
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class ContextTest(unittest.TestCase):
     def test_loads_internal_context(self) -> None:
-        discovery = ContextFactory()
+        discovery = ContextFactory(NullSystemIO())
         ctx = discovery._load_context_from_directory(CURRENT_SCRIPT_PATH + '/../src/rkd/internal')
 
         self.assertTrue(isinstance(ctx, Context))
@@ -24,7 +25,7 @@ class ContextTest(unittest.TestCase):
         os.environ['RKD_PATH'] = CURRENT_SCRIPT_PATH + '/../docs/examples/makefile-like/.rkd'
 
         try:
-            discovery = ContextFactory()
+            discovery = ContextFactory(NullSystemIO())
             ctx = discovery.create_unified_context()
 
             # :find-images is defined in docs/examples/makefile-like/.rkd/makefile.py as an alias type task
