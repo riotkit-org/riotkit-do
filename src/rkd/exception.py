@@ -27,3 +27,6 @@ class UserInputException(Exception):
 class NotSupportedEnvVariableError(UserInputException):
     pass
 
+
+class YamlParsingException(ContextException):
+    pass

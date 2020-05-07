@@ -9,6 +9,7 @@ from .contract import ContextInterface
 from .argparsing import CommandlineParsingHelper
 from .inputoutput import SystemIO, LEVEL_INFO as LOG_LEVEL_INFO
 from .exception import TaskNotFoundException
+from .yaml_context import YamlContextFactory
 
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -115,11 +116,34 @@ class ContextFactory:
     Takes responsibility of loading all tasks defined in USER PROJECT, USER HOME and GLOBALLY
     """
 
-    @staticmethod
-    def _load_context_from_directory(path: str) -> Context:
+    def _load_context_from_directory(self, path: str) -> Context:
         if not os.path.isdir(path):
             raise Exception('Path "%s" font found' % path)
 
+        ctx = Context([], [])
+        contexts = []
+
+        if os.path.isfile(path + '/makefile.py'):
+            contexts.append(self._load_from_py(path))
+
+        if os.path.isfile(path + '/makefile.yaml'):
+            contexts.append(self._load_from_yaml(path))
+
+        if not contexts:
+            raise Exception('The directory "%s" should contain at least makefile.py or makfile.yaml' % path)
+
+        for subctx in contexts:
+            ctx = Context.merge(ctx, subctx)
+
+        return ctx
+
+    def _load_from_yaml(self, path: str) -> Context:
+        makefile_path = path + '/makefile.yaml'
+
+        with open(makefile_path, 'rb') as handle:
+            return YamlContextFactory().parse(handle.read().decode('utf-8'))
+
+    def _load_from_py(self, path: str):
         makefile_path = path + '/makefile.py'
 
         if not os.path.isfile(makefile_path):
