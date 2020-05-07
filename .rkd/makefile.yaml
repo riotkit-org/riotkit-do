@@ -6,7 +6,8 @@ tasks:
   :examples:bash-test:
       description: Execute an example command in bash - show only python related tasks
       steps: |
-             echo "DEPTH: ${RKD_DEPTH}"
+             echo "RKD_DEPTH: ${RKD_DEPTH} # >= 2 means we are running rkd-in-rkd"
+             echo "RKD_PATH: ${RKD_PATH}"
              rkd --silent :tasks | grep ":py"
 
   :examples:arguments-test:
