@@ -8,6 +8,7 @@ from .resolver import TaskResolver
 from .validator import TaskDeclarationValidator
 from .executor import OneByOneTaskExecutor
 from .exception import TaskNotFoundException
+from .inputoutput import SystemIO, LEVEL_INFO as LOG_LEVEL_INFO
 
 
 class RiotKitDoApplication:
@@ -19,8 +20,13 @@ class RiotKitDoApplication:
             self.print_banner_and_exit()
 
         try:
+            # system wide IO instance with defaults, the :init task should override those settings
+            io = SystemIO()
+            io.silent = True
+            io.log_level = LOG_LEVEL_INFO
+
             # load context of components
-            self._ctx = ContextFactory().create_unified_context()
+            self._ctx = ContextFactory(io).create_unified_context()
 
             resolver = TaskResolver(self._ctx)
             executor = OneByOneTaskExecutor(self._ctx)

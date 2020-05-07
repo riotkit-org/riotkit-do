@@ -7,9 +7,9 @@ from traceback import print_exc
 from .syntax import TaskDeclaration, TaskAliasDeclaration, GroupDeclaration
 from .contract import ContextInterface
 from .argparsing import CommandlineParsingHelper
-from .inputoutput import SystemIO, LEVEL_INFO as LOG_LEVEL_INFO
+from .inputoutput import SystemIO
 from .exception import TaskNotFoundException
-from .yaml_context import YamlContextFactory
+from .yaml_context import YamlParser
 
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -116,6 +116,9 @@ class ContextFactory:
     Takes responsibility of loading all tasks defined in USER PROJECT, USER HOME and GLOBALLY
     """
 
+    def __init__(self, io: SystemIO):
+        self._io = io
+
     def _load_context_from_directory(self, path: str) -> Context:
         if not os.path.isdir(path):
             raise Exception('Path "%s" font found' % path)
@@ -141,9 +144,11 @@ class ContextFactory:
         makefile_path = path + '/makefile.yaml'
 
         with open(makefile_path, 'rb') as handle:
-            return YamlContextFactory().parse(handle.read().decode('utf-8'))
+            imports, tasks = YamlParser(self._io).parse(handle.read().decode('utf-8'), path)
+            return Context(tasks=imports, aliases=tasks)
 
-    def _load_from_py(self, path: str):
+    @staticmethod
+    def _load_from_py(path: str):
         makefile_path = path + '/makefile.py'
 
         if not os.path.isfile(makefile_path):
@@ -190,10 +195,6 @@ class ContextFactory:
                 ctx = Context.merge(ctx, self._load_context_from_directory(path))
 
         ctx.compile()
-
-        # system wide IO instance with defaults, the :init task should override those settings
-        ctx.io = SystemIO()
-        ctx.io.silent = True
-        ctx.io.log_level = LOG_LEVEL_INFO
+        ctx.io = self._io
 
         return ctx

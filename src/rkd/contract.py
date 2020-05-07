@@ -186,7 +186,9 @@ class TaskInterface(AbstractClass):
 
         return envs[env_name]
 
-    def sh(self, cmd: str, capture: bool = False, verbose: bool = False, strict: bool = True) -> Union[str, None]:
+    def sh(self, cmd: str, capture: bool = False, verbose: bool = False, strict: bool = True,
+           env: dict = None) -> Union[str, None]:
+
         """ Executes a shell script in bash. Throws exception on error.
             To capture output set capture=True
         """
@@ -194,6 +196,10 @@ class TaskInterface(AbstractClass):
         # set strict mode, it can be disabled manually
         if strict:
             cmd = 'set -euo pipefail; ' + cmd
+
+        if env:
+            for name, value in env.items():
+                cmd = (" export %s='%s';\n" % (name, value)) + cmd
 
         if verbose:
             cmd = 'set -x; ' + cmd

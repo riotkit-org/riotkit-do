@@ -97,24 +97,37 @@ class TasksListingTask(TaskInterface):
 class CallableTask(TaskInterface):
     """ Executes a custom callback - allows to quickly define a short task """
 
-    _callable: Callable[[ExecutionContext], any]
+    _callable: Callable[[ExecutionContext, TaskInterface], bool]
+    _args_callable: Callable[[ArgumentParser], None]
     _name: str
+    _group: str
+    _description: str
 
-    def __init__(self, name: str, callback: Callable[[ExecutionContext], any]):
+    def __init__(self, name: str, callback: Callable[[ExecutionContext, TaskInterface], bool],
+                 args_callback: Callable[[ArgumentParser], None] = None,
+                 description: str = '',
+                 group: str = ''):
         self._name = name
         self._callable = callback
+        self._args_callable = args_callback
+        self._description = description
+        self._group = group
 
     def get_name(self) -> str:
         return self._name
 
+    def get_description(self) -> str:
+        return self._description
+
     def get_group_name(self) -> str:
-        return ''
+        return self._group
 
     def configure_argparse(self, parser: ArgumentParser):
-        pass
+        if self._args_callable:
+            self._args_callable(parser)
 
     def execute(self, context: ExecutionContext) -> bool:
-        return self._callable(context)
+        return self._callable(context, self)
 
 
 class VersionTask(TaskInterface):

@@ -3,6 +3,7 @@ import os
 from typing import List, Dict
 from copy import deepcopy
 from .contract import TaskDeclarationInterface, GroupDeclarationInterface, TaskInterface
+from .exception import DeclarationException
 
 
 class TaskDeclaration(TaskDeclarationInterface):
@@ -12,6 +13,9 @@ class TaskDeclaration(TaskDeclarationInterface):
     _args: List[str]
 
     def __init__(self, task: TaskInterface, env: Dict[str, str] = {}, args: List[str] = []):
+        if not isinstance(task, TaskInterface):
+            raise DeclarationException('Invalid class: TaskDeclaration needs to take TaskInterface as task argument')
+
         merged_env = dict(os.environ)
         merged_env.update(env)
 
@@ -86,6 +90,15 @@ class TaskDeclaration(TaskDeclarationInterface):
             return task.get_description()
 
         return task.__doc__.strip().split("\n")[0]
+
+    @staticmethod
+    def parse_name(name: str) -> tuple:
+        split = name.split(':')
+        task_name = ":" + split[-1]
+        group = ":".join(split[:-1])
+
+        return task_name, group
+
 
 
 class GroupDeclaration(GroupDeclarationInterface):

@@ -29,4 +29,8 @@ class NotSupportedEnvVariableError(UserInputException):
 
 
 class YamlParsingException(ContextException):
-    pass
+    """ Logic or syntax errors in makefile.yaml """
+
+
+class DeclarationException(ContextException):
+    """ Something wrong with the makefile.py/makefile.yaml """

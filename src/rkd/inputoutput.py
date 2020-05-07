@@ -94,23 +94,29 @@ class IO:
     # Standard output/error
     #
 
+    def _stdout(self, text):
+        sys.stdout.write(text)
+
+    def _stderr(self, text):
+        sys.stderr.write(text)
+
     def out(self, text):
         """ Standard output """
-        sys.stdout.write(text)
+        self._stdout(text)
 
     def outln(self, text):
         """ Standard output + newline """
         self.out(text)
-        sys.stdout.write("\n")
+        self._stdout("\n")
 
     def err(self, text):
         """ Standard error """
-        sys.stderr.write(text)
+        self._stderr(text)
 
     def errln(self, text):
         """ Standard error + newline """
         self.err(text)
-        sys.stderr.write("\n")
+        self._stderr("\n")
 
     def opt_out(self, text):
         """ Optional output - fancy output skipped in --silent mode """
@@ -186,4 +192,12 @@ class SystemIO(IO):
     """ Used for logging outside of tasks """
 
     def capture_descriptors(self, target_file: str = None):
+        pass
+
+
+class NullSystemIO(SystemIO):
+    def _stdout(self, text):
+        pass
+
+    def _stderr(self, text):
         pass
