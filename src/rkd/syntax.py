@@ -100,7 +100,6 @@ class TaskDeclaration(TaskDeclarationInterface):
         return task_name, group
 
 
-
 class GroupDeclaration(GroupDeclarationInterface):
     """ Internal DTO: Processed definition of TaskAliasDeclaration into TaskDeclaration """
 

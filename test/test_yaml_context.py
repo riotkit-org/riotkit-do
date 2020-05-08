@@ -5,6 +5,7 @@ from rkd.yaml_context import YamlParser
 from rkd.inputoutput import IO, NullSystemIO, BufferedSystemIO
 from rkd.exception import DeclarationException, YamlParsingException
 from rkd.contract import ExecutionContext
+from rkd.test import get_test_declaration
 
 
 class TestYamlContext(unittest.TestCase):
@@ -94,3 +95,19 @@ print(syntax-error-here)
         self.assertEqual(False, result, msg='Expected that syntax error would result in a failure')
         self.assertIn("NameError: name 'syntax' is not defined", io.get_value(), msg='Error message should be attached')
         self.assertIn('File ":song@step 1", line 1', io.get_value(), msg='Stacktrace should be attached')
+
+    def test_create_bash_callable_successful_case(self):
+        """ Bash callable test: Successful case """
+
+        io = BufferedSystemIO()
+        factory = YamlParser(io)
+
+        declaration = get_test_declaration()
+
+        execute_callable = factory.create_bash_callable(
+            'python --version > /tmp/.test_create_bash_callable_successful_case', 500, ':test', '')
+        result = execute_callable(ExecutionContext(declaration), declaration.get_task_to_execute())
+
+        with open('/tmp/.test_create_bash_callable_successful_case', 'r') as test_result:
+            self.assertIn("Python", test_result.read())
+            self.assertTrue(result, msg='python --version should result with a True')
