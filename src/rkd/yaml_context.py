@@ -5,9 +5,9 @@ import os
 import importlib
 from argparse import ArgumentParser
 from typing import List, Tuple, Union, Callable
-from traceback import print_exc
+from traceback import format_exc
 from .exception import YamlParsingException
-from .inputoutput import SystemIO
+from .inputoutput import IO
 from .syntax import TaskDeclaration, TaskAliasDeclaration
 from .standardlib import CallableTask
 from .contract import ExecutionContext, TaskInterface
@@ -18,9 +18,9 @@ class YamlParser:
     Translates YAML syntax into Python syntax of makefile (makefile.yaml -> makefile.py)
     """
 
-    io: SystemIO
+    io: IO
 
-    def __init__(self, io: SystemIO):
+    def __init__(self, io: IO):
         self.io = io
 
     def parse(self, content: str, rkd_path: str) -> Tuple[List[TaskDeclaration], List[TaskAliasDeclaration]]:
@@ -137,10 +137,10 @@ class YamlParser:
                 return eval(compile(eval_expr, filename, 'eval'))
 
             except Exception as e:
-                this._io.error_msg('Error while executing step %i in task "%s". Exception: %s' % (
+                this.io().error_msg('Error while executing step %i in task "%s". Exception: %s' % (
                     step_num, task_name, str(e)
                 ))
-                print_exc()
+                this.io().error_msg(format_exc())
 
                 return False
 

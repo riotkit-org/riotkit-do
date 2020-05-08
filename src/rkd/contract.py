@@ -243,3 +243,7 @@ class TaskInterface(AbstractClass):
     def is_silent_in_observer(self) -> bool:
         """ Internally used property """
         return False
+
+    def io(self):
+        return self._io
+

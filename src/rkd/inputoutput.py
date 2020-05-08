@@ -44,7 +44,7 @@ class IO:
     log_level = LEVEL_INFO
 
     @contextmanager
-    def capture_descriptors(self, target_file: str = None):
+    def capture_descriptors(self, target_file: str = None, stream = None):
         """ Capture stdout and stderr per task """
 
         if this.IS_CAPTURING_DESCRIPTORS:
@@ -57,13 +57,20 @@ class IO:
         sys_stderr = sys.stderr
         log_file = None
 
+        outputs_stdout = [sys_stdout]
+        outputs_stderr = [sys_stderr]
+
         if target_file:
             log_file = open(target_file, 'wb')
-            sys.stdout = StandardOutputReplication([sys_stdout, log_file])
-            sys.stderr = StandardOutputReplication([sys_stderr, log_file])
-        else:
-            sys.stdout = StandardOutputReplication([sys_stdout])
-            sys.stderr = StandardOutputReplication([sys_stderr])
+            outputs_stdout.append(log_file)
+            outputs_stderr.append(log_file)
+
+        if stream:
+            outputs_stdout.append(stream)
+            outputs_stderr.append(stream)
+
+        sys.stdout = StandardOutputReplication([sys_stdout])
+        sys.stderr = StandardOutputReplication([sys_stderr])
 
         yield
         sys.stdout = sys_stdout
@@ -191,7 +198,7 @@ class IO:
 class SystemIO(IO):
     """ Used for logging outside of tasks """
 
-    def capture_descriptors(self, target_file: str = None):
+    def capture_descriptors(self, target_file: str = None, stream = None):
         pass
 
 
@@ -201,3 +208,16 @@ class NullSystemIO(SystemIO):
 
     def _stderr(self, text):
         pass
+
+
+class BufferedSystemIO(SystemIO):
+    _buffer = ''
+
+    def _stdout(self, text):
+        self._buffer += text
+
+    def _stderr(self, text):
+        self._buffer += text
+
+    def get_value(self):
+        return self._buffer
