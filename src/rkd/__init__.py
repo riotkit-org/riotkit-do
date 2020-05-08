@@ -19,30 +19,25 @@ class RiotKitDoApplication:
         if not argv[1:]:
             self.print_banner_and_exit()
 
-        try:
-            # system wide IO instance with defaults, the :init task should override those settings
-            io = SystemIO()
-            io.silent = True
-            io.log_level = LOG_LEVEL_INFO
+        # system wide IO instance with defaults, the :init task should override those settings
+        io = SystemIO()
+        io.silent = True
+        io.log_level = LOG_LEVEL_INFO
 
-            # load context of components
-            self._ctx = ContextFactory(io).create_unified_context()
+        # load context of components
+        self._ctx = ContextFactory(io).create_unified_context()
 
-            resolver = TaskResolver(self._ctx)
-            executor = OneByOneTaskExecutor(self._ctx)
+        resolver = TaskResolver(self._ctx)
+        executor = OneByOneTaskExecutor(self._ctx)
 
-            # iterate over each task, parse commandline arguments
-            requested_tasks = CommandlineParsingHelper.create_grouped_arguments([':init'] + argv[1:])
+        # iterate over each task, parse commandline arguments
+        requested_tasks = CommandlineParsingHelper.create_grouped_arguments([':init'] + argv[1:])
 
-            # validate all tasks
-            resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
+        # validate all tasks
+        resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
 
-            # execute all tasks
-            resolver.resolve(requested_tasks, executor.execute)
-
-        except TaskNotFoundException as e:
-            print(e)
-            sys.exit(1)
+        # execute all tasks
+        resolver.resolve(requested_tasks, executor.execute)
 
         executor.get_observer().execution_finished()
 
@@ -58,7 +53,12 @@ class RiotKitDoApplication:
 
 def main():
     app = RiotKitDoApplication()
-    app.main(argv=sys.argv)
+
+    try:
+        app.main(argv=sys.argv)
+    except TaskNotFoundException as e:
+        print(e)
+        sys.exit(1)
 
 
 if __name__ == '__main__':
