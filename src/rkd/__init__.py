@@ -15,8 +15,8 @@ class RiotKitDoApplication:
     _ctx: Context
     _tasks_to_execute = []
 
-    def main(self):
-        if not sys.argv[1:]:
+    def main(self, argv: list):
+        if not argv[1:]:
             self.print_banner_and_exit()
 
         try:
@@ -32,7 +32,7 @@ class RiotKitDoApplication:
             executor = OneByOneTaskExecutor(self._ctx)
 
             # iterate over each task, parse commandline arguments
-            requested_tasks = CommandlineParsingHelper.create_grouped_arguments([':init'] + sys.argv[1:])
+            requested_tasks = CommandlineParsingHelper.create_grouped_arguments([':init'] + argv[1:])
 
             # validate all tasks
             resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
@@ -55,9 +55,10 @@ class RiotKitDoApplication:
 
         sys.exit(0)
 
+
 def main():
     app = RiotKitDoApplication()
-    app.main()
+    app.main(argv=sys.argv)
 
 
 if __name__ == '__main__':
