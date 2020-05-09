@@ -15,7 +15,7 @@ Task executor - balance between Makefile and Gradle [see documentation_]
     # via PIPENV
     pipenv install rkd
 
-Please check available releases there: https://pypi.org/project/rkd/0.2.1.dev1/#history
+Please check available releases there: https://pypi.org/project/rkd/#history
 
 NOTICE: This project is in testing stage. There is no stable release yet, but it will come very soon. The API can change in upcoming days.
 
