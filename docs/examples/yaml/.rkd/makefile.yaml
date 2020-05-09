@@ -1,0 +1,50 @@
+version: org.riotkit.rkd/0.2
+imports:
+  - rkd.standardlib.docker.TagImageTask
+
+tasks:
+  :examples:bash-test:
+      description: Execute an example command in bash - show only python related tasks
+      steps: |
+             echo "RKD_DEPTH: ${RKD_DEPTH} # >= 2 means we are running rkd-in-rkd"
+             echo "RKD_PATH: ${RKD_PATH}"
+             rkd --silent :tasks | grep ":py"
+
+  :examples:arguments-test:
+      description: Show example usage of arguments in Bash
+      arguments:
+          "--text":
+              help: "Adds text message"
+              required: True
+          "--test-boolean":
+              help: "Example of a boolean flag"
+              action: store_true # or store_false
+      steps:
+        - |
+          #!bash
+          echo " ==> In Bash"
+          echo " Text: ${ARG_TEXT}"
+          echo " Boolean test: ${ARG_TEST_BOOLEAN}"
+        - |
+          #!python
+          print(' ==> In Python')
+          print(' Text: %s ' % ctx.args['text'])
+          print(' Text: %s ' % str(ctx.args['test_boolean']))
+          return True
+
+  :examples:list-standardlib-modules:
+      description: List all modules in the standardlib
+      steps:
+        - |
+          #!python
+          ctx: ExecutionContext
+          this: TaskInterface
+
+          import os
+
+          print('Hello world')
+          print(os)
+          print(ctx)
+          print(this)
+
+          return True

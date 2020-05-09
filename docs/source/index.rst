@@ -117,6 +117,16 @@ In this example the argument values "..." are taken from ``makefile.py``
       --username USERNAME  Username
       --password PASSWORD  Password
 
+Simplified - YAML syntax
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+YAML syntax has an advantage of simplicity and clean syntax, custom bash tasks can be defined there easier than in Python.
+To use YAML you need to define **makefile.yaml** file in .rkd directory.
+
+**NOTICE: makefile.py and makefile.yaml can exist together. Python version will be loaded first, the YAML version will append changes in priority.**
+
+.. literalinclude:: ../examples/yaml/.rkd/makefile.yaml
+
 Paths and inheritance
 ~~~~~~~~~~~~~~~~~~~~~
 
