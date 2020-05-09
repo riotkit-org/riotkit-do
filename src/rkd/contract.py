@@ -1,9 +1,10 @@
 
 import os
+import sys
 from abc import abstractmethod, ABC as AbstractClass
 from typing import Dict, List, Union
 from argparse import ArgumentParser
-from subprocess import check_call, check_output, Popen, DEVNULL
+from subprocess import check_call, check_output, Popen, DEVNULL, PIPE as SUBPROCESS_PIPE, CalledProcessError
 from .inputoutput import IO
 from .exception import UndefinedEnvironmentVariableUsageError
 
@@ -210,7 +211,21 @@ class TaskInterface(AbstractClass):
         os.close(write)
 
         if not capture:
-            check_call('bash', shell=True, stdin=read)
+            process = Popen('bash', shell=True, stdin=read, stdout=SUBPROCESS_PIPE, stderr=SUBPROCESS_PIPE)
+            stderr = ''
+
+            # subprocess is having issues with giving stdout and stderr streams directory as arguments
+            # that's why the streams are copied there
+            while process.poll() is None:
+                sys.stdout.write(process.stdout.read().decode('utf-8'))
+                stderr = process.stderr.read().decode('utf-8')
+                sys.stderr.write(stderr)
+
+            exit_code = process.wait()
+
+            if exit_code > 0:
+                raise CalledProcessError(exit_code, cmd, None, stderr)
+
             return
 
         return check_output('bash', shell=True, stdin=read).decode('utf-8')

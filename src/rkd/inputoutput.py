@@ -33,6 +33,9 @@ class StandardOutputReplication(object):
             except TypeError:
                 stream.write(buf.encode('utf-8'))
 
+    def fileno(self):
+        return 1
+
     def flush(self):
         pass
 
@@ -44,12 +47,11 @@ class IO:
     log_level = LEVEL_INFO
 
     @contextmanager
-    def capture_descriptors(self, target_file: str = None, stream = None):
+    def capture_descriptors(self, target_file: str = None, stream=None, enable_standard_out: bool = True):
         """ Capture stdout and stderr per task """
 
         if this.IS_CAPTURING_DESCRIPTORS:
-            self.warn('Deep call to capture_descriptors() will be ignored')
-            return False
+            self.debug('Deep call to capture_descriptors()')
 
         this.IS_CAPTURING_DESCRIPTORS = True
 
@@ -57,8 +59,12 @@ class IO:
         sys_stderr = sys.stderr
         log_file = None
 
-        outputs_stdout = [sys_stdout]
-        outputs_stderr = [sys_stderr]
+        outputs_stdout = []
+        outputs_stderr = []
+
+        if enable_standard_out:
+            outputs_stdout.append(sys_stdout)
+            outputs_stderr.append(sys_stderr)
 
         if target_file:
             log_file = open(target_file, 'wb')
@@ -69,8 +75,8 @@ class IO:
             outputs_stdout.append(stream)
             outputs_stderr.append(stream)
 
-        sys.stdout = StandardOutputReplication([sys_stdout])
-        sys.stderr = StandardOutputReplication([sys_stderr])
+        sys.stdout = StandardOutputReplication(outputs_stdout)
+        sys.stderr = StandardOutputReplication(outputs_stderr)
 
         yield
         sys.stdout = sys_stdout

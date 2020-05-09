@@ -163,7 +163,7 @@ class YamlParser:
                 return True
 
             except Exception as e:
-                this._io.error_msg('Error while executing step %i in task "%s". Exception: %s' % (
+                this.io().error_msg('Error while executing step %i in task "%s". Exception: %s' % (
                     step_num, task_name, str(e)
                 ))
                 return False

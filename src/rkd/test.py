@@ -1,9 +1,13 @@
 from argparse import ArgumentParser
 from .syntax import TaskDeclaration
 from .contract import TaskInterface, ExecutionContext
+from .inputoutput import NullSystemIO
 
 
 class TestTask(TaskInterface):
+    def __init__(self):
+        self._io = NullSystemIO()
+
     def get_name(self) -> str:
         pass
 

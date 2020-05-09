@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
+from io import StringIO
 from rkd.yaml_context import YamlParser
 from rkd.inputoutput import IO, NullSystemIO, BufferedSystemIO
 from rkd.exception import DeclarationException, YamlParsingException
@@ -96,18 +97,63 @@ print(syntax-error-here)
         self.assertIn("NameError: name 'syntax' is not defined", io.get_value(), msg='Error message should be attached')
         self.assertIn('File ":song@step 1", line 1', io.get_value(), msg='Stacktrace should be attached')
 
-    def test_create_bash_callable_successful_case(self):
-        """ Bash callable test: Successful case """
-
+    def _create_callable_tester(self, code: str, language: str) -> bool:
         io = BufferedSystemIO()
         factory = YamlParser(io)
 
         declaration = get_test_declaration()
 
-        execute_callable = factory.create_bash_callable(
-            'python --version > /tmp/.test_create_bash_callable_successful_case', 500, ':test', '')
+        if language == 'python':
+            execute_callable = factory.create_python_callable(code, 500, ':test', '/some/path')
+        else:
+            execute_callable = factory.create_bash_callable(code, 500, ':test', '/some/path')
+
         result = execute_callable(ExecutionContext(declaration), declaration.get_task_to_execute())
+
+        return result
+
+    def test_create_bash_callable_successful_case(self):
+        """ Bash callable test: Successful case """
+
+        result = self._create_callable_tester('python --version > /tmp/.test_create_bash_callable_successful_case',
+                                              language='bash')
 
         with open('/tmp/.test_create_bash_callable_successful_case', 'r') as test_result:
             self.assertIn("Python", test_result.read())
             self.assertTrue(result, msg='python --version should result with a True')
+
+    def test_create_bash_callable_failure_case(self):
+        """ Bash callable test: Check if failures are correctly catched """
+
+        result = self._create_callable_tester('exit 161', language='bash')
+
+        self.assertFalse(result)
+
+    def test_create_python_callable_case_syntax_error(self):
+
+        result = self._create_callable_tester('''
+impppport os
+        ''', language='python')
+
+        self.assertFalse(result)
+
+    def test_create_python_callable_case_multiline_with_imports_and_call_to_this(self):
+
+        result = self._create_callable_tester('''
+import os
+
+# do a very simple verification of class names, if not defined then it would fail
+return "ExecutionContext" in str(ctx) and "Task" in str(this)
+''', language='python')
+
+        self.assertTrue(result)
+
+    def test_create_bash_callable_case_verify_env_variables_are_present(self):
+
+        io = IO()
+        out = StringIO()
+
+        with io.capture_descriptors(stream=out, enable_standard_out=False):
+            self._create_callable_tester('echo "Boolean: ${ARG_TEST}, Text: ${ARG_MESSAGE}"', language='bash')
+
+        self.assertIn('ARG_TEST: unbound variable', out.getvalue())

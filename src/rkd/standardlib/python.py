@@ -119,6 +119,12 @@ class UnitTestTask(BasePythonTask):
             context.args['tests_dir']
         )
 
+        if context.args['pattern']:
+            cmd += ' -p %s ' % context.args['pattern']
+
+        if context.args['filter']:
+            cmd += ' -k %s ' % context.args['filter']
+
         try:
             self.sh(cmd, verbose=True, strict=True)
         except CalledProcessError as e:
