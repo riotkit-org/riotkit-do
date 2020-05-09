@@ -204,7 +204,7 @@ class IO:
 class SystemIO(IO):
     """ Used for logging outside of tasks """
 
-    def capture_descriptors(self, target_file: str = None, stream = None):
+    def capture_descriptors(self, target_file: str = None, stream=None, enable_standard_out: bool = True):
         pass
 
 
