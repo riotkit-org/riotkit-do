@@ -182,16 +182,22 @@ class ContextFactory:
             CURRENT_SCRIPT_PATH + '/internal',
             '/usr/lib/rkd',
             os.path.expanduser('~/.rkd'),
-            chdir + './.rkd'
+            os.getcwd() + '/.rkd'
         ]
+
+        if chdir:
+            paths += chdir + '/.rkd'
 
         if os.getenv('RKD_PATH'):
             paths += os.getenv('RKD_PATH', '').split(':')
 
+        # export for usage inside in makefiles
+        os.environ['RKD_PATH'] = ":".join(paths)
+
         ctx = Context([], [])
 
         for path in paths:
-            if os.path.isdir(path) and os.path.isfile(path + '/makefile.py'):
+            if os.path.isdir(path) and (os.path.isfile(path + '/makefile.py') or os.path.isfile(path + '/makefile.yaml')):
                 ctx = Context.merge(ctx, self._load_context_from_directory(path))
 
         ctx.compile()
