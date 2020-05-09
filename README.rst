@@ -1,11 +1,23 @@
 RKD - RiotKit DO
 ================
 
+.. image:: https://api.travis-ci.com/riotkit-org/riotkit-do.svg?branch=master
+
 Task executor - balance between Makefile and Gradle [see documentation_]
 
 .. image:: docs/makefile.png
 
-NOTICE: This project is in testing stage. There is no stable release yet, but it will come very soon.
+.. code:: bash
+
+    # via PIP
+    pip install rkd
+
+    # via PIPENV
+    pipenv install rkd
+
+Please check available releases there: https://pypi.org/project/rkd/0.2.1.dev1/#history
+
+NOTICE: This project is in testing stage. There is no stable release yet, but it will come very soon. The API can change in upcoming days.
 
 **Goals:**
 
