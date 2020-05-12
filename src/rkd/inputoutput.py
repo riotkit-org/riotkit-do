@@ -87,6 +87,12 @@ class IO:
 
         this.IS_CAPTURING_DESCRIPTORS = False
 
+    def inherit_silent(self, io: 'SystemIO'):
+        self.silent = io.is_silent(consider_ui=False)
+
+    def is_silent(self) -> bool:
+        return self.silent
+
     #
     # Log level - mutable setting
     #
@@ -134,13 +140,13 @@ class IO:
     def opt_out(self, text):
         """ Optional output - fancy output skipped in --silent mode """
 
-        if not self.silent:
+        if not self.is_silent():
             self.out(text)
 
     def opt_outln(self, text):
         """ Optional output - fancy output skipped in --silent mode + newline """
 
-        if not self.silent:
+        if not self.is_silent():
             self.outln(text)
 
     #
@@ -168,7 +174,7 @@ class IO:
             self.log(text)
 
     def log(self, text):
-        if not self.silent:
+        if not self.is_silent():
             self.outln(text)
 
     def print_group(self, text):
@@ -204,8 +210,19 @@ class IO:
 class SystemIO(IO):
     """ Used for logging outside of tasks """
 
+    _ui = True
+
     def capture_descriptors(self, target_file: str = None, stream=None, enable_standard_out: bool = True):
         pass
+
+    def set_display_ui(self, ui: bool):
+        self._ui = ui
+
+    def is_silent(self, consider_ui: bool = True) -> bool:
+        if consider_ui and not self._ui:
+            return True
+
+        return self.silent
 
 
 class NullSystemIO(SystemIO):

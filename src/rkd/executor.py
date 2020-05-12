@@ -36,7 +36,11 @@ class OneByOneTaskExecutor(ExecutorInterface):
         try:
             io = IO()
             io.set_log_level(parsed_args['log_level'] if parsed_args['log_level'] else self.io.get_log_level())
-            io.silent = parsed_args['silent'] if parsed_args['silent'] else self.io.silent  # fallback to system-wide
+
+            if parsed_args['silent']:
+                io.silent = parsed_args['silent']
+            else:
+                io.inherit_silent(self.io)  # fallback to system-wide
 
             with io.capture_descriptors(target_file=parsed_args['log_to_file']):
                 task = declaration.get_task_to_execute()
@@ -68,6 +72,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
                 if not is_exception:  # do not do double summary
                     self._observer.task_failed(declaration, parent)
 
+                # break the whole pipeline only if not --keep-going
                 if not parsed_args['keep_going']:
                     raise InterruptExecution()
 

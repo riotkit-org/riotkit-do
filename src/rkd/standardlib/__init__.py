@@ -1,6 +1,7 @@
 
 import pkg_resources
 import os
+from typing import Dict
 from argparse import ArgumentParser
 from typing import Callable
 from ..contract import TaskInterface, ExecutionContext, TaskDeclarationInterface
@@ -20,8 +21,15 @@ class InitTask(TaskInterface):
     def get_group_name(self) -> str:
         return ''
 
+    def get_declared_envs(self) -> Dict[str, str]:
+        return {
+            'RKD_DEPTH': '0'
+        }
+
     def configure_argparse(self, parser: ArgumentParser):
-        pass
+        parser.add_argument('--no-ui', '-n', action='store_true',
+                            help='Do not display RKD interface (similar to --silent, ' +
+                                 'but does not inherit --silent into next tasks)')
 
     def execute(self, context: ExecutionContext) -> bool:
         """
@@ -39,6 +47,9 @@ class InitTask(TaskInterface):
         # log level is optional to be set
         if context.args['log_level']:
             self._ctx.io.set_log_level(context.args['log_level'])
+
+        if int(context.getenv('RKD_DEPTH')) >= 1 or context.args['no_ui']:
+            self._ctx.io.set_display_ui(False)
 
         return True
 
