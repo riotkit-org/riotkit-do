@@ -20,6 +20,10 @@ class UndefinedEnvironmentVariableUsageError(TaskException):
     pass
 
 
+class EnvironmentVariableNotUsed(TaskException):
+    pass
+
+
 class UserInputException(Exception):
     pass
 

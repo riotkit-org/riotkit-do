@@ -4,7 +4,7 @@ from abc import abstractmethod, ABC as AbstractClass
 from typing import Dict, List, Union
 from argparse import ArgumentParser
 from .inputoutput import IO
-from .exception import UndefinedEnvironmentVariableUsageError
+from .exception import UndefinedEnvironmentVariableUsageError, EnvironmentVariableNotUsed
 from .taskutil import TaskUtilities
 
 
@@ -106,9 +106,28 @@ class ExecutionContext:
         self.args = args
         self.env = env
 
-    def getenv(self, name: str):
+    def getenv(self, name: str, error_on_not_used: bool = False):
         """ Get environment variable value """
-        return self.declaration.get_task_to_execute().internal_getenv(name, self.env)
+        return self.declaration.get_task_to_execute().internal_getenv(name, self.env,
+                                                                      error_on_not_used=error_on_not_used)
+
+    def getarg(self, name: str) -> Union[str, None]:
+        try:
+            return self.args[name]
+        except KeyError:
+            raise Exception('"%s" is not a defined argument')
+
+    def get_arg_or_env(self, name: str) -> Union[str, None]:
+        env_name = name[2:].replace('-', '_').upper()
+
+        try:
+            return self.getenv(env_name, error_on_not_used=True)
+        except EnvironmentVariableNotUsed:
+            pass
+
+        arg_name = name[2:].replace('-', '_')
+
+        return self.args[arg_name]
 
 
 class TaskInterface(TaskUtilities):
@@ -171,7 +190,7 @@ class TaskInterface(TaskUtilities):
         """ Dictionary of allowed envs to override: KEY -> DEFAULT VALUE """
         return {}
 
-    def internal_getenv(self, env_name: str, envs: Dict[str, str]) -> str:
+    def internal_getenv(self, env_name: str, envs: Dict[str, str], error_on_not_used: bool = False) -> str:
         declared_envs = self.get_declared_envs()
 
         if env_name not in declared_envs:
@@ -182,6 +201,9 @@ class TaskInterface(TaskUtilities):
 
         # return default value
         if env_name not in envs:
+            if error_on_not_used:
+                raise EnvironmentVariableNotUsed(env_name)
+
             return declared_envs[env_name]
 
         return envs[env_name]
