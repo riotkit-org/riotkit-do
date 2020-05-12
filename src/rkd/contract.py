@@ -1,10 +1,13 @@
 
 import os
 import sys
+from time import sleep
 from abc import abstractmethod, ABC as AbstractClass
 from typing import Dict, List, Union
 from argparse import ArgumentParser
 from subprocess import check_call, check_output, Popen, DEVNULL, PIPE as SUBPROCESS_PIPE, CalledProcessError
+from queue import Queue
+from threading  import Thread
 from .inputoutput import IO
 from .exception import UndefinedEnvironmentVariableUsageError
 
@@ -211,16 +214,38 @@ class TaskInterface(AbstractClass):
         os.close(write)
 
         if not capture:
-            process = Popen('bash', shell=True, stdin=read, stdout=SUBPROCESS_PIPE, stderr=SUBPROCESS_PIPE)
+            process = Popen('bash', shell=True, stdin=read, stdout=SUBPROCESS_PIPE, stderr=SUBPROCESS_PIPE, bufsize=1,
+                            close_fds='posix' in sys.builtin_module_names)
+
+            out_queue = Queue()
+            stdout_thread = Thread(target=self._enqueue_output, args=(process.stdout, out_queue))
+            stdout_thread.daemon = True
+            stdout_thread.start()
+
+            err_queue = Queue()
+            stderr_thread = Thread(target=self._enqueue_output, args=(process.stderr, err_queue))
+            stderr_thread.daemon = True
+            stderr_thread.start()
+
             stderr = ''
 
             # subprocess is having issues with giving stdout and stderr streams directory as arguments
             # that's why the streams are copied there
-            while process.poll() is None:
-                sys.stdout.write(process.stdout.read().decode('utf-8'))
-                stderr = process.stderr.read().decode('utf-8')
-                sys.stderr.write(stderr)
+            def flush():
+                if not out_queue.empty():
+                    out_line = out_queue.get(timeout=.1)
+                    sys.stdout.write(out_line.decode('utf-8'))
 
+                if not err_queue.empty():
+                    err_line = err_queue.get(timeout=.1)
+                    stderr = err_line.decode('utf-8')
+                    sys.stderr.write(stderr)
+
+            while process.poll() is None:
+                flush()
+                sleep(0.01)  # important: to not dry the CPU (no sleep = full cpu usage at one core)
+
+            flush()
             exit_code = process.wait()
 
             if exit_code > 0:
@@ -229,6 +254,12 @@ class TaskInterface(AbstractClass):
             return
 
         return check_output('bash', shell=True, stdin=read).decode('utf-8')
+
+    @staticmethod
+    def _enqueue_output(out, queue: Queue):
+        for line in iter(out.readline, b''):
+            queue.put(line)
+        out.close()
 
     def exec(self, cmd: str, capture: bool = False, background: bool = False) -> Union[str, None]:
         """ Starts a process in shell. Throws exception on error.
