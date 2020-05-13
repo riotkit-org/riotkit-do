@@ -127,3 +127,14 @@ class TestFunctional(unittest.TestCase):
                 # clean up
             os.unlink(first.name)
             os.unlink(second.name)
+
+    def test_env_variables_listed_in_help(self):
+        full_output, exit_code = self._run_and_capture_output(['--help'])
+        self.assertIn('- RKD_DEPTH (default: 0)', full_output)
+
+    def test_env_variables_not_listed_in_tasks_task(self):
+        """ :tasks does not define any environment variables """
+
+        full_output, exit_code = self._run_and_capture_output([':tasks', '--help'])
+        self.assertNotIn('- RKD_DEPTH (default: 0)', full_output)
+        self.assertIn('-- No environment variables declared --', full_output)

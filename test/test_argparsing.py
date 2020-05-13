@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import unittest
+from argparse import ArgumentParser
 from rkd.argparsing import CommandlineParsingHelper
+from rkd.test import get_test_declaration
 
 
 class ArgParsingTest(unittest.TestCase):
@@ -34,3 +36,21 @@ class ArgParsingTest(unittest.TestCase):
         ])
 
         self.assertEqual("[Task<:harbor:start ([])>, Task<:harbor:status ([])>, Task<:harbor:stop ([])>]", str(parsed))
+
+    def test_add_env_variables_to_argparse(self):
+        parser = ArgumentParser(':test')
+        task = get_test_declaration()
+
+        CommandlineParsingHelper.add_env_variables_to_argparse(parser, task)
+        self.assertIn('Union (default: International Workers Association)', parser.description)
+
+    def test_add_env_variables_to_argparse__no_envs(self):
+        parser = ArgumentParser(':test')
+        task = get_test_declaration()
+
+        # empty the values
+        task.get_task_to_execute().get_declared_envs = lambda: {}
+
+        CommandlineParsingHelper.add_env_variables_to_argparse(parser, task)
+        self.assertNotIn('Union (default: International Workers Association)', parser.description)
+        self.assertIn('-- No environment variables declared --', parser.description)

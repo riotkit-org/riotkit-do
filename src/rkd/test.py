@@ -1,3 +1,4 @@
+from typing import Dict
 from argparse import ArgumentParser
 from .syntax import TaskDeclaration
 from .contract import TaskInterface, ExecutionContext
@@ -9,16 +10,21 @@ class TestTask(TaskInterface):
         self._io = NullSystemIO()
 
     def get_name(self) -> str:
-        pass
+        return ':test'
 
     def get_group_name(self) -> str:
-        pass
+        return ':rkd'
 
     def execute(self, context: ExecutionContext) -> bool:
-        pass
+        return True
 
     def configure_argparse(self, parser: ArgumentParser):
         pass
+
+    def get_declared_envs(self) -> Dict[str, str]:
+        return {
+            'Union': 'International Workers Association'
+        }
 
 
 def get_test_declaration() -> TaskDeclaration:

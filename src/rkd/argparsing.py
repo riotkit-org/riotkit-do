@@ -2,6 +2,7 @@
 
 from typing import List
 from argparse import ArgumentParser
+from argparse import RawTextHelpFormatter
 from .contract import TaskDeclarationInterface
 
 
@@ -66,9 +67,10 @@ class CommandlineParsingHelper:
 
         return tasks
 
-    @staticmethod
-    def get_parsed_vars_for_task(task: TaskDeclarationInterface, args: list):
-        argparse = ArgumentParser(task.to_full_name())
+    @classmethod
+    def get_parsed_vars_for_task(cls, task: TaskDeclarationInterface, args: list):
+        argparse = ArgumentParser(task.to_full_name(), formatter_class=RawTextHelpFormatter)
+
         argparse.add_argument('--log-to-file', '-rf', help='Capture stdout and stderr to file')
         argparse.add_argument('--log-level', '-rl', help='Log level: debug,info,warning,error,fatal')
         argparse.add_argument('--keep-going', '-rk', help='Allow going to next task, even if this one fails',
@@ -76,5 +78,20 @@ class CommandlineParsingHelper:
         argparse.add_argument('--silent', '-rs', help='Do not print logs, just task output', action='store_true')
 
         task.get_task_to_execute().configure_argparse(argparse)
+        cls.add_env_variables_to_argparse(argparse, task)
 
         return vars(argparse.parse_args(args))
+
+    @classmethod
+    def add_env_variables_to_argparse(cls, argparse: ArgumentParser, task: TaskDeclarationInterface):
+        if argparse.description is None:
+            argparse.description = ""
+
+        # print all environment variables possible to use
+        argparse.description += "\nEnvironment variables for task \"%s\":\n" % task.to_full_name()
+
+        for env_name, default_value in task.get_task_to_execute().get_declared_envs().items():
+            argparse.description += " - %s (default: %s)\n" % (str(env_name), str(default_value))
+
+        if not task.get_task_to_execute().get_declared_envs():
+            argparse.description += ' -- No environment variables declared -- '
