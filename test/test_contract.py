@@ -2,7 +2,10 @@
 
 import unittest
 import os
+import subprocess
+from io import StringIO
 from rkd.standardlib import InitTask
+from rkd.inputoutput import IO
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -26,3 +29,37 @@ class TestTaskInterface(unittest.TestCase):
             task.exec('ls', background=True, capture=True)
 
         self.assertRaises(Exception, test)
+
+    def test_sh_captures_output_in_correct_order(self):
+        self.maxDiff = None  # unittest setting
+        task = InitTask()
+
+        io = IO()
+        out = StringIO()
+
+        with io.capture_descriptors(stream=out, enable_standard_out=False):
+            task.sh(''' set +e;
+                sleep 0.5;
+                echo "FIRST";
+                sleep 0.5;
+                echo "SECOND" >&2;
+                echo "THIRD";
+                echo "FOURTH" >&2;
+                echo "FIFTH" >&2;
+            ''')
+
+        self.assertEqual("FIRST\nSECOND\nTHIRD\nFOURTH\nFIFTH\n", out.getvalue())
+
+    def test_sh_provides_stdout_and_stderr_in_exception(self):
+        task = InitTask()
+
+        try:
+            task.sh('''
+                echo "Freedom, Equality, Mutual Aid!"
+                echo "The state and capitalism is failing" >&2
+                
+                exit 161
+            ''')
+        except subprocess.CalledProcessError as e:
+            self.assertEqual("Freedom, Equality, Mutual Aid!\n", e.output)
+            self.assertEqual("The state and capitalism is failing\n", e.stderr)

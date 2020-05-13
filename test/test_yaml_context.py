@@ -122,7 +122,7 @@ print(syntax-error-here)
             self.assertIn("Python", test_result.read())
             self.assertTrue(result, msg='python --version should result with a True')
 
-    def test_create_bash_callable_failure_case(self):
+    def test_create_bash_callable_failure_case_on_invalid_exit_code(self):
         """ Bash callable test: Check if failures are correctly catched """
 
         result = self._create_callable_tester('exit 161', language='bash')
