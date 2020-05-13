@@ -4,6 +4,7 @@ from typing import List
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
 from .contract import TaskDeclarationInterface
+from .exception import TaskNotFoundException
 
 
 class TaskArguments:
@@ -60,7 +61,7 @@ class CommandlineParsingHelper:
                 current_task_name = part
                 current_group_elements = []
             else:
-                raise Exception('Unknown task "%s"' % part)
+                raise TaskNotFoundException('Unknown task "%s"' % part)
 
             if cursor + 1 == max_cursor:
                 tasks.append(TaskArguments(current_task_name, current_group_elements))
