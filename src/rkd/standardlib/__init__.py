@@ -23,7 +23,8 @@ class InitTask(TaskInterface):
 
     def get_declared_envs(self) -> Dict[str, str]:
         return {
-            'RKD_DEPTH': '0'
+            'RKD_DEPTH': '0',
+            'RKD_PATH': ''
         }
 
     def configure_argparse(self, parser: ArgumentParser):
@@ -101,6 +102,9 @@ class TasksListingTask(TaskInterface):
                 io.outln(task_name + text_description)
 
             io.print_opt_line()
+
+        io.print_opt_line()
+        io.opt_outln('Use --help to see task environment variables and switches, eg. rkd :sh --help, rkd --help')
 
         return True
 
