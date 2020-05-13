@@ -91,7 +91,7 @@ class DockerBaseTask(TaskInterface, ABC):
         parser.add_argument('--without-global-latest', '-wgl', help='Do not tag :latest', action='store_true')
         parser.add_argument('--propagate', '-p', help='Propagate tags? eg. 1.0.0 -> 1.0 -> 1 -> latest', action='store_true')
         parser.add_argument('--allowed-meta', '-m', help='Allowed meta part eg. rc, alpha, beta',
-                            default='rc,alpha,stable,dev,prod,test,beta,build,b,snapshot')
+                            default='rc,alpha,stable,dev,prod,test,beta,build,b')
 
 
 class TagImageTask(DockerBaseTask):

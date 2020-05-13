@@ -206,6 +206,21 @@ class IO:
     def info_msg(self, text):
         self.opt_outln("\x1B[93m%s\x1B[0m" % text)
 
+    #
+    # Standard formatting
+    #
+    def h1(self, text):
+        self.opt_outln("\x1B[93m  ##> %s\x1B[0m" % text)
+
+    def h2(self, text):
+        self.opt_outln("\x1B[93m   ===> %s\x1B[0m" % text)
+
+    def h3(self, text):
+        self.opt_outln("\x1B[33m    --> %s\x1B[0m" % text)
+
+    def h4(self, text):
+        self.opt_outln("\x1B[33m     ... %s\x1B[0m" % text)
+
 
 class SystemIO(IO):
     """ Used for logging outside of tasks """

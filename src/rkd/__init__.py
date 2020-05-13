@@ -58,7 +58,7 @@ def main():
         app.main(argv=sys.argv)
     except TaskNotFoundException as e:
         print(e)
-        sys.exit(1)
+        sys.exit(127)
 
 
 if __name__ == '__main__':

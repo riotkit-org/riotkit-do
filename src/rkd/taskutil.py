@@ -56,27 +56,29 @@ class TaskUtilities(AbstractClass):
         os.close(write)
 
         if not capture:
-            process = Popen('bash', shell=True, stdin=read, stdout=SUBPROCESS_PIPE, stderr=SUBPROCESS_STDOUT)
+            # process = Popen('bash', shell=True, stdin=read, stdout=SUBPROCESS_PIPE, stderr=SUBPROCESS_STDOUT, bufsize=1)
+            #
+            # stdout_thread = Thread(target=self._copy_stream, args=(process.stdout, sys.stdout, process))
+            # stdout_thread.daemon = True
+            # stdout_thread.start()
+            #
+            # exit_code = process.wait()
+            #
+            # if exit_code > 0:
+            #     raise CalledProcessError(exit_code, cmd)
 
-            stdout_thread = Thread(target=self._copy_stream, args=(process.stdout, sys.stdout, process))
-            stdout_thread.daemon = True
-            stdout_thread.start()
-            stderr = ''
-
-            exit_code = process.wait()
-
-            if exit_code > 0:
-                raise CalledProcessError(exit_code, cmd, None, stderr)
-
+            check_call('bash', shell=True, stdin=read)
             return
 
         return check_output('bash', shell=True, stdin=read).decode('utf-8')
 
-    @staticmethod
-    def _copy_stream(in_stream, out_stream, process: Popen):
-        while process.poll() is None:
-            for line in iter(in_stream.readline, ''):
-                out_stream.write(line.decode('utf-8'))
+    # @staticmethod
+    # def _copy_stream(in_stream, out_stream, process: Popen):
+    #     while process.poll() is None:
+    #         for line in iter(in_stream.readline, ''):
+    #             out_stream.write(line.decode('utf-8'))
+    #
+    #     out_stream.write(in_stream.read().decode('utf-8'))
 
     def exec(self, cmd: str, capture: bool = False, background: bool = False) -> Union[str, None]:
         """ Starts a process in shell. Throws exception on error.
