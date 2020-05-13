@@ -9,24 +9,29 @@ from ..syntax import TaskDeclaration
 
 
 class DockerBaseTask(TaskInterface, ABC):
-    def calculate_images(self, image: str, latest_per_version: bool, global_latest: bool, allowed_meta: str):
+    def calculate_images(self, image: str, latest_per_version: bool, global_latest: bool, allowed_meta_list: str):
         """ Calculate tags propagation """
 
-        meta = allowed_meta.replace(' ', '').replace(',', '|')
+        allowed_meta = allowed_meta_list.replace(' ', '').split(',')
         tag = image.split(':')[-1]
 
         # output
         output_tags = [image]
 
-        matches = re.match('([0-9.]+)(-(' + meta + '))?([0-9]+)?', tag, re.IGNORECASE)
+        matches = re.match('([0-9.]+)(-([A-Za-z]+))?([0-9]+)?', tag, re.IGNORECASE)
+        meta_type = matches.group(3)
 
         if not matches:
-            self._io.warn('No release version found, possibly it\'s a not versioned development snapshot')
+            self._io.warn('No release version found')
+            return output_tags
+
+        if meta_type and meta_type not in allowed_meta:
+            self.io().warn('Version meta part is not allowed, not calculating propagation')
             return output_tags
 
         original_tag = matches.group(0)
         base_version = matches.group(1)
-        meta = matches.group(2)
+        meta = meta_type
         meta_number = matches.group(4)
 
         # :latest
@@ -113,7 +118,7 @@ class TagImageTask(DockerBaseTask):
                 image=original_image,
                 latest_per_version=not context.args['without_latest'],
                 global_latest=not context.args['without_global_latest'],
-                allowed_meta=context.args['allowed_meta']
+                allowed_meta_list=context.args['allowed_meta']
             )
         else:
             images = [original_image]
@@ -146,7 +151,7 @@ class PushTask(DockerBaseTask):
                 image=original_image,
                 latest_per_version=not context.args['without_latest'],
                 global_latest=not context.args['without_global_latest'],
-                allowed_meta=context.args['allowed_meta']
+                allowed_meta_list=context.args['allowed_meta']
             )
         else:
             images = [original_image]
