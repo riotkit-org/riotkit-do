@@ -31,24 +31,28 @@ class TestTaskInterface(unittest.TestCase):
         self.assertRaises(Exception, test)
 
     def test_sh_captures_output_in_correct_order(self):
-        self.maxDiff = None  # unittest setting
-        task = InitTask()
+        #
+        # Perform 300 rounds of test to prove it is working as expected
+        #
+        for i in range(1, 300):
+            self.maxDiff = None  # unittest setting
+            task = InitTask()
 
-        io = IO()
-        out = StringIO()
+            io = IO()
+            out = StringIO()
 
-        with io.capture_descriptors(stream=out, enable_standard_out=False):
-            task.sh(''' set +e;
-                sleep 0.5;
-                echo "FIRST";
-                sleep 0.5;
-                echo "SECOND" >&2;
-                echo "THIRD";
-                echo "FOURTH" >&2;
-                echo "FIFTH" >&2;
-            ''')
+            with io.capture_descriptors(stream=out, enable_standard_out=False):
+                task.sh(''' set +e;
+                    sleep 0.1;
+                    echo "FIRST";
+                    sleep 0.1;
+                    echo "SECOND" >&2;
+                    echo "THIRD";
+                    echo "FOURTH" >&2;
+                    echo "FIFTH" >&2;
+                ''')
 
-        self.assertEqual("FIRST\nSECOND\nTHIRD\nFOURTH\nFIFTH\n", out.getvalue())
+            self.assertEqual("FIRST\nSECOND\nTHIRD\nFOURTH\nFIFTH\n", out.getvalue())
 
     def test_sh_provides_stdout_and_stderr_in_exception(self):
         task = InitTask()
