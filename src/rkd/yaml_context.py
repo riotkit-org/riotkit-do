@@ -1,8 +1,8 @@
-
 import yaml
 import ast
 import os
 import importlib
+from types import FunctionType
 from argparse import ArgumentParser
 from typing import List, Tuple, Union, Callable
 from traceback import format_exc
@@ -182,7 +182,23 @@ class YamlParser:
 
     @staticmethod
     def parse_imports(classes: List[str]) -> List[TaskDeclaration]:
-        """ Parses imports strings into Python classes """
+        """Parses imports strings into Python classes
+
+        Args:
+            classes: List of classes to import
+
+        Returns:
+            A list of basic task declarations with imported tasks inside
+            [
+                TaskDeclaration(ProtestWorkplaceTask()),
+                TaskDeclaration(StrikeWorkplaceTask()),
+                TaskDeclaration(OccupyWorkplaceTask()),
+                TaskDeclaration(RunProductionByWorkersOnTheirOwnTask())
+            ]
+
+        Raises:
+            YamlParsingException: When a class or module does not exist
+        """
 
         parsed: List[TaskDeclaration] = []
 
@@ -190,6 +206,12 @@ class YamlParser:
             parts = import_str.split('.')
             class_name = parts[-1]
             import_path = '.'.join(parts[:-1])
+
+            # Test if it's not a class name
+            # In this case we treat is as a module and import an importing method imports()
+            if class_name.lower() == class_name:
+                import_path += '.' + class_name
+                class_name = 'imports'
 
             try:
                 module = importlib.import_module(import_path)
@@ -200,9 +222,12 @@ class YamlParser:
 
             if class_name not in dir(module):
                 raise YamlParsingException('Import "%s" is invalid. Class "%s" not found in module "%s"' % (
-                    import_str, import_path, class_name
+                    import_str, class_name, import_path
                 ))
 
-            parsed.append(TaskDeclaration(module.__getattribute__(class_name)()))
+            if isinstance(module.__getattribute__(class_name), FunctionType):
+                parsed += module.__getattribute__(class_name)()
+            else:
+                parsed.append(TaskDeclaration(module.__getattribute__(class_name)()))
 
         return parsed

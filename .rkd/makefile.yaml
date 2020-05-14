@@ -1,6 +1,7 @@
 version: org.riotkit.rkd/0.3
 imports:
-  - rkd.standardlib.docker.TagImageTask
+  #- rkd.standardlib.docker.TagImageTask  # example of importing single task without dependencies
+  - rkd.standardlib.docker                # example of importing a package with dependencies
 
 tasks:
   :examples:bash-test:

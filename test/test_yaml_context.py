@@ -10,11 +10,23 @@ from rkd.test import get_test_declaration
 
 
 class TestYamlContext(unittest.TestCase):
-    def test_parse_imports_successful_case(self):
+    def test_parse_imports_successful_case_single_task(self):
         factory = YamlParser(NullSystemIO())
         imported = factory.parse_imports(['rkd.standardlib.python.PublishTask'])
 
         self.assertEqual(':py:publish', imported[0].to_full_name())
+
+    def test_parse_imports_successful_case_module(self):
+        factory = YamlParser(NullSystemIO())
+        imported = factory.parse_imports(['rkd.standardlib.python'])
+
+        names_of_imported_tasks = []
+
+        for task in imported:
+            names_of_imported_tasks.append(task.to_full_name())
+
+        self.assertIn(':py:publish', names_of_imported_tasks)
+        self.assertIn(':py:build', names_of_imported_tasks)
 
     def test_parse_imports_wrong_class_type_but_existing(self):
         def test():
@@ -59,6 +71,7 @@ class TestYamlContext(unittest.TestCase):
                          msg='Expected that the task name will be present')
 
         declaration = parsed_tasks[0]
+        declaration.get_task_to_execute()._io = NullSystemIO()
         declaration.get_task_to_execute().execute(ExecutionContext(declaration))
 
         with open('/tmp/.test_parse_tasks', 'r') as test_helper:
@@ -88,6 +101,7 @@ print(syntax-error-here)
         parsed_tasks = factory.parse_tasks(input_tasks, '')
 
         declaration = parsed_tasks[0]
+        declaration.get_task_to_execute()._io = IO()
         task = declaration.get_task_to_execute()
         task._io = io
 
