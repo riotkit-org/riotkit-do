@@ -16,20 +16,20 @@ jobs:
         - stage: Test on Python 3.6
           python: 3.6
           script:
-              - python -m unittest
               - rkd :build
+              - cd src && python -m unittest discover -s ../test
 
         - stage: Test on Python 3.7
           python: 3.7
           script:
-              - python -m unittest
               - rkd :build
+              - cd src && python -m unittest discover -s ../test
 
         - stage: Test on Python 3.8
           python: 3.8
           script:
-              - python -m unittest
               - rkd :build
+              - cd src && python -m unittest discover -s ../test
 
         - stage: Release
           python: 3.6
@@ -41,12 +41,12 @@ jobs:
           env: CAN_FAIL=true
           python: 3.9
           script:
-            - python -m unittest
-            - rkd :build
+              - rkd :build
+              - cd src && python -m unittest discover -s ../test
 
         - stage: Test on Python NIGHTLY (allowed to fail)
           env: CAN_FAIL=true
           python: nightly
           script:
-              - python -m unittest
               - rkd :build
+              - cd src && python -m unittest discover -s ../test
