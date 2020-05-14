@@ -50,3 +50,7 @@ tasks:
               print(package.name[:-3])
 
           return True
+
+  :build:
+      description: Build project
+      steps: rkd :py:build
