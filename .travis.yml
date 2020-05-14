@@ -13,25 +13,40 @@ jobs:
             - CAN_FAIL=true
 
     include:
+        - stage: Test on Python 3.6
+          python: 3.6
+          script:
+              - python -m unittest
+              - rkd :build
+
+        - stage: Test on Python 3.7
+          python: 3.7
+          script:
+              - python -m unittest
+              - rkd :build
 
         - stage: Test on Python 3.8
           python: 3.8
           script:
-              - rkd :test
+              - python -m unittest
+              - rkd :build
 
         - stage: Release
           python: 3.6
           script:
+              - ./setup.py install
               - rkd :release
 
         - stage: Test on Python 3.9 (allowed to fail)
           env: CAN_FAIL=true
           python: 3.9
           script:
-            - rkd :test
+            - python -m unittest
+            - rkd :build
 
         - stage: Test on Python NIGHTLY (allowed to fail)
           env: CAN_FAIL=true
           python: nightly
           script:
-              - rkd :test
+              - python -m unittest
+              - rkd :build
