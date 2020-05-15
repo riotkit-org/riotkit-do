@@ -17,7 +17,7 @@ def check_call(command: str, stdin=None):
     err_buffer = StringIO()
     out_buffer = StringIO()
 
-    process = subprocess.Popen('bash', shell=True, stdin=stdin, stdout=stdout_pipe_w, stderr=stderr_pipe_w,
+    process = subprocess.Popen(command, shell=True, stdin=stdin, stdout=stdout_pipe_w, stderr=stderr_pipe_w,
                                bufsize=1)
 
     stdout_thread = Thread(target=_copy_stream, args=(stdout_pipe_r, sys.stdout, process, out_buffer))
