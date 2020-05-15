@@ -21,6 +21,11 @@ Example: Given we want to import tasks from package "rkt_armutils".
     pip install -r requirements.txt
 
 
+**Good practices:**
+
+- Use fixed versions eg. 3.0 or even 3.0.0 and upgrade only intentionally to reduce your work on fixing bugs
+
+
 2) In YAML syntax
 -----------------
 
