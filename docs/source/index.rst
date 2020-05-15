@@ -159,4 +159,5 @@ That's why we at first load internals, then your tasks.
    :caption: Contents:
 
    standardlib/index
+   usage/index
 
