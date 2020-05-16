@@ -30,11 +30,10 @@ class TestTaskInterface(unittest.TestCase):
 
         self.assertRaises(Exception, test)
 
-    @unittest.skip("Rare case, not a blocker. To resolve within a github issue")
     def test_sh_captures_output_in_correct_order_with_various_timing(self):
         """Test if output is containing stdout and stderr lines mixed in proper order (as it is defined in shell script)
         """
-        for i in range(1, 50):
+        for i in range(1, 150):
             self.maxDiff = None  # unittest setting
             task = InitTask()
 
@@ -78,6 +77,7 @@ class TestTaskInterface(unittest.TestCase):
 
             self.assertEqual("FIRST\nSECOND\nTHIRD\n", out.getvalue())
 
+    @unittest.skip("Github issue #1")
     def test_sh_provides_stdout_and_stderr_in_exception(self):
         task = InitTask()
 

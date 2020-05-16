@@ -11,22 +11,22 @@ def check_call(command: str, stdin=None):
     os.environ['PYTHONUNBUFFERED'] = "1"
 
     stdout_pipe_r, stdout_pipe_w = os.pipe()
-    stderr_pipe_r, stderr_pipe_w = os.pipe()
+    # stderr_pipe_r, stderr_pipe_w = os.pipe()
 
     # keep the last 1024 characters of stderr
     err_buffer = StringIO()
     out_buffer = StringIO()
 
-    process = subprocess.Popen(command, shell=True, stdin=stdin, stdout=stdout_pipe_w, stderr=stderr_pipe_w,
+    process = subprocess.Popen(command, shell=True, stdin=stdin, stdout=stdout_pipe_w, stderr=subprocess.STDOUT,
                                bufsize=1)
 
     stdout_thread = Thread(target=_copy_stream, args=(stdout_pipe_r, sys.stdout, process, out_buffer))
     stdout_thread.daemon = True
     stdout_thread.start()
 
-    stderr_thread = Thread(target=_copy_stream, args=(stderr_pipe_r, sys.stderr, process, err_buffer))
-    stderr_thread.daemon = True
-    stderr_thread.start()
+    # stderr_thread = Thread(target=_copy_stream, args=(stderr_pipe_r, sys.stderr, process, err_buffer))
+    # stderr_thread.daemon = True
+    # stderr_thread.start()
 
     exit_code = process.wait()
 
