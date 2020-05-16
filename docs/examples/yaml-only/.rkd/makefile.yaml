@@ -1,0 +1,4 @@
+version: org.riotkit.rkd/0.3
+tasks:
+    :hello:
+        steps: echo "Hello world"

@@ -4,11 +4,16 @@ import sys
 from typing import Dict, List, Union
 from importlib.machinery import SourceFileLoader
 from traceback import print_exc
-from .syntax import TaskDeclaration, TaskAliasDeclaration, GroupDeclaration
+from .syntax import TaskDeclaration
+from .syntax import TaskAliasDeclaration
+from .syntax import GroupDeclaration
 from .contract import ContextInterface
 from .argparsing import CommandlineParsingHelper
 from .inputoutput import SystemIO
 from .exception import TaskNotFoundException
+from .exception import ContextFileNotFoundException
+from .exception import PythonContextFileNotFoundException
+from .exception import NotImportedClassException
 from .yaml_context import YamlParser
 
 
@@ -121,7 +126,7 @@ class ContextFactory:
 
     def _load_context_from_directory(self, path: str) -> Context:
         if not os.path.isdir(path):
-            raise Exception('Path "%s" font found' % path)
+            raise Exception('Path "%s" not found' % path)
 
         ctx = Context([], [])
         contexts = []
@@ -132,8 +137,11 @@ class ContextFactory:
         if os.path.isfile(path + '/makefile.yaml'):
             contexts.append(self._load_from_yaml(path))
 
+        if os.path.isfile(path + '/makefile.yml'):
+            contexts.append(self._load_from_yaml(path))
+
         if not contexts:
-            raise Exception('The directory "%s" should contain at least makefile.py or makfile.yaml' % path)
+            raise ContextFileNotFoundException(path)
 
         for subctx in contexts:
             ctx = Context.merge(ctx, subctx)
@@ -152,7 +160,7 @@ class ContextFactory:
         makefile_path = path + '/makefile.py'
 
         if not os.path.isfile(makefile_path):
-            raise Exception('makefile.py not found at path "%s"' % makefile_path)
+            raise PythonContextFileNotFoundException(makefile_path)
 
         try:
             sys.path.append(path)
@@ -160,8 +168,7 @@ class ContextFactory:
 
         except ImportError as e:
             print_exc()
-            print("\n==> Your Makefile contains a reference to not available or not installed Python module")
-            sys.exit(1)
+            raise NotImportedClassException(e)
 
         return Context(
             tasks=makefile.IMPORTS if "IMPORTS" in dir(makefile) else [],
@@ -197,8 +204,14 @@ class ContextFactory:
         ctx = Context([], [])
 
         for path in paths:
-            if os.path.isdir(path) and (os.path.isfile(path + '/makefile.py') or os.path.isfile(path + '/makefile.yaml')):
+            # not all paths could exist, we consider this, we look where it is possible
+            if not os.path.isdir(path):
+                continue
+
+            try:
                 ctx = Context.merge(ctx, self._load_context_from_directory(path))
+            except ContextFileNotFoundException:
+                pass
 
         ctx.compile()
         ctx.io = self._io
