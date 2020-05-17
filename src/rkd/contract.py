@@ -4,7 +4,9 @@ from abc import abstractmethod, ABC as AbstractClass
 from typing import Dict, List, Union
 from argparse import ArgumentParser
 from .inputoutput import IO
-from .exception import UndefinedEnvironmentVariableUsageError, EnvironmentVariableNotUsed
+from .exception import UndefinedEnvironmentVariableUsageError
+from .exception import EnvironmentVariableNotUsed
+from .exception import MissingInputException
 from .taskutil import TaskUtilities
 
 
@@ -117,17 +119,28 @@ class ExecutionContext:
         except KeyError:
             raise Exception('"%s" is not a defined argument')
 
+    # @todo: Coverage + static analysis in validator?
     def get_arg_or_env(self, name: str) -> Union[str, None]:
+        """Provides value of user input
+
+        Behavior:
+            When user provided explicitly switch eg. --history-id, then it's value will be taken in priority.
+            If switch --history-id was not used, but user provided HISTORY_ID environment variable,
+            then it will be considered.
+
+        Raises:
+            MissingInputException: When no switch and no environment variable was provided, then an exception is thrown.
+        """
         env_name = name[2:].replace('-', '_').upper()
+        arg_name = name[2:].replace('-', '_')
+
+        if self.args[arg_name] is not None:
+            return self.args[arg_name]
 
         try:
             return self.getenv(env_name, error_on_not_used=True)
         except EnvironmentVariableNotUsed:
-            pass
-
-        arg_name = name[2:].replace('-', '_')
-
-        return self.args[arg_name]
+            raise MissingInputException(name, env_name)
 
 
 class TaskInterface(TaskUtilities):
@@ -143,8 +156,7 @@ class TaskInterface(TaskUtilities):
         self._executor = executor
 
     def copy_internal_dependencies(self, task):
-        """
-        Allows to execute a task-in-task, by copying dependent services from one task to other task
+        """Allows to execute a task-in-task, by copying dependent services from one task to other task
         :api 0.2
         """
 
@@ -152,8 +164,7 @@ class TaskInterface(TaskUtilities):
 
     @abstractmethod
     def get_name(self) -> str:
-        """
-        Task name  eg. ":sh"
+        """Task name  eg. ":sh"
         :api 0.2
         """
         pass

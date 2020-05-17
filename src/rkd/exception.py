@@ -72,3 +72,14 @@ class EnvironmentVariablesFileNotFound(ContextException):
                 path, str(lookup_paths)
             )
         )
+
+
+class RuntimeException(Exception):
+    pass
+
+
+class MissingInputException(RuntimeException):
+    def __init__(self, arg_name: str, env_name: str):
+        super().__init__('Either "%s" switch not used, either "%s" was not defined in environment' % (
+            arg_name, env_name
+        ))
