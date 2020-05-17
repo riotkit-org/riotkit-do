@@ -6,9 +6,6 @@ python: 3.6
 before_script: ./setup.py install
     #pip install rkd  # todo: set fixed version
 
-env:
-  - RKD_COMPAT_SUBPROCESS=true
-
 jobs:
     allow_failures:
         env:
@@ -37,7 +34,7 @@ jobs:
           python: 3.6
           script:
               - ./setup.py install
-              - rkd :release
+              - RKD_COMPAT_SUBPROCESS=true rkd :release
 
         - stage: Test on Python 3.9 (allowed to fail)
           env: CAN_FAIL=true
