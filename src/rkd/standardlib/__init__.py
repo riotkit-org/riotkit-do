@@ -4,6 +4,7 @@ import os
 from typing import Dict
 from argparse import ArgumentParser
 from typing import Callable
+from copy import deepcopy
 from ..contract import TaskInterface, ExecutionContext, TaskDeclarationInterface
 from ..inputoutput import SystemIO
 
@@ -117,6 +118,7 @@ class CallableTask(TaskInterface):
     _name: str
     _group: str
     _description: str
+    _envs: dict
 
     def __init__(self, name: str, callback: Callable[[ExecutionContext, TaskInterface], bool],
                  args_callback: Callable[[ArgumentParser], None] = None,
@@ -127,6 +129,7 @@ class CallableTask(TaskInterface):
         self._args_callable = args_callback
         self._description = description
         self._group = group
+        self._envs = {}
 
     def get_name(self) -> str:
         return self._name
@@ -143,6 +146,12 @@ class CallableTask(TaskInterface):
 
     def execute(self, context: ExecutionContext) -> bool:
         return self._callable(context, self)
+
+    def push_env_variables(self, envs: dict):
+        self._envs = deepcopy(envs)
+
+    def get_declared_envs(self) -> Dict[str, str]:
+        return self._envs
 
 
 class VersionTask(TaskInterface):

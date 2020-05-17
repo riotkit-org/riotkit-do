@@ -3,11 +3,15 @@
 import os
 import sys
 import unittest
+from copy import deepcopy
 from tempfile import NamedTemporaryFile
 from typing import Tuple
+from contextlib import contextmanager
 from io import StringIO
 from rkd.inputoutput import IO
 from rkd import RiotKitDoApplication
+
+SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestFunctional(unittest.TestCase):
@@ -26,6 +30,16 @@ class TestFunctional(unittest.TestCase):
     def _restore_standard_out(self):
         sys.stdout = self._stdout
         sys.stderr = self._stderr
+
+    @contextmanager
+    def environment(self, environ: dict):
+        backup = deepcopy(os.environ)
+
+        try:
+            os.environ.update(environ)
+            yield
+        finally:
+            os.environ = backup
 
     def _run_and_capture_output(self, argv: list) -> Tuple[str, int]:
         io = IO()
@@ -138,3 +152,25 @@ class TestFunctional(unittest.TestCase):
         full_output, exit_code = self._run_and_capture_output([':tasks', '--help'])
         self.assertNotIn('- RKD_DEPTH (default: 0)', full_output)
         self.assertIn('-- No environment variables declared --', full_output)
+
+    def test_env_variables_loaded_from_various_sources(self):
+        """:hello task should print variables loaded globally and per-task using "environment" and "env_files"
+        """
+
+        with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/env-in-yaml/.rkd'}):
+            full_output, exit_code = self._run_and_capture_output([':hello'])
+
+            self.assertIn('Inline defined in this task: 17 May 1972 10,000 schoolchildren in the UK walked out on' +
+                          ' strike in protest against corporal punishment. Within two years, London state schools ' +
+                          'banned corporal punishment. The rest of the country followed in 1987.', full_output)
+
+            self.assertIn('Inline defined globally: 16 May 1966, seamen across the UK walked out on a nationwide ' +
+                          'strike for the first time in half a century. Holding solid for seven weeks, they won a' +
+                          ' reduction in working hours from 56 to 48 per week', full_output)
+
+            self.assertIn('Included globally - global.env: Jolanta Brzeska was a social activist against evictions,' +
+                          ' she was murdered - burned alive by reprivatization mafia', full_output)
+
+            self.assertIn('Included in task - per-task.env: 24 April 2013, the 8-storey Rana Plaza building in ' +
+                          'Bangladesh collapsed, killing over 1,000 garment workers, as bosses in the ' +
+                          'country\'s largest industry put profits before people', full_output)

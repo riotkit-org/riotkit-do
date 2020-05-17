@@ -3,11 +3,12 @@
 import os
 import sys
 import subprocess
+from typing import Optional
 from threading import Thread
 from io import StringIO
 
 
-def check_call(command: str, stdin=None):
+def check_call(command: str, stdin=None, script: Optional[str] = ''):
     os.environ['PYTHONUNBUFFERED'] = "1"
 
     stdout_pipe_r, stdout_pipe_w = os.pipe()
@@ -32,7 +33,7 @@ def check_call(command: str, stdin=None):
 
     if exit_code > 0:
         raise subprocess.CalledProcessError(
-            exit_code, command, stderr=err_buffer.getvalue(), output=out_buffer.getvalue()
+            exit_code, script if script else command, stderr=err_buffer.getvalue(), output=out_buffer.getvalue()
         )
 
 

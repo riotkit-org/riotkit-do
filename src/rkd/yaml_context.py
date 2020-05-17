@@ -5,8 +5,11 @@ import importlib
 from types import FunctionType
 from argparse import ArgumentParser
 from typing import List, Tuple, Union, Callable
-from traceback import format_exc
+from traceback import format_exc, print_exc
+from dotenv import dotenv_values
+from copy import deepcopy
 from .exception import YamlParsingException
+from .exception import EnvironmentVariablesFileNotFound
 from .inputoutput import IO
 from .syntax import TaskDeclaration, TaskAliasDeclaration
 from .standardlib import CallableTask
@@ -23,11 +26,12 @@ class YamlParser:
     def __init__(self, io: IO):
         self.io = io
 
-    def parse(self, content: str, rkd_path: str) -> Tuple[List[TaskDeclaration], List[TaskAliasDeclaration]]:
+    def parse(self, content: str, rkd_path: str, file_path: str) -> Tuple[List[TaskDeclaration], List[TaskAliasDeclaration]]:
         """ Parses whole YAML into entities same as in makefile.py - IMPORTS, TASKS """
 
         parsed = yaml.load(content, yaml.FullLoader)
         imports = []
+        global_envs = self.parse_env(parsed, file_path)
 
         if "imports" in parsed:
             imports = self.parse_imports(parsed['imports'])
@@ -35,23 +39,81 @@ class YamlParser:
         if "tasks" not in parsed or not isinstance(parsed, dict):
             raise YamlParsingException('"tasks" section not found in YAML file')
 
-        tasks = self.parse_tasks(parsed['tasks'], rkd_path)
+        tasks = self.parse_tasks(parsed['tasks'], rkd_path, file_path, global_envs)
 
         return imports + tasks, []
 
-    def parse_tasks(self, tasks: dict, rkd_path: str) -> List[TaskDeclaration]:
+    def parse_tasks(self, tasks: dict, rkd_path: str, makefile_path, global_envs: dict) -> List[TaskDeclaration]:
         """ Parse tasks section of YAML and creates rkd.standardlib.CallableTask type tasks """
 
         parsed_tasks: List[Union[TaskDeclaration, None]] = []
 
         for name, yaml_declaration in tasks.items():
-            parsed_tasks.append(self._parse_task(name, yaml_declaration, rkd_path))
+            parsed_tasks.append(self._parse_task(name, yaml_declaration, rkd_path, global_envs, makefile_path))
 
         return parsed_tasks
 
-    def _parse_task(self, name: str, yaml_declaration: dict, rkd_path: str) -> TaskDeclaration:
+    def parse_env(self, parent: dict, makefile_path: str):
+        """Parse environment variables from parent node
+
+        Priority (first - higher): 1) environment 2) env_files
+
+        Examples:
+            environment:
+                EVENT_NAME: "In memory of Maxwell Itoya, an Nigerian immigrant killed by police at flea market. He was innocent, and left wife with 3 kids."
+
+            env_files:
+                - .rkd/env/important-history-events.envs
+
+        Returns:
+            KV dictionary
+        """
+        envs = {}
+
+        if "env_files" in parent:
+            for path in parent['env_files']:
+                envs.update(self._load_env_from_file(path, makefile_path))
+
+        if "environment" in parent:
+            envs.update(parent['environment'])
+
+        return envs
+
+    def _load_env_from_file(self, path: str, makefile_path: str) -> dict:
+        """Load .env file
+
+        Loads .env file in Bash-like syntax from selected path (path to file, not directory).
+        Looks also in .rkd/{{path}} and in {{makefile_path}}/{{path}}
+
+        Arguments:
+            path: Path to file that contains env variables
+            makefile_path: Path to the Makefile.yaml that is being processed
+
+        Returns:
+            KV dictionary
+        """
+
+        search_paths = [
+            path,
+            '.rkd/' + path,
+            os.path.dirname(makefile_path) + '/' + path
+        ]
+
+        for search_path in search_paths:
+            if not os.path.isfile(search_path):
+                continue
+
+            return dotenv_values(dotenv_path=search_path)
+
+        raise EnvironmentVariablesFileNotFound(path, search_paths)
+
+    def _parse_task(self, name: str, yaml_declaration: dict, rkd_path: str,
+                    global_env: dict, makefile_path: str) -> TaskDeclaration:
+
         description = yaml_declaration['description'] if 'description' in yaml_declaration else ''
         arguments = yaml_declaration['arguments'] if 'arguments' in yaml_declaration else {}
+        envs = deepcopy(global_env)
+        envs.update(self.parse_env(yaml_declaration, makefile_path))
 
         try:
             steps = yaml_declaration['steps']
@@ -71,14 +133,14 @@ class YamlParser:
                 description=description,
                 group=group_name,
                 args_callback=self.create_arguments_callback(arguments),
-                callback=self.create_execution_callback_from_steps(steps, name, rkd_path)
+                callback=self.create_execution_callback_from_steps(steps, name, rkd_path, envs)
             )
         )
 
-    def create_execution_callback_from_steps(self, steps: List[str], task_name: str, rkd_path: str) \
+    def create_execution_callback_from_steps(self, steps: List[str], task_name: str, rkd_path: str, envs: dict) \
             -> Callable[[ExecutionContext, TaskInterface], bool]:
 
-        """ Creates implementation of TaskInterface.execute() - a callback that will execute all steps (callbacks) """
+        """Creates implementation of TaskInterface.execute() - a callback that will execute all steps (callbacks)"""
 
         steps_as_callbacks = []
         step_num = 0
@@ -98,9 +160,9 @@ class YamlParser:
                 code = "\n".join(as_lines[1:])
 
             if language == 'python':
-                steps_as_callbacks.append(self.create_python_callable(code, step_num, task_name, rkd_path))
+                steps_as_callbacks.append(self.create_python_callable(code, step_num, task_name, rkd_path, envs))
             elif language == 'bash':
-                steps_as_callbacks.append(self.create_bash_callable(code, step_num, task_name, rkd_path))
+                steps_as_callbacks.append(self.create_bash_callable(code, step_num, task_name, rkd_path, envs))
             else:
                 raise YamlParsingException('Unsupported step language "%s"' % language)
 
@@ -120,21 +182,29 @@ class YamlParser:
         return execute
 
     @staticmethod
-    def create_python_callable(code: str, step_num: int, task_name: str, rkd_path: str) \
-            -> Callable[[ExecutionContext, TaskInterface], bool]:
+    def create_python_callable(code: str, step_num: int, task_name: str, rkd_path: str, envs: dict) \
+            -> Callable[[ExecutionContext, CallableTask], bool]:
 
-        def execute(ctx: ExecutionContext, this: TaskInterface) -> bool:
+        def execute(ctx: ExecutionContext, this: CallableTask) -> bool:
+            env_backup = deepcopy(os.environ)
+
             # "ctx" and "this" will be available as a local context
             try:
+                # prepare environment
+                os.environ.update(envs)
                 os.environ['RKD_PATH'] = rkd_path
+                this.push_env_variables(os.environ)
                 filename = task_name + '@step ' + str(step_num)
 
+                # compile code
                 tree = ast.parse(code)
                 eval_expr = ast.Expression(tree.body[-1].value)
                 exec_expr = ast.Module(tree.body[:-1], type_ignores=[])
+
+                # run compiled code
                 exec(compile(exec_expr, filename, 'exec'))
 
-                return eval(compile(eval_expr, filename, 'eval'))
+                to_return = eval(compile(eval_expr, filename, 'eval'))
 
             except Exception as e:
                 this.io().error_msg('Error while executing step %i in task "%s". Exception: %s' % (
@@ -142,17 +212,23 @@ class YamlParser:
                 ))
                 this.io().error_msg(format_exc())
 
-                return False
+                to_return = False
+
+            finally:
+                os.environ = env_backup
+
+            return to_return
 
         return execute
 
     @staticmethod
-    def create_bash_callable(code: str, step_num: int, task_name: str, rkd_path: str) \
+    def create_bash_callable(code: str, step_num: int, task_name: str, rkd_path: str, envs: dict) \
             -> Callable[[ExecutionContext, TaskInterface], bool]:
 
         def execute(ctx: ExecutionContext, this: TaskInterface) -> bool:
             try:
                 args = {}
+                args.update(envs)
 
                 # assign arguments from ArgumentParser (argparse) to env variables
                 for name, value in ctx.args.items():

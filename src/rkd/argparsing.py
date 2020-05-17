@@ -41,6 +41,9 @@ class CommandlineParsingHelper:
         for part in commandline:
             cursor += 1
 
+            # normalize - strip out spaces to be able to detect "-", "--" and ":" at the beginning of string
+            part = part.strip()
+
             is_flag = part[0:1] == "-"
             is_task = part[0:1] == ":"
             previous_is_flag = commandline[cursor-1][0:1] == "-" if cursor >= 1 else False

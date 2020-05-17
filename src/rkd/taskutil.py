@@ -42,12 +42,13 @@ class TaskUtilities(AbstractClass):
         if strict:
             cmd = 'set -euo pipefail; ' + cmd
 
-        if env:
-            for name, value in env.items():
-                cmd = (" export %s='%s';\n" % (name, value)) + cmd
-
         if verbose:
             cmd = 'set -x; ' + cmd
+
+        if env:
+            for name, value in env.items():
+                value = '' if value is None else str(value).replace('"', '\\"')
+                cmd = (" export %s=\"%s\";\n" % (name, value)) + cmd
 
         bash_script = "#!/bin/bash -eopipefail \n" + cmd
         read, write = os.pipe()
@@ -55,7 +56,7 @@ class TaskUtilities(AbstractClass):
         os.close(write)
 
         if not capture:
-            check_call('bash', stdin=read)
+            check_call('bash', stdin=read, script=bash_script)
             return
 
         return check_output('bash', shell=True, stdin=read).decode('utf-8')

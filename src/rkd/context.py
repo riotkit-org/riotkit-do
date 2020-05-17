@@ -135,10 +135,10 @@ class ContextFactory:
             contexts.append(self._load_from_py(path))
 
         if os.path.isfile(path + '/makefile.yaml'):
-            contexts.append(self._load_from_yaml(path))
+            contexts.append(self._load_from_yaml(path, 'makefile.yaml'))
 
         if os.path.isfile(path + '/makefile.yml'):
-            contexts.append(self._load_from_yaml(path))
+            contexts.append(self._load_from_yaml(path, 'makefile.yml'))
 
         if not contexts:
             raise ContextFileNotFoundException(path)
@@ -148,11 +148,11 @@ class ContextFactory:
 
         return ctx
 
-    def _load_from_yaml(self, path: str) -> Context:
-        makefile_path = path + '/makefile.yaml'
+    def _load_from_yaml(self, path: str, filename: str) -> Context:
+        makefile_path = path + '/' + filename
 
         with open(makefile_path, 'rb') as handle:
-            imports, tasks = YamlParser(self._io).parse(handle.read().decode('utf-8'), path)
+            imports, tasks = YamlParser(self._io).parse(handle.read().decode('utf-8'), path, makefile_path)
             return Context(tasks=imports, aliases=tasks)
 
     @staticmethod

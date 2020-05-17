@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
 import unittest
+import os
 from io import StringIO
 from rkd.yaml_context import YamlParser
 from rkd.inputoutput import IO, NullSystemIO, BufferedSystemIO
 from rkd.exception import DeclarationException, YamlParsingException
 from rkd.contract import ExecutionContext
 from rkd.test import get_test_declaration
+
+SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestYamlContext(unittest.TestCase):
@@ -65,7 +68,7 @@ class TestYamlContext(unittest.TestCase):
 
         io = IO()
         factory = YamlParser(io)
-        parsed_tasks = factory.parse_tasks(input_tasks, '')
+        parsed_tasks = factory.parse_tasks(input_tasks, '', './makefile.yaml', {})
 
         self.assertEqual(':resistentia', parsed_tasks[0].to_full_name(),
                          msg='Expected that the task name will be present')
@@ -98,7 +101,7 @@ print(syntax-error-here)
 
         io = BufferedSystemIO()
         factory = YamlParser(io)
-        parsed_tasks = factory.parse_tasks(input_tasks, '')
+        parsed_tasks = factory.parse_tasks(input_tasks, '', 'makefile.yaml', {})
 
         declaration = parsed_tasks[0]
         declaration.get_task_to_execute()._io = IO()
@@ -111,16 +114,18 @@ print(syntax-error-here)
         self.assertIn("NameError: name 'syntax' is not defined", io.get_value(), msg='Error message should be attached')
         self.assertIn('File ":song@step 1", line 1', io.get_value(), msg='Stacktrace should be attached')
 
-    def _create_callable_tester(self, code: str, language: str) -> bool:
-        io = BufferedSystemIO()
+    def _create_callable_tester(self, code: str, language: str, io: IO = None) -> bool:
+        if not io:
+            io = BufferedSystemIO()
+
         factory = YamlParser(io)
 
         declaration = get_test_declaration()
 
         if language == 'python':
-            execute_callable = factory.create_python_callable(code, 500, ':test', '/some/path')
+            execute_callable = factory.create_python_callable(code, 500, ':test', '/some/path', {})
         else:
-            execute_callable = factory.create_bash_callable(code, 500, ':test', '/some/path')
+            execute_callable = factory.create_bash_callable(code, 500, ':test', '/some/path', {})
 
         result = execute_callable(ExecutionContext(declaration), declaration.get_task_to_execute())
 
@@ -152,7 +157,6 @@ impppport os
         self.assertFalse(result)
 
     def test_create_python_callable_case_multiline_with_imports_and_call_to_this(self):
-
         result = self._create_callable_tester('''
 import os
 
@@ -171,3 +175,35 @@ return "ExecutionContext" in str(ctx) and "Task" in str(this)
             self._create_callable_tester('echo "Boolean: ${ARG_TEST}, Text: ${ARG_MESSAGE}"', language='bash')
 
         self.assertIn('ARG_TEST: unbound variable', out.getvalue())
+
+    def test_parse_env_parses_environment_variables_added_manually(self):
+        """Test "environment" block
+        """
+
+        io = IO()
+        factory = YamlParser(io)
+        envs = factory.parse_env({
+            'environment': {
+                'EVENT_NAME': 'In memory of Maxwell Itoya, an Nigerian immigrant killed by police at flea market.' +
+                              ' He was innocent, and left wife with 3 kids.'
+            }
+        }, 'make/file/path/makefile.yaml')
+
+        self.assertIn('EVENT_NAME', envs)
+        self.assertIn('Maxwell Itoya', envs['EVENT_NAME'])
+
+    def test_parse_env_parses_environment_variables_from_file(self):
+        """Check if envs are loaded from file correctly
+        """
+
+        io = IO()
+        factory = YamlParser(io)
+        envs = factory.parse_env({
+            'env_files': [
+                SCRIPT_DIR_PATH + '/../docs/examples/env-in-yaml/.rkd/env/global.env'
+            ]
+        }, SCRIPT_DIR_PATH + '/../docs/examples/env-in-yaml/.rkd/makefile.yml')
+
+        self.assertIn('TEXT', envs)
+        self.assertIn('Jolanta Brzeska was a social activist against evictions, ' +
+                      'she was murdered - burned alive by reprivatization mafia', envs['TEXT'])

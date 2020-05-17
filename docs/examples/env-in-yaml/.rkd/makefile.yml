@@ -1,0 +1,19 @@
+version: org.riotkit.rkd/0.3
+
+environment:
+    GLOBALLY_DEFINED: "16 May 1966, seamen across the UK walked out on a nationwide strike for the first time in half a century. Holding solid for seven weeks, they won a reduction in working hours from 56 to 48 per week "
+
+env_files:
+    - env/global.env
+
+tasks:
+    :hello:
+        environment:
+            INLINE_PER_TASK: "17 May 1972 10,000 schoolchildren in the UK walked out on strike in protest against corporal punishment. Within two years, London state schools banned corporal punishment. The rest of the country followed in 1987."
+        env_files: ['env/per-task.env']
+        steps: |
+            echo " >> ENVIRONMENT VARIABLES DEMO"
+            echo "Inline defined in this task: ${INLINE_PER_TASK}\n\n"
+            echo "Inline defined globally: ${GLOBALLY_DEFINED}\n\n"
+            echo "Included globally - global.env: ${TEXT_FROM_GLOBAL_ENV}\n\n"
+            echo "Included in task - per-task.env: ${TEXT_PER_TASK_FROM_FILE}\n\n"

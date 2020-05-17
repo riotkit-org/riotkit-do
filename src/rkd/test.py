@@ -1,11 +1,13 @@
 from typing import Dict
 from argparse import ArgumentParser
 from .syntax import TaskDeclaration
-from .contract import TaskInterface, ExecutionContext
+from .contract import TaskInterface
+from .contract import ExecutionContext
+from .standardlib import CallableTask
 from .inputoutput import NullSystemIO
 
 
-class TestTask(TaskInterface):
+class TestTask(CallableTask):
     def __init__(self):
         self._io = NullSystemIO()
 

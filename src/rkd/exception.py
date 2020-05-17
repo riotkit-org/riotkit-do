@@ -61,3 +61,14 @@ class NotImportedClassException(ContextException):
         super().__init__(
             'Your Makefile contains a reference to not available or not installed Python module "%s"' % str(exc)
         )
+
+
+class EnvironmentVariablesFileNotFound(ContextException):
+    """.env file specified, but not existing"""
+
+    def __init__(self, path: str, lookup_paths: list):
+        super().__init__(
+            'Specified file "%s" as environment variable provider does not exist. Looked in: %s' % (
+                path, str(lookup_paths)
+            )
+        )
