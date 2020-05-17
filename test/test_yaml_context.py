@@ -204,6 +204,6 @@ return "ExecutionContext" in str(ctx) and "Task" in str(this)
             ]
         }, SCRIPT_DIR_PATH + '/../docs/examples/env-in-yaml/.rkd/makefile.yml')
 
-        self.assertIn('TEXT', envs)
+        self.assertIn('TEXT_FROM_GLOBAL_ENV', envs)
         self.assertIn('Jolanta Brzeska was a social activist against evictions, ' +
-                      'she was murdered - burned alive by reprivatization mafia', envs['TEXT'])
+                      'she was murdered - burned alive by reprivatization mafia', envs['TEXT_FROM_GLOBAL_ENV'])
