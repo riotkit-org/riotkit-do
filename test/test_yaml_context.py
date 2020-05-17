@@ -46,8 +46,7 @@ class TestYamlContext(unittest.TestCase):
         self.assertRaises(YamlParsingException, test)
 
     def test_parse_tasks_successful_case(self):
-        """
-        Successful case with description, arguments and bash steps
+        """Successful case with description, arguments and bash steps
         """
 
         input_tasks = {
@@ -61,12 +60,13 @@ class TestYamlContext(unittest.TestCase):
                     }
                 },
                 'steps': [
-                    'rm -f /tmp/.test_parse_tasks && echo "Resistentia!" > /tmp/.test_parse_tasks'
+                    'echo "Resistentia!"'
                 ]
             }
         }
 
         io = IO()
+        out = StringIO()
         factory = YamlParser(io)
         parsed_tasks = factory.parse_tasks(input_tasks, '', './makefile.yaml', {})
 
@@ -75,11 +75,11 @@ class TestYamlContext(unittest.TestCase):
 
         declaration = parsed_tasks[0]
         declaration.get_task_to_execute()._io = NullSystemIO()
-        declaration.get_task_to_execute().execute(ExecutionContext(declaration))
 
-        with open('/tmp/.test_parse_tasks', 'r') as test_helper:
-            self.assertIn('Resistentia!', test_helper.read(),
-                          msg='Expected that echo contents will be visible')
+        with io.capture_descriptors(stream=out, enable_standard_out=False):
+            declaration.get_task_to_execute().execute(ExecutionContext(declaration))
+
+        self.assertIn('Resistentia!', out.getvalue(), msg='Expected that echo contents will be visible')
 
     def test_parse_tasks_signals_error_instead_of_throwing_exception(self):
         """
@@ -108,6 +108,7 @@ print(syntax-error-here)
         task = declaration.get_task_to_execute()
         task._io = io
 
+        # execute prepared task
         result = task.execute(ExecutionContext(declaration))
 
         self.assertEqual(False, result, msg='Expected that syntax error would result in a failure')
@@ -134,12 +135,14 @@ print(syntax-error-here)
     def test_create_bash_callable_successful_case(self):
         """ Bash callable test: Successful case """
 
-        result = self._create_callable_tester('python --version > /tmp/.test_create_bash_callable_successful_case',
-                                              language='bash')
+        io = IO()
+        out = StringIO()
 
-        with open('/tmp/.test_create_bash_callable_successful_case', 'r') as test_result:
-            self.assertIn("Python", test_result.read())
-            self.assertTrue(result, msg='python --version should result with a True')
+        with io.capture_descriptors(stream=out, enable_standard_out=False):
+            self._create_callable_tester('python --version', language='bash')
+
+        self.assertIn("Python", out.getvalue())
+        self.assertTrue(out.getvalue(), msg='python --version should result with a True')
 
     def test_create_bash_callable_failure_case_on_invalid_exit_code(self):
         """ Bash callable test: Check if failures are correctly catched """
