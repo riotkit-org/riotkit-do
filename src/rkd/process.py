@@ -9,6 +9,10 @@ from io import StringIO
 
 
 def check_call(command: str, stdin=None, script: Optional[str] = ''):
+    if os.getenv('RKD_COMPAT_SUBPROCESS') == 'true':
+        subprocess.check_call(command, stdin=stdin, shell=True)
+        return
+
     os.environ['PYTHONUNBUFFERED'] = "1"
 
     stdout_pipe_r, stdout_pipe_w = os.pipe()
