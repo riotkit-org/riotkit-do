@@ -96,11 +96,11 @@ class TasksListingTask(TaskInterface):
 
                 try:
                     description = declaration.get_description()
-                    text_description = "\t\t\t# " + description if description else ""
+                    text_description = "# " + description if description else ""
                 except AttributeError:
                     text_description = ""
 
-                io.outln(task_name + text_description)
+                io.outln(task_name.ljust(50, ' ') + text_description)
 
             io.print_opt_line()
 
