@@ -2,6 +2,7 @@
 
 import unittest
 import os
+import yaml
 from io import StringIO
 from rkd.yaml_context import YamlParser
 from rkd.inputoutput import IO, NullSystemIO, BufferedSystemIO
@@ -210,3 +211,36 @@ return "ExecutionContext" in str(ctx) and "Task" in str(this)
         self.assertIn('TEXT_FROM_GLOBAL_ENV', envs)
         self.assertIn('Jolanta Brzeska was a social activist against evictions, ' +
                       'she was murdered - burned alive by reprivatization mafia', envs['TEXT_FROM_GLOBAL_ENV'])
+
+    def test_parse_env_preserves_variables_order(self):
+        """Make sure that the environment variables are loaded in order they were defined
+        """
+
+        yaml_content = '''
+environment:
+    FIRST:  "Jolanta Brzeska"
+    SECOND: "Maxwell Itoya"
+    THIRD:  "August Spies"
+    FOURTH: "Samuel Fielden"
+        '''
+
+        expected_order = [
+            "Jolanta Brzeska",
+            "Maxwell Itoya",
+            "August Spies",
+            "Samuel Fielden"
+        ]
+
+        for i in range(1, 10000):
+            parsed = yaml.load(yaml_content, yaml.FullLoader)
+
+            io = IO()
+            factory = YamlParser(io)
+            envs = factory.parse_env(parsed, 'makefile.yaml')
+
+            names_in_order = []
+
+            for env_name, value in envs.items():
+                names_in_order.append(env_name)
+
+            self.assertEqual(expected_order, list(envs.values()))

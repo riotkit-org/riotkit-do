@@ -45,10 +45,15 @@ class TaskUtilities(AbstractClass):
         if verbose:
             cmd = 'set -x; ' + cmd
 
+        # append environment variables in order
         if env:
+            env_str = ""
+
             for name, value in env.items():
                 value = '' if value is None else str(value).replace('"', '\\"')
-                cmd = (" export %s=\"%s\";\n" % (name, value)) + cmd
+                env_str = env_str + (" export %s=\"%s\";\n" % (name, value))
+
+            cmd = env_str + cmd
 
         bash_script = "#!/bin/bash -eopipefail \n" + cmd
         read, write = os.pipe()

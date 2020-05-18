@@ -5,15 +5,18 @@ import importlib
 from types import FunctionType
 from argparse import ArgumentParser
 from typing import List, Tuple, Union, Callable
-from traceback import format_exc, print_exc
+from traceback import format_exc
 from dotenv import dotenv_values
 from copy import deepcopy
+from collections import OrderedDict
 from .exception import YamlParsingException
 from .exception import EnvironmentVariablesFileNotFound
-from .inputoutput import IO
-from .syntax import TaskDeclaration, TaskAliasDeclaration
+from .syntax import TaskDeclaration
+from .syntax import TaskAliasDeclaration
+from .contract import ExecutionContext
+from .contract import TaskInterface
 from .standardlib import CallableTask
-from .contract import ExecutionContext, TaskInterface
+from .inputoutput import IO
 
 
 class YamlParser:
@@ -43,8 +46,15 @@ class YamlParser:
 
         return imports + tasks, []
 
-    def parse_tasks(self, tasks: dict, rkd_path: str, makefile_path, global_envs: dict) -> List[TaskDeclaration]:
-        """ Parse tasks section of YAML and creates rkd.standardlib.CallableTask type tasks """
+    def parse_tasks(self, tasks: dict, rkd_path: str, makefile_path, global_envs: OrderedDict) -> List[TaskDeclaration]:
+        """ Parse tasks section of YAML and creates rkd.standardlib.CallableTask type tasks
+
+        Arguments:
+            tasks: List of tasks
+            rkd_path: Path to the .rkd directory
+            makefile_path: Path to the makefile.yaml/yml that is being parsed
+            global_envs: Environment defined in global scope of YAML document (WITHOUT os.environ)
+        """
 
         parsed_tasks: List[Union[TaskDeclaration, None]] = []
 
@@ -53,7 +63,7 @@ class YamlParser:
 
         return parsed_tasks
 
-    def parse_env(self, parent: dict, makefile_path: str):
+    def parse_env(self, parent: dict, makefile_path: str) -> OrderedDict:
         """Parse environment variables from parent node
 
         Priority (first - higher): 1) environment 2) env_files
@@ -68,7 +78,7 @@ class YamlParser:
         Returns:
             KV dictionary
         """
-        envs = {}
+        envs = OrderedDict()
 
         if "env_files" in parent:
             for path in parent['env_files']:
@@ -79,7 +89,8 @@ class YamlParser:
 
         return envs
 
-    def _load_env_from_file(self, path: str, makefile_path: str) -> dict:
+    @staticmethod
+    def _load_env_from_file(path: str, makefile_path: str) -> dict:
         """Load .env file
 
         Loads .env file in Bash-like syntax from selected path (path to file, not directory).
@@ -108,12 +119,15 @@ class YamlParser:
         raise EnvironmentVariablesFileNotFound(path, search_paths)
 
     def _parse_task(self, name: str, yaml_declaration: dict, rkd_path: str,
-                    global_env: dict, makefile_path: str) -> TaskDeclaration:
+                    global_env: OrderedDict, makefile_path: str) -> TaskDeclaration:
 
         description = yaml_declaration['description'] if 'description' in yaml_declaration else ''
         arguments = yaml_declaration['arguments'] if 'arguments' in yaml_declaration else {}
+
+        # important: order of environment variables loading
         envs = deepcopy(global_env)
         envs.update(self.parse_env(yaml_declaration, makefile_path))
+        envs.update(deepcopy(os.environ))
 
         try:
             steps = yaml_declaration['steps']
@@ -227,15 +241,18 @@ class YamlParser:
 
         def execute(ctx: ExecutionContext, this: TaskInterface) -> bool:
             try:
-                args = {}
-                args.update(envs)
-
                 # assign arguments from ArgumentParser (argparse) to env variables
+                args = OrderedDict()
                 for name, value in ctx.args.items():
                     args['ARG_' + name.upper()] = value
 
-                this.sh(code, strict=True,
-                        env={'RKD_PATH': rkd_path, **args, 'RKD_DEPTH': int(os.getenv('RKD_DEPTH', 0)) + 1})
+                # glue all environment variables
+                process_env = OrderedDict()
+                process_env.update(envs)
+                process_env.update(args)
+                process_env.update({'RKD_PATH': rkd_path, 'RKD_DEPTH': int(os.getenv('RKD_DEPTH', 0)) + 1})
+
+                this.sh(code, strict=True, env=process_env)
                 return True
 
             except Exception as e:

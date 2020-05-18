@@ -3,6 +3,7 @@
 import unittest
 import os
 import subprocess
+from collections import OrderedDict
 from io import StringIO
 from rkd.standardlib import InitTask
 from rkd.inputoutput import IO
@@ -91,3 +92,19 @@ class TestTaskInterface(unittest.TestCase):
         except subprocess.CalledProcessError as e:
             self.assertEqual("Freedom, Equality, Mutual Aid!\n", e.output)
             self.assertEqual("The state and capitalism is failing\n", e.stderr)
+
+    def test_sh_has_valid_order_of_defining_environment_variables(self):
+        """Checks if built-in sh() method is registering variables in proper order
+        """
+
+        task = InitTask()
+
+        envs = OrderedDict()
+        envs['ENV_NAME'] = 'riotkit'
+        envs['COMPOSE_CMD'] = 'docker-compose -p ${ENV_NAME}'
+
+        out = task.sh('''
+            echo "${COMPOSE_CMD} up -d"
+        ''', env=envs, capture=True)
+
+        self.assertEqual('docker-compose -p riotkit up -d', out.strip())
