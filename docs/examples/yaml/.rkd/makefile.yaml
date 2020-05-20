@@ -3,6 +3,8 @@ imports:
   - rkd.standardlib.docker.TagImageTask
 
 tasks:
+  # see this task in "rkd :tasks"
+  # run with "rkd :examples:bash-test"
   :examples:bash-test:
       description: Execute an example command in bash - show only python related tasks
       steps: |
@@ -10,6 +12,7 @@ tasks:
              echo "RKD_PATH: ${RKD_PATH}"
              rkd --silent :tasks | grep ":py"
 
+  # try "rkd :examples:arguments-test --text=Hello --test-boolean"
   :examples:arguments-test:
       description: Show example usage of arguments in Bash
       arguments:
@@ -32,6 +35,7 @@ tasks:
           print(' Text: %s ' % str(ctx.args['test_boolean']))
           return True
 
+  # run with "rkd :examples:list-standardlib-modules"
   :examples:list-standardlib-modules:
       description: List all modules in the standardlib
       steps:
