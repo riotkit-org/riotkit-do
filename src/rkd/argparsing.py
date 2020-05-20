@@ -7,7 +7,7 @@ from .contract import TaskDeclarationInterface
 from .exception import TaskNotFoundException
 
 
-class TaskArguments:
+class TaskArguments(object):
     _name: str
     _args: list
 
@@ -25,7 +25,7 @@ class TaskArguments:
         return self._args
 
 
-class CommandlineParsingHelper:
+class CommandlineParsingHelper(object):
     """
     Extends argparse functionality by grouping arguments into tasks -> tasks arguments
     """
@@ -72,7 +72,7 @@ class CommandlineParsingHelper:
         return tasks
 
     @classmethod
-    def get_parsed_vars_for_task(cls, task: TaskDeclarationInterface, args: list):
+    def parse(cls, task: TaskDeclarationInterface, args: list):
         argparse = ArgumentParser(task.to_full_name(), formatter_class=RawTextHelpFormatter)
 
         argparse.add_argument('--log-to-file', '-rf', help='Capture stdout and stderr to file')

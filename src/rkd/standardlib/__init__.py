@@ -50,7 +50,7 @@ class InitTask(TaskInterface):
         if context.args['log_level']:
             self._ctx.io.set_log_level(context.args['log_level'])
 
-        if int(context.getenv('RKD_DEPTH')) >= 1 or context.args['no_ui']:
+        if int(context.get_env('RKD_DEPTH')) >= 1 or context.args['no_ui']:
             self._ctx.io.set_display_ui(False)
 
         return True

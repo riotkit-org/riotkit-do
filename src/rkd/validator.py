@@ -10,7 +10,7 @@ class TaskDeclarationValidator:
     @staticmethod
     def assert_declaration_is_valid(task: TaskDeclaration, parent: Union[GroupDeclaration, None] = None, args: list = []):
         # check if arguments are satisfied
-        CommandlineParsingHelper.get_parsed_vars_for_task(task, args)
+        CommandlineParsingHelper.parse(task, args)
 
         # validate environment variables
         allowed_envs = task.get_task_to_execute().get_declared_envs()

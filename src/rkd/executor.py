@@ -32,7 +32,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
         self._observer.task_started(declaration, parent, args)
 
         # 2. execute
-        parsed_args = CommandlineParsingHelper.get_parsed_vars_for_task(declaration, args)
+        parsed_args = CommandlineParsingHelper.parse(declaration, args)
         try:
             io = IO()
             io.set_log_level(parsed_args['log_level'] if parsed_args['log_level'] else self.io.get_log_level())

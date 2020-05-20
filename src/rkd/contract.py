@@ -1,7 +1,7 @@
 
 
 from abc import abstractmethod, ABC as AbstractClass
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 from argparse import ArgumentParser
 from .inputoutput import IO
 from .exception import UndefinedEnvironmentVariableUsageError
@@ -108,39 +108,50 @@ class ExecutionContext:
         self.args = args
         self.env = env
 
-    def getenv(self, name: str, error_on_not_used: bool = False):
+    def get_env(self, name: str, error_on_not_used: bool = False):
         """ Get environment variable value """
         return self.declaration.get_task_to_execute().internal_getenv(name, self.env,
                                                                       error_on_not_used=error_on_not_used)
 
-    def getarg(self, name: str) -> Union[str, None]:
-        try:
-            return self.args[name]
-        except KeyError:
-            raise Exception('"%s" is not a defined argument')
-
     # @todo: Coverage + static analysis in validator?
     def get_arg_or_env(self, name: str) -> Union[str, None]:
         """Provides value of user input
+
+        Examples:
+            get_arg_or_env('--file-path') resolves into FILE_PATH env variable, and --file-path switch (file_path in argparse)
 
         Behavior:
             When user provided explicitly switch eg. --history-id, then it's value will be taken in priority.
             If switch --history-id was not used, but user provided HISTORY_ID environment variable,
             then it will be considered.
 
+            If no switch provided and no environment variable provided, but a switch has default value - it would be returned.
+            If no switch provided and no environment variable provided, the switch does not have default, but environment variable has a default value defined, it would be returned.
+
         Raises:
             MissingInputException: When no switch and no environment variable was provided, then an exception is thrown.
         """
         env_name = name[2:].replace('-', '_').upper()
-        arg_name = name[2:].replace('-', '_')
 
-        if self.args[arg_name] is not None:
-            return self.args[arg_name]
+        # --some-switch was used
+        try:
+            value = self.get_arg(name)
+
+            if value is not None:
+                return value
+
+        except KeyError:
+            pass
 
         try:
-            return self.getenv(env_name, error_on_not_used=True)
+            return self.get_env(env_name, error_on_not_used=True)
         except EnvironmentVariableNotUsed:
             raise MissingInputException(name, env_name)
+
+    def get_arg(self, name: str) -> Optional[str]:
+        arg_name = name[2:].replace('-', '_')
+
+        return self.args[arg_name]
 
 
 class TaskInterface(TaskUtilities):
