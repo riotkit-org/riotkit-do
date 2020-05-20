@@ -24,6 +24,7 @@ Creating simple tasks in YAML syntax
 3. "description" is an optional text field that puts a description visible in ":tasks" task
 4. "environment" is a dict of environment variables that can be defined
 5. "env_files" is a list of paths to .env files that should be included
+6. "imports" imports a Python package that contains tasks to be used in the makefile and in shell usage
 
 Developing a Python package
 ---------------------------
