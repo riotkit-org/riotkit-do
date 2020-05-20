@@ -2,18 +2,25 @@
 Riotkit Do (RKD)
 ================
 
-Quick start
------------
+RKD is delivered as a Python Package. To extend RKD with additional tasks you need to install them via PIP or (simpler) define in makefile.py/makefile.yaml
 
-RKD is delivered as a Python Package. All externally provided tasks should be also installable via Python's PIP.
+Bootstrap RKD in your project
+-----------------------------
+
+The preferred way to setup RKD is virtualenv.
+
+With requirements.txt and virtualenv you can fully control versioning of RKD and it's components provided by open-source community. You decide when you are ready to upgrade.
 
 .. code:: bash
 
     virtualenv .venv
     source .venv/bin/activate
 
-    echo "rkd" > requirements.txt
-    #echo "rkd==0.1" > requirements.txt  # better choose a stable tag and use fixed version for stability
+    echo "rkd<=0.5" > requirements.txt # better choose a stable tag and use fixed version for stability
+
+    # example of installing component from external package/repository
+    # later you need to activate it in makefile.yaml or in makefile.py - check later other chapter "Importing tasks"
+    # echo "rkt_ciutils<=3.0"
 
     pip install -r requirements.txt
     rkd :rkd:create-structure
@@ -21,7 +28,11 @@ RKD is delivered as a Python Package. All externally provided tasks should be al
 Conception
 ----------
 
-Simple task executor with clear rules and early validation of input parameters.
+Fact that Makefile, Gradle and other build systems are strictly for development, RiotKit decided to create RKD with DevOps in mind.
+Everything could be done like in Makefile via YAML syntax, or in Python, because DevOps love Python! :)
+
+
+In effect a simple task executor with clear rules and early validation of input parameters was created.
 Each task specified to be run is treated like a separate application - has it's own parameters, by default inherits global settings but those could be overridden.
 The RKD version and version of any installed tasks are managed by Python Packaging.
 
@@ -49,115 +60,11 @@ The RKD version and version of any installed tasks are managed by Python Packagi
 .. image:: ../python.png
 
 
-Usage in shell
---------------
-
-Tasks are prefixed always with ":".
-Each task can handle it's own arguments.
-
-Tasks arguments usage
-~~~~~~~~~~~~~~~~~~~~~
-
-*makefile.py*
-
-.. code:: python
-
-
-    from rkd.syntax import TaskDeclaration, TaskAliasDeclaration
-    from rkd.standardlib.python import PublishTask
-
-    IMPORTS = [
-        TaskDeclaration(PublishTask())
-    ]
-
-    TASKS = [
-        TaskAliasDeclaration(':my:test', [':py:publish', '--username=...', '--password=...'])
-    ]
-
-**Example of calling same task twice, but with different input**
-
-Notes for this example: The "username" parameter is a default defined in
-``makefile.py`` in this case.
-
-.. code:: bash
-
-    $ rkd :my:test --password=first :my:test --password=second
-     >> Executing :py:publish
-    Publishing
-    {'username': '...', 'password': 'first'}
-
-     >> Executing :py:publish
-    Publishing
-    {'username': '...', 'password': 'second'}
-
-**Example of calling same task twice, with no extra arguments**
-
-In this example the argument values "..." are taken from ``makefile.py``
-
-.. code:: bash
-
-    $ rkd :my:test :my:test
-     >> Executing :py:publish
-    Publishing
-    {'username': '...', 'password': '...'}
-
-     >> Executing :py:publish
-    Publishing
-    {'username': '...', 'password': '...'}
-
-**Example of --help per command:**
-
-.. code:: bash
-
-    $ rkd :my:test :my:test --help
-    usage: :py:publish [-h] [--username USERNAME] [--password PASSWORD]
-
-    optional arguments:
-      -h, --help           show this help message and exit
-      --username USERNAME  Username
-      --password PASSWORD  Password
-
-Simplified - YAML syntax
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-YAML syntax has an advantage of simplicity and clean syntax, custom bash tasks can be defined there easier than in Python.
-To use YAML you need to define **makefile.yaml** file in .rkd directory.
-
-**NOTICE: makefile.py and makefile.yaml can exist together. Python version will be loaded first, the YAML version will append changes in priority.**
-
-.. literalinclude:: ../examples/yaml/.rkd/makefile.yaml
-
-Paths and inheritance
-~~~~~~~~~~~~~~~~~~~~~
-
-RKD by default search for .rkd directory in current execution directory - `./.rkd`.
-
-
-**The search order is following (from lower to higher load priority):**
-
-1. RKD's internals (we provide a standard tasks like `:tasks`, `:init`, `:sh`, `:exec` and more)
-2. `/usr/lib/rkd`
-3. User's home `~/.rkd`
-4. Current directory `./.rkd`
-5. `RKD_PATH`
-
-**Custom path defined via environment variable**
-
-RKD_PATH allows to define multiple paths that would be considered in priority.
-
-`RKD_PATH="/some/path:/some/other/path:/home/user/riotkit/.rkd-second"`
-
-**How the makefile.py are loaded?**
-
-Each makefile.py is loaded in order, next makefile.py can override tasks of previous.
-That's why we at first load internals, then your tasks.
-
-
-
 .. toctree::
    :maxdepth: 5
    :caption: Contents:
 
+   quickstart
    standardlib/index
    usage/index
 

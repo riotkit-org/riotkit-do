@@ -3,12 +3,12 @@
 #
 
 from rkd.syntax import TaskDeclaration
-from rkd.standardlib.shell import ShellCommand, ExecProcessCommand
+from rkd.standardlib.shell import ShellCommandTask, ExecProcessCommand
 from rkd.standardlib import InitTask, TasksListingTask, VersionTask, CreateStructureTask
 
 
 IMPORTS = [
-    TaskDeclaration(ShellCommand()),
+    TaskDeclaration(ShellCommandTask()),
     TaskDeclaration(ExecProcessCommand()),
     TaskDeclaration(InitTask()),
     TaskDeclaration(TasksListingTask()),

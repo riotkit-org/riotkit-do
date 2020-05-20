@@ -8,3 +8,5 @@ Usage
    importing-tasks
    troubleshooting
    loading-priority
+   developing-tasks
+   tasks-api

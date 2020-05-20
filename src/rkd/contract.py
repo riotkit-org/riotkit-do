@@ -117,7 +117,7 @@ class ExecutionContext:
     def get_arg_or_env(self, name: str) -> Union[str, None]:
         """Provides value of user input
 
-        Examples:
+        Usage:
             get_arg_or_env('--file-path') resolves into FILE_PATH env variable, and --file-path switch (file_path in argparse)
 
         Behavior:
@@ -160,7 +160,7 @@ class TaskInterface(TaskUtilities):
     _executor: ExecutorInterface
 
     def internal_inject_dependencies(self, io: IO, ctx: ContextInterface, executor: ExecutorInterface):
-        """ Internal method to inject services (do not confuse with current execution context) """
+        """"""  # sphinx: skip
 
         self._io = io
         self._ctx = ctx
@@ -213,6 +213,7 @@ class TaskInterface(TaskUtilities):
         return {}
 
     def internal_getenv(self, env_name: str, envs: Dict[str, str], error_on_not_used: bool = False) -> str:
+        """"""
         declared_envs = self.get_declared_envs()
 
         if env_name not in declared_envs:

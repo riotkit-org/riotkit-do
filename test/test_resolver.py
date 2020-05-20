@@ -4,7 +4,7 @@ import unittest
 from typing import Union
 from rkd.context import Context
 from rkd.resolver import TaskResolver
-from rkd.standardlib.shell import ShellCommand
+from rkd.standardlib.shell import ShellCommandTask
 from rkd.syntax import TaskDeclaration, GroupDeclaration, TaskAliasDeclaration
 from rkd.argparsing import TaskArguments
 
@@ -17,7 +17,7 @@ class TestResolver(unittest.TestCase):
         """
 
         context = Context(
-            tasks=[TaskDeclaration(ShellCommand())],
+            tasks=[TaskDeclaration(ShellCommandTask())],
             aliases=[
                 TaskAliasDeclaration(':test', [':sh', '-c', 'uname -a', ':sh', '-c', 'ps aux'],
                                      description='Task for testing')
@@ -43,7 +43,7 @@ class TestResolver(unittest.TestCase):
 
     def test_resoles_regular_task(self):
         context = Context(
-            tasks=[TaskDeclaration(ShellCommand())],
+            tasks=[TaskDeclaration(ShellCommandTask())],
             aliases=[]
         )
 

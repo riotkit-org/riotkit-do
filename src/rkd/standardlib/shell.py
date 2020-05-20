@@ -5,10 +5,9 @@ from typing import Callable
 from ..contract import TaskInterface, ExecutionContext
 
 
-class ShellCommand(TaskInterface):
-    """
-    Executes shell scripts
-    """
+# <sphinx=shell-command>
+class ShellCommandTask(TaskInterface):
+    """Executes shell scripts"""
 
     def get_name(self) -> str:
         return ':sh'
@@ -20,13 +19,16 @@ class ShellCommand(TaskInterface):
         parser.add_argument('--cmd', '-c', help='Shell command', required=True)
 
     def execute(self, context: ExecutionContext) -> bool:
+        # self.sh() and self.io() are part of TaskUtilities via TaskInterface
+
         try:
             self.sh(context.args['cmd'], capture=False)
         except CalledProcessError as e:
-            self._io.error_msg(str(e))
+            self.io().error_msg(str(e))
             return False
 
         return True
+# </sphinx=shell-command>
 
 
 class ExecProcessCommand(TaskInterface):

@@ -1,14 +1,21 @@
+import sys
+import os
+
+sys.path = [os.path.dirname(os.path.realpath(__file__)) + "/../../src"] + sys.path
+
 project = 'RiotKit Do'
 copyright = '2019, RiotKit Collective'
 author = 'RiotKit Collective'
 
 version = ''
-release = '2'
+release = '1'
 
 extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.imgmath',
     'sphinx.ext.githubpages',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon'
 ]
 
 templates_path = ['_templates']

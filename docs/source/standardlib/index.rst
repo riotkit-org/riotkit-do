@@ -9,4 +9,3 @@ Tasks
    technical
    docker
    python
-   tasks-api

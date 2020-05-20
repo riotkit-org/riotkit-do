@@ -48,7 +48,7 @@ class IO:
 
     @contextmanager
     def capture_descriptors(self, target_file: str = None, stream=None, enable_standard_out: bool = True):
-        """ Capture stdout and stderr per task """
+        """Capture stdout and stderr from a block of code - use with 'with'"""
 
         if this.IS_CAPTURING_DESCRIPTORS:
             self.debug('Deep call to capture_descriptors()')
@@ -91,6 +91,8 @@ class IO:
         self.silent = io.is_silent(consider_ui=False)
 
     def is_silent(self) -> bool:
+        """Is output silent? In silent mode OPTIONAL MESSAGES are not shown"""
+
         return self.silent
 
     #
@@ -154,22 +156,41 @@ class IO:
     #
 
     def debug(self, text):
+        """Logger: debug
+
+        """
         if self.log_level >= LEVEL_DEBUG:
             self.log(text)
 
     def info(self, text):
+        """Logger: info
+
+        """
+
         if self.log_level >= LEVEL_INFO:
             self.log(text)
 
     def warn(self, text):
+        """Logger: warn
+
+        """
+
         if self.log_level >= LEVEL_WARNING:
             self.log(text)
 
     def error(self, text):
+        """Logger: error
+
+        """
+
         if self.log_level >= LEVEL_ERROR:
             self.log(text)
 
     def critical(self, text):
+        """Logger: critical
+
+        """
+
         if self.log_level >= LEVEL_FATAL:
             self.log(text)
 
@@ -178,6 +199,10 @@ class IO:
             self.outln(text)
 
     def print_group(self, text):
+        """Prints a colored text inside brackets [text] (optional output)
+
+        """
+
         self.opt_outln("\x1B[33m[%s]\x1B[0m" % text)
 
     #
@@ -185,12 +210,21 @@ class IO:
     #
 
     def print_line(self):
+        """Prints a newline
+
+        """
+
         self.outln('')
 
     def print_opt_line(self):
+        """Prints a newline (optional output)
+        """
+
         self.opt_outln('')
 
     def print_separator(self):
+        """Prints a text separator (optional output)
+        """
         self.opt_outln("\x1B[37m%s\x1B[0m" % '-----------------------------------')
 
     #
@@ -198,27 +232,48 @@ class IO:
     #
 
     def success_msg(self, text):
+        """Success message (optional output)
+        """
+
         self.opt_outln("\x1B[92m%s\x1B[0m" % text)
 
     def error_msg(self, text):
+        """Error message (optional output)
+        """
+
         self.opt_outln("\x1B[91m%s\x1B[0m" % text)
 
     def info_msg(self, text):
+        """Informational message (optional output)
+        """
+
         self.opt_outln("\x1B[93m%s\x1B[0m" % text)
 
     #
     # Standard formatting
     #
     def h1(self, text):
+        """Heading #1 (optional output)
+        """
+
         self.opt_outln("\x1B[93m  ##> %s\x1B[0m" % text)
 
     def h2(self, text):
+        """Heading #2 (optional output)
+        """
+
         self.opt_outln("\x1B[93m   ===> %s\x1B[0m" % text)
 
     def h3(self, text):
+        """Heading #3 (optional output)
+        """
+
         self.opt_outln("\x1B[33m    --> %s\x1B[0m" % text)
 
     def h4(self, text):
+        """Heading #3 (optional output)
+        """
+
         self.opt_outln("\x1B[33m     ... %s\x1B[0m" % text)
 
 
