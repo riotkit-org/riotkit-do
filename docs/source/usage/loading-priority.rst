@@ -24,7 +24,7 @@ Order of loading of makefile files in same .rkd directory
 .. _Path and inheritance:
 
 Paths and inheritance
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 RKD by default search for .rkd directory in current execution directory - `./.rkd`.
 
