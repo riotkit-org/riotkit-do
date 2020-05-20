@@ -28,13 +28,14 @@ With requirements.txt and virtualenv you can fully control versioning of RKD and
 Conception
 ----------
 
-Fact that Makefile, Gradle and other build systems are strictly for development, RiotKit decided to create RKD with DevOps in mind.
+Makefile, Gradle and other build systems are strictly for development, so RiotKit decided to create RKD **with DevOps in mind**.
+
 Everything could be done like in Makefile via YAML syntax, or in Python, because DevOps love Python! :)
 
 
 In effect a simple task executor with clear rules and early validation of input parameters was created.
 Each task specified to be run is treated like a separate application - has it's own parameters, by default inherits global settings but those could be overridden.
-The RKD version and version of any installed tasks are managed by Python Packaging.
+**The RKD version and version of any installed tasks are managed by Python Packaging - DevOps needs to have strict control over dependencies and upgrades.**
 
 **Basic examples:**
 
