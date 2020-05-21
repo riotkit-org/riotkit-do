@@ -1,1 +1,2 @@
 sphinx-glpi-theme
+pyyaml>=5.3.1
