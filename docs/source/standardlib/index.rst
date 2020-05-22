@@ -9,3 +9,4 @@ Tasks
    technical
    docker
    python
+   jinja
