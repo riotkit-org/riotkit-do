@@ -3,7 +3,7 @@ from typing import Union
 from traceback import print_exc
 from .argparsing import CommandlineParsingHelper
 from .syntax import TaskDeclaration, GroupDeclaration
-from .context import Context
+from .context import ApplicationContext
 from .contract import ExecutorInterface, ExecutionContext
 from .inputoutput import IO, SystemIO
 from .results import ProgressObserver
@@ -13,11 +13,11 @@ from .exception import InterruptExecution
 class OneByOneTaskExecutor(ExecutorInterface):
     """ Executes tasks one-by-one, providing a context that includes eg. parsed arguments """
 
-    _ctx: Context
+    _ctx: ApplicationContext
     _observer: ProgressObserver
     io: SystemIO
 
-    def __init__(self, ctx: Context):
+    def __init__(self, ctx: ApplicationContext):
         self._ctx = ctx
         self.io = ctx.io
         self._observer = ProgressObserver(ctx.io)

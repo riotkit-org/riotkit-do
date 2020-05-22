@@ -3,7 +3,7 @@
 import unittest
 import os
 from rkd.context import ContextFactory
-from rkd.context import Context
+from rkd.context import ApplicationContext
 from rkd.inputoutput import NullSystemIO
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -16,7 +16,7 @@ class ContextTest(unittest.TestCase):
         discovery = ContextFactory(NullSystemIO())
         ctx = discovery._load_context_from_directory(CURRENT_SCRIPT_PATH + '/../src/rkd/internal')
 
-        self.assertTrue(isinstance(ctx, Context))
+        self.assertTrue(isinstance(ctx, ApplicationContext))
 
     def test_loads_internal_context_in_unified_context(self) -> None:
         """Check if application loads context including paths from RKD_PATH

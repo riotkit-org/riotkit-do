@@ -3,7 +3,7 @@
 import sys
 import os
 from .argparsing import CommandlineParsingHelper
-from .context import ContextFactory, Context
+from .context import ContextFactory, ApplicationContext
 from .resolver import TaskResolver
 from .validator import TaskDeclarationValidator
 from .executor import OneByOneTaskExecutor
@@ -12,7 +12,7 @@ from .inputoutput import SystemIO, LEVEL_INFO as LOG_LEVEL_INFO
 
 
 class RiotKitDoApplication:
-    _ctx: Context
+    _ctx: ApplicationContext
     _tasks_to_execute = []
 
     def main(self, argv: list):

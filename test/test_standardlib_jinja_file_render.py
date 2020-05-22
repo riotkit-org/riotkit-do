@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+
+import unittest
+import os
+from rkd.standardlib.jinja import FileRendererTask
+from rkd.test import mock_task, mock_execution_context
+from rkd.inputoutput import BufferedSystemIO
+
+SAMPLES_PATH = os.path.dirname(os.path.realpath(__file__)) + '/internal-samples'
+
+
+class TestFileRendererTask(unittest.TestCase):
+    """Tests for a task that should render single JINJA2 file from SOURCE PATH to TARGET PATH
+    """
+
+    @staticmethod
+    def _execute_mocked_task(params: dict, envs: dict = {}) -> BufferedSystemIO:
+        io = BufferedSystemIO()
+
+        task: FileRendererTask = FileRendererTask()
+        mock_task(task, io=io)
+        task.execute(mock_execution_context(task, params, envs))
+
+        return io
+
+    def test_naming(self):
+        self.assertEqual(':j2:render', FileRendererTask().get_full_name())
+
+    def test_renders_file_considering_environment_variables(self):
+        """Test that file is properly rendered
+        """
+
+        msg = '22 May 1918 Spanish civil war fighter Dolores Jiménez Alvarez was born. Fought in ' + \
+              'the Durruti column until arrested by the Communists. Then escaped and joined French ' + \
+              'resistance and underground resistance to Franco'
+
+        io = self._execute_mocked_task(
+            # shell arguments
+            {
+                'source': SAMPLES_PATH + '/jinja2/example.j2',
+                'output': '-'
+            },
+            # env variables
+            {
+                'MESSAGE': msg
+            }
+        )
+
+        self.assertEqual('Listen to this important message: `%s`\n' % msg, io.get_value())
+
+    def test_non_existing_source_file_raises_error(self):
+        """Test that error message will be printed in case, when source file does not exist
+        """
+
+        io = self._execute_mocked_task(
+            {
+                'source': 'non-existing',
+                'output': '-'
+            }
+        )
+
+        self.assertIn('Source file does not exist at path "non-existing"', io.get_value())
+
+    def test_undefined_variable_raises_error(self):
+        """Test that JINJA2 will raise an exception, and it will be formatted properly
+        """
+        io = self._execute_mocked_task(
+            # shell arguments
+            {
+                'source': SAMPLES_PATH + '/jinja2/example.j2',
+                'output': '-'
+            },
+            # env variables
+            {
+                # "MESSAGE" variable should be defined, but is not - to test if error will be raised
+            }
+        )
+
+        self.assertIn("Undefined variable - 'MESSAGE' is undefined", io.get_value())
+        self.assertNotIn('Traceback (most recent call last):', io.get_value())

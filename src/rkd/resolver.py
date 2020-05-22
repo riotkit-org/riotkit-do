@@ -2,7 +2,7 @@
 from typing import List, Callable, Union
 from .argparsing import TaskArguments
 from .syntax import TaskDeclaration, GroupDeclaration
-from .context import Context
+from .context import ApplicationContext
 from .exception import InterruptExecution
 
 
@@ -17,9 +17,9 @@ class TaskResolver:
         - preserve valid order of task validation/execution
     """
 
-    _ctx: Context
+    _ctx: ApplicationContext
 
-    def __init__(self, ctx: Context):
+    def __init__(self, ctx: ApplicationContext):
         self._ctx = ctx
 
     def resolve(self, requested_tasks: List[TaskArguments], callback: CALLBACK_DEF):

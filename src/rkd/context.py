@@ -20,7 +20,7 @@ from .yaml_context import YamlParser
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
-class Context(ContextInterface):
+class ApplicationContext(ContextInterface):
     """
     Application context - collects all tasks together
 
@@ -53,7 +53,7 @@ class Context(ContextInterface):
         new_ctx = cls([], [])
 
         for context in [first, second]:
-            context: Context
+            context: ApplicationContext
 
             for name, component in context._imported_tasks.items():
                 new_ctx._add_component(component)
@@ -124,11 +124,11 @@ class ContextFactory:
     def __init__(self, io: SystemIO):
         self._io = io
 
-    def _load_context_from_directory(self, path: str) -> Context:
+    def _load_context_from_directory(self, path: str) -> ApplicationContext:
         if not os.path.isdir(path):
             raise Exception('Path "%s" not found' % path)
 
-        ctx = Context([], [])
+        ctx = ApplicationContext([], [])
         contexts = []
 
         if os.path.isfile(path + '/makefile.py'):
@@ -144,16 +144,16 @@ class ContextFactory:
             raise ContextFileNotFoundException(path)
 
         for subctx in contexts:
-            ctx = Context.merge(ctx, subctx)
+            ctx = ApplicationContext.merge(ctx, subctx)
 
         return ctx
 
-    def _load_from_yaml(self, path: str, filename: str) -> Context:
+    def _load_from_yaml(self, path: str, filename: str) -> ApplicationContext:
         makefile_path = path + '/' + filename
 
         with open(makefile_path, 'rb') as handle:
             imports, tasks = YamlParser(self._io).parse(handle.read().decode('utf-8'), path, makefile_path)
-            return Context(tasks=imports, aliases=tasks)
+            return ApplicationContext(tasks=imports, aliases=tasks)
 
     @staticmethod
     def _load_from_py(path: str):
@@ -170,12 +170,12 @@ class ContextFactory:
             print_exc()
             raise NotImportedClassException(e)
 
-        return Context(
+        return ApplicationContext(
             tasks=makefile.IMPORTS if "IMPORTS" in dir(makefile) else [],
             aliases=makefile.TASKS if "TASKS" in dir(makefile) else []
         )
 
-    def create_unified_context(self, chdir: str = '') -> Context:
+    def create_unified_context(self, chdir: str = '') -> ApplicationContext:
         """
         Creates a merged context in order:
         - Internal/Core (this package)
@@ -201,7 +201,7 @@ class ContextFactory:
         # export for usage inside in makefiles
         os.environ['RKD_PATH'] = ":".join(paths)
 
-        ctx = Context([], [])
+        ctx = ApplicationContext([], [])
 
         for path in paths:
             # not all paths could exist, we consider this, we look where it is possible
@@ -209,7 +209,7 @@ class ContextFactory:
                 continue
 
             try:
-                ctx = Context.merge(ctx, self._load_context_from_directory(path))
+                ctx = ApplicationContext.merge(ctx, self._load_context_from_directory(path))
             except ContextFileNotFoundException:
                 pass
 

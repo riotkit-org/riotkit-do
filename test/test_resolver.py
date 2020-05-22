@@ -2,7 +2,7 @@
 
 import unittest
 from typing import Union
-from rkd.context import Context
+from rkd.context import ApplicationContext
 from rkd.resolver import TaskResolver
 from rkd.standardlib.shell import ShellCommandTask
 from rkd.syntax import TaskDeclaration, GroupDeclaration, TaskAliasDeclaration
@@ -16,7 +16,7 @@ class TestResolver(unittest.TestCase):
         :return:
         """
 
-        context = Context(
+        context = ApplicationContext(
             tasks=[TaskDeclaration(ShellCommandTask())],
             aliases=[
                 TaskAliasDeclaration(':test', [':sh', '-c', 'uname -a', ':sh', '-c', 'ps aux'],
@@ -42,7 +42,7 @@ class TestResolver(unittest.TestCase):
         self.assertEqual([':sh -c uname -a', ':sh -c ps aux'], result_tasks)
 
     def test_resoles_regular_task(self):
-        context = Context(
+        context = ApplicationContext(
             tasks=[TaskDeclaration(ShellCommandTask())],
             aliases=[]
         )

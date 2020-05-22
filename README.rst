@@ -59,3 +59,5 @@ We are grassroot activists for social change, so we created RKD especially in mi
 - Komitet Obrony Praw Lokatorów (https://lokatorzy.info.pl)
 - Solidarity Federation (https://solfed.org.uk)
 - Priama Akcia (https://priamaakcia.sk)
+
+Special thanks to `Working Class History <https://twitter.com/wrkclasshistory>`_ for very powerful samples that we could use in our unit tests.
