@@ -30,6 +30,7 @@ Rules
 -----
 
 -  No hooks eg. task.executeAfter(otherTask), no complex dependencies
+-  No in-memory state between tasks. State could be only changed in files/database/kv-store like it is in other build systems
 -  No dynamic tasks names eg. by turning on Publish component it should
    not create tasks eg. :publishIWAToDockerRegistry (where IWA is the
    project name)
