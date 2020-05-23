@@ -16,21 +16,21 @@ SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 class TestYamlContext(unittest.TestCase):
     def test_parse_imports_successful_case_single_task(self):
         factory = YamlParser(NullSystemIO())
-        imported = factory.parse_imports(['rkd.standardlib.python.PublishTask'])
+        imported = factory.parse_imports(['rkd.standardlib.docker.PushTask'])
 
-        self.assertEqual(':py:publish', imported[0].to_full_name())
+        self.assertEqual(':docker:push', imported[0].to_full_name())
 
     def test_parse_imports_successful_case_module(self):
         factory = YamlParser(NullSystemIO())
-        imported = factory.parse_imports(['rkd.standardlib.python'])
+        imported = factory.parse_imports(['rkd.standardlib.docker'])
 
         names_of_imported_tasks = []
 
         for task in imported:
             names_of_imported_tasks.append(task.to_full_name())
 
-        self.assertIn(':py:publish', names_of_imported_tasks)
-        self.assertIn(':py:build', names_of_imported_tasks)
+        self.assertIn(':docker:tag', names_of_imported_tasks)
+        self.assertIn(':docker:push', names_of_imported_tasks)
 
     def test_parse_imports_wrong_class_type_but_existing(self):
         def test():
@@ -45,6 +45,18 @@ class TestYamlContext(unittest.TestCase):
             factory.parse_imports(['rkd.standardlib.python.WRONG_NAME'])
 
         self.assertRaises(YamlParsingException, test)
+
+    def test_parse_imports_importing_whole_module_without_submodules(self):
+        factory = YamlParser(NullSystemIO())
+        imported = factory.parse_imports(['rkd_python'])
+
+        names_of_imported_tasks = []
+
+        for task in imported:
+            names_of_imported_tasks.append(task.to_full_name())
+
+        self.assertIn(':py:build', names_of_imported_tasks)
+        self.assertIn(':py:publish', names_of_imported_tasks)
 
     def test_parse_tasks_successful_case(self):
         """Successful case with description, arguments and bash steps

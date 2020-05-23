@@ -300,9 +300,13 @@ class YamlParser:
             class_name = parts[-1]
             import_path = '.'.join(parts[:-1])
 
+            # importing just a full module name eg. "rkd_python"
+            if len(parts) == 1:
+                import_path = class_name
+                class_name = 'imports'
             # Test if it's not a class name
             # In this case we treat is as a module and import an importing method imports()
-            if class_name.lower() == class_name:
+            elif class_name.lower() == class_name:
                 import_path += '.' + class_name
                 class_name = 'imports'
 
