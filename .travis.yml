@@ -3,6 +3,10 @@ os: linux
 if: branch = master or tag IS present
 python: 3.6
 
+# show stdout/stderr immediately
+env:
+    - PYTHONUNBUFFERED=true
+
 before_script: ./setup.py install
     #pip install rkd  # todo: set fixed version
 

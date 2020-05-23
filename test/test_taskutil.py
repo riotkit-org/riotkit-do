@@ -36,7 +36,7 @@ class TestTaskUtil(unittest.TestCase):
 
         Notice: Test is interacting with shell, to reduce possibility of weird behavior it is retried multiple times
         """
-        for i in range(1, 150):
+        for i in range(1, 50):
             self.maxDiff = None  # unittest setting
             task = InitTask()
 
@@ -88,7 +88,7 @@ class TestTaskUtil(unittest.TestCase):
         Notice: Test is interacting with shell, to reduce possibility of weird behavior it is retried multiple times
         """
 
-        for i in range(1, 10):
+        for i in range(1, 5):
             for std_redirect in ['', '>&2']:
                 task = InitTask()
                 io = IO()

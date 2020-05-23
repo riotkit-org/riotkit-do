@@ -109,7 +109,7 @@ class UnitTestTask(BasePythonTask):
     """ Runs unit tests using standard Python framework "unittest" """
 
     def execute(self, context: ExecutionContext) -> bool:
-        cmd = ''
+        cmd = 'export PYTHONUNBUFFERED=1; '
 
         if context.args['src_dir']:
             cmd += 'cd %s && ' % context.args['src_dir']

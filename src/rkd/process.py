@@ -55,5 +55,5 @@ def _copy_stream(in_stream_fd: int, out_stream, process: subprocess.Popen, copy:
             buffer_wrote_size += len(read)
             copy.write(read)
 
-    read = os.read(in_stream_fd, 1024).decode('utf-8')
+    read = os.read(in_stream_fd, 1024 * 1024 * 10).decode('utf-8')
     out_stream.write(read)

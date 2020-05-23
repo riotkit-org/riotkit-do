@@ -33,11 +33,15 @@ class StandardOutputReplication(object):
             except TypeError:
                 stream.write(buf.encode('utf-8'))
 
+        self.flush()
+
     def fileno(self):
         return 1
 
     def flush(self):
-        pass
+        for stream in self._out_streams:
+            stream.flush()
+
 
 
 class IO:

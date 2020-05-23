@@ -38,6 +38,8 @@ class TaskUtilities(AbstractClass):
             To capture output set capture=True
         """
 
+        cmd = 'export PYTHONUNBUFFERED=1; ' + cmd
+
         # set strict mode, it can be disabled manually
         if strict:
             cmd = 'set -euo pipefail; ' + cmd
