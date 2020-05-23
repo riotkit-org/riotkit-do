@@ -38,6 +38,7 @@ Rules
 -  Full static analysis, you can work on makefile.py and on task's code in PyCharm with full code completion!
 -  Do early validation. Runtime validation for long running builds is a pain-in-the-ass for the user.
 -  Show clear error messages as much as it is possible. Task not found? Tell the user - do not leave a stack trace. Import error in makefile.py? Tell the user + add stack trace. RESPECT TIME OF ALL OF US! :)
+-  Do not overuse libraries in RKD core - it must be installable in any environment, including Docker. Libraries count should be small, and the libraries cannot depend on GCC/G++
 
 Documentation
 -------------
