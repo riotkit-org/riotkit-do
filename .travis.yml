@@ -38,7 +38,7 @@ jobs:
           python: 3.6
           script:
               - ./setup.py install
-              - RKD_COMPAT_SUBPROCESS=true rkd :release
+              - rkd :release
 
         - stage: Test on Python 3.9 (allowed to fail)
           env: CAN_FAIL=true
