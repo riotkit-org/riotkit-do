@@ -238,3 +238,7 @@ class TaskInterface(TaskUtilities):
     def io(self):
         return self._io
 
+    def __str__(self):
+        return 'Task<' + self.get_full_name() + '>'
+
+

@@ -6,3 +6,7 @@
 /AUTHORS
 /ChangeLog
 /docs/build/
+subpackages/rkd_python/AUTHORS
+subpackages/rkd_python/ChangeLog
+
+/subpackages/rkd_python/src/rkd_python.egg-info/

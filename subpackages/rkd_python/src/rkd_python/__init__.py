@@ -2,8 +2,9 @@ import os
 from abc import ABC
 from subprocess import CalledProcessError
 from argparse import ArgumentParser
-from ..contract import TaskInterface, ExecutionContext
-from ..syntax import TaskDeclaration
+from typing import Dict
+from rkd.contract import TaskInterface, ExecutionContext
+from rkd.syntax import TaskDeclaration
 
 
 class BasePythonTask(TaskInterface, ABC):
@@ -16,6 +17,11 @@ class PublishTask(BasePythonTask):
 
     def get_name(self) -> str:
         return ':publish'
+
+    def get_declared_envs(self) -> Dict[str, str]:
+        return {
+            'TWINE_PATH': 'twine'
+        }
 
     def configure_argparse(self, parser: ArgumentParser):
         parser.add_argument('--username', help='Username in repository', required=True)
@@ -31,27 +37,28 @@ class PublishTask(BasePythonTask):
         if context.args['skip_existing']:
             opts += ' --skip-existing '
 
-        if context.args['url']:
-            if context.args['test']:
+        if context.get_arg('--url'):
+            if context.get_arg('--test'):
                 raise Exception('Cannot use --url and --test switch at once')
 
-            opts += ' --repository-url=%s' % context.args['url']
+            opts += ' --repository-url=%s' % context.get_arg('--url')
 
-        if context.args['test']:
+        if context.get_arg('--test'):
             opts += ' --repository-url https://test.pypi.org/legacy/ '
 
         self.sh('''
-            twine upload \\
+            %s upload \\
                 --disable-progress-bar \\
                 --verbose \\
                 --username=%s \\
                 --password=%s \\
                 %s %s
         ''' % (
-            context.args['username'],
-            context.args['password'],
+            context.get_env('TWINE_PATH'),
+            context.get_arg('--username'),
+            context.get_arg('--password'),
             opts,
-            context.args['src']
+            context.get_arg('--src')
         ))
 
         return True

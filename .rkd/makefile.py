@@ -1,6 +1,6 @@
 
 from rkd.syntax import TaskAliasDeclaration as Task
-from rkd.standardlib.python import imports as PythonImports
+from rkd_python import imports as PythonImports
 
 IMPORTS = [] + PythonImports()
 

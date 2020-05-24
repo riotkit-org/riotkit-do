@@ -1,7 +1,7 @@
 
 import os
 from rkd.syntax import TaskAliasDeclaration as Task, TaskDeclaration
-from rkd.standardlib.python import imports as PythonImports
+from subpackages.rkd_python import imports as PythonImports
 from rkd.standardlib.docker import imports as DockerImports
 from rkd.standardlib import CallableTask
 from rkd.contract import ExecutionContext

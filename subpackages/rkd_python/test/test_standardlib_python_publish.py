@@ -9,7 +9,7 @@ class PublishTaskTest(unittest.TestCase):
         try:
             out = subprocess.check_output('''
                 export PYTHONPATH=$(pwd)
-                cd ..
+                cd ../
                 python3 -m rkd --silent :sh -c "python3 -m rkd --silent :py:publish ''' + arguments + '''"
             ''', shell=True)
         except subprocess.CalledProcessError as e:

@@ -99,6 +99,9 @@ class TaskDeclaration(TaskDeclarationInterface):
 
         return task_name, group
 
+    def __str__(self):
+        return 'TaskDeclaration<%s>' % self.get_task_to_execute().get_full_name()
+
 
 class GroupDeclaration(GroupDeclarationInterface):
     """ Internal DTO: Processed definition of TaskAliasDeclaration into TaskDeclaration """
