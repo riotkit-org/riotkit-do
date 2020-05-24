@@ -29,18 +29,16 @@ jobs:
     include:
         - stage: Test on Python 3.6
           python: 3.6
-          script:
-              <<: *test_script
+          script: *test_script
+
 
         - stage: Test on Python 3.7
           python: 3.7
-          script:
-              <<: *test_script
+          script: *test_script
 
         - stage: Test on Python 3.8
           python: 3.8
-          script:
-              <<: *test_script
+          script: *test_script
 
         - stage: Release
           python: 3.6
@@ -55,11 +53,9 @@ jobs:
         - stage: Test on Python 3.9 (allowed to fail)
           env: CAN_FAIL=true
           python: 3.9
-          script:
-              <<: *test_script
+          script: *test_script
 
         - stage: Test on Python NIGHTLY (allowed to fail)
           env: CAN_FAIL=true
           python: nightly
-          script:
-              <<: *test_script
+          script: *test_script
