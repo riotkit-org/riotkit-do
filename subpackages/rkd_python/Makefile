@@ -11,7 +11,7 @@ tests:
 release: build publish
 
 ## Build local package
-build:
+package:
 	./setup.py build
 	./setup.py sdist
 
