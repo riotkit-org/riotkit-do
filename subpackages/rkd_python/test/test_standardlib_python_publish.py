@@ -8,7 +8,6 @@ class PublishTaskTest(unittest.TestCase):
     def _call_publish_via_shell(self, arguments: str):
         try:
             out = subprocess.check_output('''
-                export PYTHONPATH=$(pwd)
                 export RKD_PATH=$(pwd)/../example/.rkd
                 
                 cd ../
