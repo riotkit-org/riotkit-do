@@ -2,10 +2,11 @@
 # https://github.com/riotkit-org/riotkit-do/issues/5
 #
 TEST_OPTS=
+PYTHONPATH = $(shell echo "$$(pwd)/src:$$(pwd)/../../src")
 
 ## Run tests
 tests:
-	cd src && python3 -m unittest discover -s ../test ${TEST_OPTS}
+	export PYTHONPATH=${PYTHONPATH}; cd src && python3 -m unittest discover -s ../test ${TEST_OPTS}
 
 ## Release
 release: build publish

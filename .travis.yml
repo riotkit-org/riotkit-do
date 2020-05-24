@@ -11,7 +11,7 @@ test_script: &test_script
     # Subpackages: rkd_python
     - cd subpackages/rkd_python && make package tests
 
-# show stdout/stderr immediately
+# show stdout/stderr immediately in tests (in RKD itself the buffering is turned off)
 env:
     - PYTHONUNBUFFERED=true
 
