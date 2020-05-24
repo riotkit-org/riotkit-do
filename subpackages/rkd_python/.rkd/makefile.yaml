@@ -1,8 +1,0 @@
-version: org.riotkit.rkd/0.6
-imports:
-  - rkd_python
-
-tasks:
-    :test:
-        description: Test module rkd_python
-        steps: python -m rkd :py:unittest

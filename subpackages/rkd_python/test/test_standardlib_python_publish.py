@@ -9,6 +9,8 @@ class PublishTaskTest(unittest.TestCase):
         try:
             out = subprocess.check_output('''
                 export PYTHONPATH=$(pwd)
+                export RKD_PATH=$(pwd)/../example/.rkd
+                
                 cd ../
                 python3 -m rkd --silent :sh -c "python3 -m rkd --silent :py:publish ''' + arguments + '''"
             ''', shell=True)

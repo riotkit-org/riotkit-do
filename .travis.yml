@@ -5,21 +5,15 @@ python: 3.6
 
 test_script: &test_script
     # RKD & RKD Core & Standardlib
-    - rkd :build
-    - cd src && python -m unittest discover -s ../test
+    - make package
+    - make tests
 
     # Subpackages: rkd_python
-    - cd ../subpackages/rkd_python
-    - ./setup.py install
-    - ./setup.py sdist
-    - ./rkd.sh test
+    - cd subpackages/rkd_python && make package tests
 
 # show stdout/stderr immediately
 env:
     - PYTHONUNBUFFERED=true
-
-before_script: ./setup.py install
-    #pip install rkd  # todo: set fixed version
 
 jobs:
     allow_failures:
@@ -43,12 +37,8 @@ jobs:
         - stage: Release
           python: 3.6
           script:
-              - ./setup.py install
-              - rkd :release
-
-              - cd subpackages/rkd_python
-              - ./setup.py install
-              - rkd :release
+              - make release
+              - cd subpackages/rkd_python && make release
 
         - stage: Test on Python 3.9 (allowed to fail)
           env: CAN_FAIL=true

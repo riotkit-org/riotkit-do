@@ -1,0 +1,4 @@
+version: org.riotkit.rkd/0.6
+imports:
+    - rkd_python
+tasks: {}
