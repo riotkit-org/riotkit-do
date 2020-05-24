@@ -14,6 +14,7 @@ test_script: &test_script
 # show stdout/stderr immediately
 env:
     - PYTHONUNBUFFERED=true
+    - PYTHONPATH=/home/travis/build/riotkit-org/riotkit-do/src:/home/travis/build/riotkit-org/riotkit-do/subpackages/rkd_python/src
 
 jobs:
     allow_failures:
