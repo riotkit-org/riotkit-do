@@ -1,6 +1,9 @@
 Shell
 =====
 
+.. jinja:: shell
+   :file: source/templates/package-usage.rst
+
 :sh
 ~~~
 
@@ -21,6 +24,9 @@ Executes a Bash script. Can be multi-line.
 
 :exec
 ~~~~~
+
+.. jinja:: exec
+   :file: source/templates/package-usage.rst
 
 Works identically as **:sh**, but for spawns a single process. Does not allow a multi-line script syntax.
 

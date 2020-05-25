@@ -15,8 +15,92 @@ extensions = [
     'sphinx.ext.imgmath',
     'sphinx.ext.githubpages',
     'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'sphinxcontrib.jinja'
 ]
+
+jinja_contexts = {
+    'py_publish': {
+        'PKG_NAME': 'rkd_python',
+        'PKG_CLASS_NAME': 'rkd_python.PublishTask',
+        'PKG_PIP': 'rkd_python'
+    },
+    'py_build': {
+        'PKG_NAME': 'rkd_python',
+        'PKG_CLASS_NAME': 'rkd_python.BuildTask',
+        'PKG_PIP': 'rkd_python'
+    },
+    'py_install': {
+        'PKG_NAME': 'rkd_python',
+        'PKG_CLASS_NAME': 'rkd_python.InstallTask',
+        'PKG_PIP': 'rkd_python'
+    },
+    'py_clean': {
+        'PKG_NAME': 'rkd_python',
+        'PKG_CLASS_NAME': 'rkd_python.CleanTask',
+        'PKG_PIP': 'rkd_python'
+    },
+    'py_unittest': {
+        'PKG_NAME': 'rkd_python',
+        'PKG_CLASS_NAME': 'rkd_python.UnitTestTask',
+        'PKG_PIP': 'rkd_python'
+    },
+    'shell': {
+        'PKG_NAME': 'rkd.standardlib.shell',
+        'PKG_CLASS_NAME': 'rkd.standardlib.shell.ShellCommandTask',
+        'PKG_PIP': 'rkd'
+    },
+    'exec': {
+        'PKG_NAME': 'rkd.standardlib.shell',
+        'PKG_CLASS_NAME': 'rkd.standardlib.shell.ExecProcessCommand',
+        'PKG_PIP': 'rkd'
+    },
+    'j2_render': {
+        'PKG_NAME': 'rkd.standardlib.jinja',
+        'PKG_CLASS_NAME': 'rkd.standardlib.jinja.FileRendererTask',
+        'PKG_PIP': 'rkd'
+    },
+    'j2_directory_to_directory': {
+        'PKG_NAME': 'rkd.standardlib.jinja',
+        'PKG_CLASS_NAME': 'rkd.standardlib.jinja.RenderDirectoryTask',
+        'PKG_PIP': 'rkd'
+    },
+    'docker_tag': {
+        'PKG_NAME': 'rkd.standardlib.docker',
+        'PKG_CLASS_NAME': 'rkd.standardlib.docker.TagImageTask',
+        'PKG_PIP': 'rkd'
+    },
+    'docker_push': {
+        'PKG_NAME': 'rkd.standardlib.docker',
+        'PKG_CLASS_NAME': 'rkd.standardlib.docker.PushTask',
+        'PKG_PIP': 'rkd'
+    },
+    'init': {
+        'PKG_NAME': 'rkd.standardlib',
+        'PKG_CLASS_NAME': 'rkd.standardlib.InitTask',
+        'PKG_PIP': 'rkd'
+    },
+    'tasks': {
+        'PKG_NAME': 'rkd.standardlib',
+        'PKG_CLASS_NAME': 'rkd.standardlib.TasksListingTask',
+        'PKG_PIP': 'rkd'
+    },
+    'callable_task': {
+        'PKG_NAME': 'rkd.standardlib',
+        'PKG_CLASS_NAME': 'rkd.standardlib.CallableTask',
+        'PKG_PIP': 'rkd'
+    },
+    'rkd_create_structure': {
+        'PKG_NAME': 'rkd.standardlib',
+        'PKG_CLASS_NAME': 'rkd.standardlib.CreateStructureTask',
+        'PKG_PIP': 'rkd'
+    },
+    'version': {
+        'PKG_NAME': 'rkd.standardlib',
+        'PKG_CLASS_NAME': 'rkd.standardlib.VersionTask',
+        'PKG_PIP': 'rkd'
+    }
+}
 
 templates_path = ['_templates']
 source_suffix = '.rst'

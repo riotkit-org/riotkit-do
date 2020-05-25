@@ -5,9 +5,8 @@ Renders JINJA2 files, and whole directories of files. Allows to render by patter
 
 :j2:render
 ~~~~~~~~~~
-**Class name:** rkd.standardlib.jinja.FileRendererTask
-
-**Package:** rkd.standardlib.jinja
+.. jinja:: j2_render
+   :file: source/templates/package-usage.rst
 
 Renders a single file from JINJA2.
 
@@ -21,9 +20,8 @@ Renders a single file from JINJA2.
 
 :j2:directory-to-directory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-**Class name:** rkd.standardlib.jinja.RenderDirectoryTask
-
-**Package:** rkd.standardlib.jinja
+.. jinja:: j2_render
+   :file: source/templates/package-usage.rst
 
 Renders all files recursively in given directory to other directory.
 Can remove source files after rendering them to the output files.

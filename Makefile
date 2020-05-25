@@ -25,6 +25,6 @@ publish:
 		dist/*
 
 ## Build SPHINX docs
-docs:
-	cd docs
-	sphinx-build -M html "source" "build"
+documentation:
+	cd docs && sphinx-build -M html "source" "build"
+
