@@ -19,7 +19,7 @@ package:
 ## Publish to PyPI
 publish:
 	twine upload --disable-progress-bar --verbose \
-		--username=$${QUAY_USERNAME} \
-		--password=$${QUAY_PASSWORD} \
+		--username=__token__ \
+		--password=$${PYPI_TOKEN} \
 		--skip-existing \
 		dist/*
