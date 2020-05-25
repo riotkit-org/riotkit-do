@@ -2,7 +2,7 @@
 Riotkit Do (RKD)
 ================
 
-RKD is delivered as a Python Package. To extend RKD with additional tasks you need to install them via PIP or (simpler) define in makefile.py/makefile.yaml
+RKD is delivered as a Python Package. To extend RKD with additional tasks you need to install them via PIP or (simpler) define without own code in makefile.py/makefile.yaml
 
 Bootstrap RKD in your project
 -----------------------------
