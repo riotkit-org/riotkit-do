@@ -102,6 +102,8 @@ jinja_contexts = {
     }
 }
 
+jinja_base = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + '/../')
+
 templates_path = ['_templates']
 source_suffix = '.rst'
 master_doc = 'index'
