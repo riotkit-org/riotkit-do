@@ -9,7 +9,7 @@ tests:
 	cd src && export PYTHONPATH=${PYTHONPATH} && python3 -u -m unittest discover -s ../test ${TEST_OPTS}
 
 ## Release
-release: build publish
+release: package publish
 
 ## Build local package
 package:
