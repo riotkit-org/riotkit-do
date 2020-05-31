@@ -60,7 +60,11 @@ class InitTask(TaskInterface):
 
 
 class TasksListingTask(TaskInterface):
-    """ Lists all enabled tasks """
+    """Lists all enabled tasks
+
+    Environment:
+        - RKD_WHITELIST_GROUPS: Comma separated list of groups that should be only visible, others would be hidden
+    """
 
     def get_name(self) -> str:
         return ':tasks'
@@ -71,13 +75,26 @@ class TasksListingTask(TaskInterface):
     def configure_argparse(self, parser: ArgumentParser):
         pass
 
+    def get_declared_envs(self) -> Dict[str, str]:
+        return {
+            'RKD_WHITELIST_GROUPS': ''
+        }
+
     def execute(self, context: ExecutionContext) -> bool:
         io = self._io
         groups = {}
 
+        # fancy stuff
+        whitelisted_groups = context.get_env('RKD_WHITELIST_GROUPS').replace(' ', '').split(',') \
+            if context.get_env('RKD_WHITELIST_GROUPS') else []
+
         # collect into groups
         for name, declaration in self._ctx.find_all_tasks().items():
             group_name = declaration.get_group_name()
+
+            # (optional) whitelists of displayed groups
+            if whitelisted_groups and group_name not in whitelisted_groups:
+                continue
 
             if group_name not in groups:
                 groups[group_name] = {}
