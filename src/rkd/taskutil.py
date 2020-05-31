@@ -1,5 +1,6 @@
 
 import os
+import sys
 from typing import Union
 from subprocess import check_output, Popen, DEVNULL, CalledProcessError
 from abc import ABC as AbstractClass, abstractmethod
@@ -32,6 +33,19 @@ class TaskUtilities(AbstractClass):
             self.io().error_msg(str(e))
             return False
 
+    @staticmethod
+    def get_rkd_binary():
+        """Gets the command how RKD was launched"""
+
+        binary = sys.argv[0]
+
+        # as a Python module: "python -m rkd" for example
+        if binary[:-3] == '.py':
+            return '%s -m %s' % (sys.executable, os.path.basename(os.path.dirname(binary)))
+
+        # using a script eg. "rkd"
+        return sys.executable
+
     def sh(self, cmd: str, capture: bool = False, verbose: bool = False, strict: bool = True,
            env: dict = None) -> Union[str, None]:
         """ Executes a shell script in bash. Throws exception on error.
@@ -58,6 +72,8 @@ class TaskUtilities(AbstractClass):
             cmd = env_str + cmd
 
         bash_script = "#!/bin/bash -eopipefail \n" + cmd
+        bash_script = bash_script.replace('%RKD%', self.get_rkd_binary())
+
         read, write = os.pipe()
         os.write(write, bash_script.encode('utf-8'))
         os.close(write)
@@ -93,4 +109,4 @@ class TaskUtilities(AbstractClass):
         bash_opts = 'set -x; ' if verbose else ''
         args_str = ' '.join(args)
 
-        return self.sh(bash_opts + ' rkd --no-ui %s' % args_str)
+        return self.sh(bash_opts + ' %%RKD%% --no-ui %s' % args_str)

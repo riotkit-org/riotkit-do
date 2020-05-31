@@ -9,6 +9,8 @@ Shell
 
 Executes a Bash script. Can be multi-line.
 
+*Notice: phrase %RKD% is replaced with an rkd binary name*
+
 **Example of plain usage:**
 
 .. code:: bash
