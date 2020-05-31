@@ -2,6 +2,7 @@
 
 import sys
 import os
+from dotenv import load_dotenv
 from .argparsing import CommandlineParsingHelper
 from .context import ContextFactory, ApplicationContext
 from .resolver import TaskResolver
@@ -14,6 +15,10 @@ from .inputoutput import SystemIO, LEVEL_INFO as LOG_LEVEL_INFO
 class RiotKitDoApplication:
     _ctx: ApplicationContext
     _tasks_to_execute = []
+
+    @staticmethod
+    def load_environment():
+        load_dotenv()
 
     def main(self, argv: list):
         if not argv[1:]:
@@ -53,6 +58,7 @@ class RiotKitDoApplication:
 
 def main():
     app = RiotKitDoApplication()
+    app.load_environment()
 
     try:
         app.main(argv=sys.argv)
