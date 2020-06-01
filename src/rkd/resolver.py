@@ -45,7 +45,7 @@ class TaskResolver:
         """Resolves task group's shortcuts eg. :hb -> :harbor"""
 
         for alias in self._alias_groups:
-            resolved = alias.get_aliased_task_name(task_name)
+            resolved = alias.append_alias_to_task(task_name)
 
             if resolved:
                 return resolved

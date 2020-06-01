@@ -20,9 +20,15 @@ class AliasGroup(object):
         self._src = src
         self._dst = dst
 
-    def get_aliased_task_name(self, task_name) -> Optional[str]:
+    def append_alias_to_task(self, task_name) -> Optional[str]:
         if task_name[0:len(self._src)] == self._src:
             return self._dst + task_name[len(self._src):]
+
+        return None
+
+    def get_aliased_task_name(self, task_name) -> Optional[str]:
+        if task_name[0:len(self._dst)] == self._dst:
+            return self._src + task_name[len(self._dst):]
 
         return None
 
