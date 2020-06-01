@@ -227,6 +227,8 @@ class VersionTask(TaskInterface):
                     break
                 except pkg_resources.DistributionNotFound:
                     parts = parts[:-1]
+                except ValueError:
+                    parts = parts[:-1]
 
         return True
 
