@@ -165,6 +165,18 @@ class TestFunctional(unittest.TestCase):
         self.assertIn(':rkd:create-structure', full_output)
         self.assertNotIn(':exec', full_output)
 
+    def test_task_whitelist_shows_only_global_group(self):
+        """Test that when we set RKD_WHITELIST_GROUPS=,, then we will see only tasks from [global] group"""
+
+        try:
+            os.environ['RKD_WHITELIST_GROUPS'] = ','
+            full_output, exit_code = self._run_and_capture_output([':tasks'])
+        finally:
+            os.environ['RKD_WHITELIST_GROUPS'] = ''
+
+        self.assertIn(':tasks', full_output)
+        self.assertNotIn(':rkd:create-structure', full_output)
+
     def test_task_alias_resolves_task(self):
         """Test that with RKD_ALIAS_GROUPS=":py->:class-war" the :class-war:build would be resolved to :py:build"""
 

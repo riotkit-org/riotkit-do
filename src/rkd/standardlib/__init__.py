@@ -98,8 +98,11 @@ class TasksListingTask(TaskInterface):
             group_name = declaration.get_group_name()
 
             # (optional) whitelists of displayed groups
-            if whitelisted_groups and (':' + group_name) not in whitelisted_groups:
-                continue
+            if whitelisted_groups:
+                group_to_whitelist_check = (':' + group_name) if group_name else ''  # allow empty group ([global])
+
+                if group_to_whitelist_check not in whitelisted_groups:
+                    continue
 
             if group_name not in groups:
                 groups[group_name] = {}
