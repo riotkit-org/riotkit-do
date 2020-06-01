@@ -9,4 +9,5 @@ Tasks
    technical
    docker
    python
+   env
    jinja

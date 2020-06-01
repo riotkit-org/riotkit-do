@@ -99,6 +99,16 @@ jinja_contexts = {
         'PKG_NAME': 'rkd.standardlib',
         'PKG_CLASS_NAME': 'rkd.standardlib.VersionTask',
         'PKG_PIP': 'rkd'
+    },
+    'env_get': {
+        'PKG_NAME': 'rkd.standardlib.env',
+        'PKG_CLASS_NAME': 'rkd.standardlib.env.SetEnvTask',
+        'PKG_PIP': 'rkd'
+    },
+    'env_set': {
+        'PKG_NAME': 'rkd.standardlib.env',
+        'PKG_CLASS_NAME': 'rkd.standardlib.env.GetEnvTask',
+        'PKG_PIP': 'rkd'
     }
 }
 
