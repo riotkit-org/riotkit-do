@@ -20,6 +20,7 @@ Lists all tasks that are loaded by all chained makefile.py configurations.
 Environment variables:
 
 - RKD_WHITELIST_GROUPS: (Optional) Comma separated list of groups to only show on the list
+- RKD_ALIAS_GROUPS: (Optional) Comma separated list of groups aliases eg. ":international-workers-association->:iwa,:anarchist-federation->:fa"
 
 :version
 ~~~~~~~~

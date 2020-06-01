@@ -2,11 +2,13 @@
 import pkg_resources
 import os
 from typing import Dict
+from typing import List
 from argparse import ArgumentParser
 from typing import Callable
 from copy import deepcopy
 from ..contract import TaskInterface, ExecutionContext, TaskDeclarationInterface
 from ..inputoutput import SystemIO
+from ..aliasgroups import parse_alias_groups_from_env, AliasGroup
 
 
 class InitTask(TaskInterface):
@@ -25,7 +27,8 @@ class InitTask(TaskInterface):
     def get_declared_envs(self) -> Dict[str, str]:
         return {
             'RKD_DEPTH': '0',
-            'RKD_PATH': ''
+            'RKD_PATH': '',
+            'RKD_ALIAS_GROUPS': ''
         }
 
     def configure_argparse(self, parser: ArgumentParser):
@@ -77,12 +80,14 @@ class TasksListingTask(TaskInterface):
 
     def get_declared_envs(self) -> Dict[str, str]:
         return {
-            'RKD_WHITELIST_GROUPS': ''
+            'RKD_WHITELIST_GROUPS': '',
+            'RKD_ALIAS_GROUPS': ''
         }
 
     def execute(self, context: ExecutionContext) -> bool:
         io = self._io
         groups = {}
+        aliases = parse_alias_groups_from_env(context.get_env('RKD_ALIAS_GROUPS'))
 
         # fancy stuff
         whitelisted_groups = context.get_env('RKD_WHITELIST_GROUPS').replace(' ', '').split(',') \
@@ -93,13 +98,13 @@ class TasksListingTask(TaskInterface):
             group_name = declaration.get_group_name()
 
             # (optional) whitelists of displayed groups
-            if whitelisted_groups and group_name not in whitelisted_groups:
+            if whitelisted_groups and (':' + group_name) not in whitelisted_groups:
                 continue
 
             if group_name not in groups:
                 groups[group_name] = {}
 
-            groups[group_name][declaration.to_full_name()] = declaration
+            groups[group_name][self.translate_alias(declaration.to_full_name(), aliases)] = declaration
 
         # iterate over groups and list tasks under groups
         for group_name, tasks in groups.items():
@@ -125,6 +130,19 @@ class TasksListingTask(TaskInterface):
         io.opt_outln('Use --help to see task environment variables and switches, eg. rkd :sh --help, rkd --help')
 
         return True
+
+    @staticmethod
+    def translate_alias(full_name: str, aliases: List[AliasGroup]) -> str:
+        if not aliases:
+            return full_name
+
+        for alias in aliases:
+            match = alias.get_aliased_task_name(full_name)
+
+            if match:
+                return match
+
+        return full_name
 
 
 class CallableTask(TaskInterface):

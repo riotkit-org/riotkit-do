@@ -146,12 +146,35 @@ class TestFunctional(unittest.TestCase):
         full_output, exit_code = self._run_and_capture_output(['--help'])
         self.assertIn('- RKD_DEPTH (default: 0)', full_output)
 
-    def test_env_variables_not_listed_in_tasks_task(self):
-        """ :tasks does not define any environment variables """
+    def test_env_variables_not_listed_in_sh_task(self):
+        """ :sh does not define any environment variables """
 
-        full_output, exit_code = self._run_and_capture_output([':tasks', '--help'])
+        full_output, exit_code = self._run_and_capture_output([':sh', '--help'])
         self.assertNotIn('- RKD_DEPTH (default: 0)', full_output)
         self.assertIn('-- No environment variables declared --', full_output)
+
+    def test_tasks_whitelist_shows_only_selected_groups(self):
+        """Test that when we set RKD_WHITELIST_GROUPS=:rkd, then we will see only tasks from [rkd] group"""
+
+        try:
+            os.environ['RKD_WHITELIST_GROUPS'] = ':rkd'
+            full_output, exit_code = self._run_and_capture_output([':tasks'])
+        finally:
+            os.environ['RKD_WHITELIST_GROUPS'] = ''
+
+        self.assertIn(':rkd:create-structure', full_output)
+        self.assertNotIn(':exec', full_output)
+
+    def test_task_alias_resolves_task(self):
+        """Test that with RKD_ALIAS_GROUPS=":py->:class-war" the :class-war:build would be resolved to :py:build"""
+
+        try:
+            os.environ['RKD_ALIAS_GROUPS'] = ':class-war->:rkd'
+            full_output, exit_code = self._run_and_capture_output([':class-war:create-structure', '--help'])
+        finally:
+            os.environ['RKD_ALIAS_GROUPS'] = ''
+
+        self.assertIn('usage: :rkd:create-structure', full_output)
 
     def test_env_variables_loaded_from_various_sources(self):
         """:hello task should print variables loaded globally and per-task using "environment" and "env_files"

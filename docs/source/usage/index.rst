@@ -9,4 +9,5 @@ Usage
    troubleshooting
    loading-priority
    developing-tasks
+   global-envs
    tasks-api

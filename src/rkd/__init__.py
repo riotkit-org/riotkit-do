@@ -10,6 +10,7 @@ from .validator import TaskDeclarationValidator
 from .executor import OneByOneTaskExecutor
 from .exception import TaskNotFoundException
 from .inputoutput import SystemIO, LEVEL_INFO as LOG_LEVEL_INFO
+from .aliasgroups import parse_alias_groups_from_env
 
 
 class RiotKitDoApplication:
@@ -32,7 +33,7 @@ class RiotKitDoApplication:
         # load context of components
         self._ctx = ContextFactory(io).create_unified_context()
 
-        resolver = TaskResolver(self._ctx)
+        resolver = TaskResolver(self._ctx, parse_alias_groups_from_env(os.getenv('RKD_ALIAS_GROUPS', '')))
         executor = OneByOneTaskExecutor(self._ctx)
 
         # iterate over each task, parse commandline arguments

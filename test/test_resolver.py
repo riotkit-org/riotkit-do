@@ -7,6 +7,7 @@ from rkd.resolver import TaskResolver
 from rkd.standardlib.shell import ShellCommandTask
 from rkd.syntax import TaskDeclaration, GroupDeclaration, TaskAliasDeclaration
 from rkd.argparsing import TaskArguments
+from rkd.aliasgroups import parse_alias_groups_from_env
 
 
 class TestResolver(unittest.TestCase):
@@ -33,7 +34,7 @@ class TestResolver(unittest.TestCase):
                                args: list = []):
             result_tasks.append(declaration.to_full_name() + ' ' + (' '.join(declaration.get_args())))
 
-        resolver = TaskResolver(context)
+        resolver = TaskResolver(context, [])
         resolver.resolve(
             [TaskArguments(':test', ['--short'])],
             assertion_callback
@@ -42,6 +43,8 @@ class TestResolver(unittest.TestCase):
         self.assertEqual([':sh -c uname -a', ':sh -c ps aux'], result_tasks)
 
     def test_resoles_regular_task(self):
+        """Checks that :sh resolution works fine"""
+
         context = ApplicationContext(
             tasks=[TaskDeclaration(ShellCommandTask())],
             aliases=[]
@@ -56,7 +59,31 @@ class TestResolver(unittest.TestCase):
                                args: list = []):
             result_tasks.append(declaration.to_full_name())
 
-        resolver = TaskResolver(context)
+        resolver = TaskResolver(context, [])
         resolver.resolve([TaskArguments(':sh', [])], assertion_callback)
+
+        self.assertEqual([':sh'], result_tasks)
+
+    def test_resolves_aliased_task(self):
+        """Checks 'alias groups' feature about to resolve some group name to other group name
+
+        Example:
+            :bella-ciao:sh -> :sh
+        """
+
+        context = ApplicationContext(
+            tasks=[TaskDeclaration(ShellCommandTask())],
+            aliases=[]
+        )
+        context.compile()
+        result_tasks = []
+
+        def assertion_callback(declaration: TaskDeclaration,
+                               parent: Union[GroupDeclaration, None] = None,
+                               args: list = []):
+            result_tasks.append(declaration.to_full_name())
+
+        resolver = TaskResolver(context, parse_alias_groups_from_env(':bella-ciao->'))
+        resolver.resolve([TaskArguments(':bella-ciao:sh', [])], assertion_callback)
 
         self.assertEqual([':sh'], result_tasks)
