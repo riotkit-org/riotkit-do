@@ -26,3 +26,9 @@ Alias group names, so it can be shorter, or even group names could be not typed 
 
     RKD_ALIAS_GROUPS=":rkd->:r" rkd :tasks :r:create-structure
     RKD_ALIAS_GROUPS=":rkd->" rkd :tasks :create-structure
+
+
+RKD_UI
+~~~~~~
+
+Allows to toggle (true/false) the UI - messages like "Executing task X" or "Task finished", leaving only tasks stdout, stderr and logs.
