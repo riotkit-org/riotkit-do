@@ -21,6 +21,12 @@ class RiotKitDoApplication:
     def load_environment():
         load_dotenv()
 
+    @staticmethod
+    def prepend_development_paths():
+        """Add ./src at the beginning of PYTHONPATH - very useful for development"""
+
+        sys.path = [os.getcwd() + '/src'] + sys.path
+
     def main(self, argv: list):
         if not argv[1:]:
             self.print_banner_and_exit()
@@ -59,6 +65,7 @@ class RiotKitDoApplication:
 
 def main():
     app = RiotKitDoApplication()
+    app.prepend_development_paths()
     app.load_environment()
 
     try:
