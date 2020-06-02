@@ -1,3 +1,5 @@
+.. _global environment variables:
+
 Global environment variables
 ============================
 

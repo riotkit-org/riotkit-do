@@ -10,4 +10,5 @@ Usage
    loading-priority
    developing-tasks
    global-envs
+   custom-distribution
    tasks-api
