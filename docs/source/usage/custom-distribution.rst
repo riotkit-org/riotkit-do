@@ -20,6 +20,9 @@ Example
     import os
     from rkd import main as rkd_main
 
+    def env_or_default(env_name: str, default: str):
+        return os.environ[env_name] if env_name in os.environ else default
+
     def main():
         os.environ['RKD_WHITELIST_GROUPS'] = env_or_default('RKD_WHITELIST_GROUPS', ':env,:harbor,')
         os.environ['RKD_ALIAS_GROUPS'] = env_or_default('RKD_ALIAS_GROUPS', '->:harbor')
