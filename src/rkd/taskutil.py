@@ -38,10 +38,14 @@ class TaskUtilities(AbstractClass):
         """Gets the command how RKD was launched"""
 
         binary = sys.argv[0]
+        sys_executable_basename = os.path.basename(sys.executable)
 
         # as a Python module: "python -m rkd" for example
         if binary[:-3] == '.py':
             return '%s -m %s' % (sys.executable, os.path.basename(os.path.dirname(binary)))
+
+        if sys_executable_basename.startswith('python'):
+            return binary
 
         # using a script eg. "rkd"
         return sys.executable
