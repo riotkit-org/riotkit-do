@@ -28,7 +28,8 @@ class InitTask(TaskInterface):
         return {
             'RKD_DEPTH': '0',
             'RKD_PATH': '',
-            'RKD_ALIAS_GROUPS': ''
+            'RKD_ALIAS_GROUPS': '',
+            'RKD_UI': 'true'
         }
 
     def configure_argparse(self, parser: ArgumentParser):
@@ -55,6 +56,9 @@ class InitTask(TaskInterface):
 
         if int(context.get_env('RKD_DEPTH')) >= 1 or context.args['no_ui']:
             self._ctx.io.set_display_ui(False)
+
+        if context.get_env('RKD_UI'):
+            self._ctx.io.set_display_ui(context.get_env('RKD_UI').lower() == 'true')
 
         return True
 
