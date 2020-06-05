@@ -78,3 +78,28 @@ class TestFileRendererTask(unittest.TestCase):
 
         self.assertIn("Undefined variable - 'MESSAGE' is undefined", io.get_value())
         self.assertNotIn('Traceback (most recent call last):', io.get_value())
+
+    def test_renders_with_extends_section(self):
+        """Test that JINJA2 finds files on disk in current directory when using {% extends "..." %}"""
+
+        cwd_copy = os.getcwd()
+        os.chdir('../test/internal-samples/jinja2')
+
+        try:
+            io = self._execute_mocked_task(
+                # shell arguments
+                {
+                    'source': SAMPLES_PATH + '/jinja2/example-with-extends.j2',
+                    'output': '-'
+                },
+                # env variables
+                {
+                    # "MESSAGE" variable should be defined, but is not - to test if error will be raised
+                }
+            )
+        finally:
+            os.chdir(cwd_copy)
+
+        self.assertIn('Teresa Claramunt was born.', io.get_value())
+        self.assertIn('played a leading role in the 1911 Aragon general strike.', io.get_value())
+        self.assertIn('When she died 50k workers went to her funeral', io.get_value())

@@ -4,6 +4,8 @@ from typing import Pattern
 from argparse import ArgumentParser
 from subprocess import CalledProcessError
 from jinja2 import Template
+from jinja2 import Environment
+from jinja2 import FileSystemLoader
 from jinja2 import StrictUndefined
 from jinja2.exceptions import UndefinedError
 from ..contract import TaskInterface
@@ -32,7 +34,9 @@ class FileRendererTask(TaskInterface):
             self.sh('mkdir -p %s' % os.path.dirname(output))
 
         with open(source, 'rb') as f:
-            tpl = Template(f.read().decode('utf-8'), undefined=StrictUndefined)
+
+            tpl = Environment(loader=FileSystemLoader("./"), undefined=StrictUndefined)\
+                .from_string(f.read().decode('utf-8'))
 
             try:
                 rendered = tpl.render(**context.env)

@@ -3,6 +3,8 @@ JINJA
 
 Renders JINJA2 files, and whole directories of files. Allows to render by pattern.
 
+All includes and extends are by default looking in current working directory path.
+
 :j2:render
 ~~~~~~~~~~
 .. jinja:: j2_render
