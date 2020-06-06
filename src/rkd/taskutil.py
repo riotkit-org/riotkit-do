@@ -106,11 +106,11 @@ class TaskUtilities(AbstractClass):
 
         return check_output(cmd, shell=True).decode('utf-8')
 
-    def rkd(self, args: list, verbose: bool = False) -> str:
+    def rkd(self, args: list, verbose: bool = False, capture: bool = False) -> str:
         """ Spawns an RKD subprocess
         """
 
         bash_opts = 'set -x; ' if verbose else ''
         args_str = ' '.join(args)
 
-        return self.sh(bash_opts + ' %%RKD%% --no-ui %s' % args_str)
+        return self.sh(bash_opts + ' %%RKD%% --no-ui %s' % args_str, capture=capture)

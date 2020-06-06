@@ -9,7 +9,7 @@ LEVEL_DEBUG = 37
 LEVEL_INFO = 36
 LEVEL_WARNING = 33
 LEVEL_ERROR = 31
-LEVEL_FATAL = 41
+LEVEL_FATAL = 20
 
 LOG_LEVELS = {
     'debug': LEVEL_DEBUG,
@@ -110,6 +110,9 @@ class IO:
             raise Exception('Invalid log level name')
 
         self.log_level = LOG_LEVELS[desired_level_name]
+
+    def is_log_level_at_least(self, log_level: str) -> bool:
+        return self.log_level >= LOG_LEVELS[log_level]
 
     def get_log_level(self) -> str:
         for name, severity in LOG_LEVELS.items():
