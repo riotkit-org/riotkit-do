@@ -31,7 +31,10 @@ class StandardOutputReplication(object):
             try:
                 stream.write(buf)
             except TypeError:
-                stream.write(buf.encode('utf-8'))
+                try:
+                    stream.write(buf.encode('utf-8'))
+                except AttributeError:
+                    stream.write(str(buf))
 
         self.flush()
 

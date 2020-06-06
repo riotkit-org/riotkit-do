@@ -34,8 +34,8 @@ class FileRendererTask(TaskInterface):
             self.sh('mkdir -p %s' % os.path.dirname(output))
 
         with open(source, 'rb') as f:
-
-            tpl = Environment(loader=FileSystemLoader("./"), undefined=StrictUndefined)\
+            # @todo: Support for .rkd directories in proper order
+            tpl = Environment(loader=FileSystemLoader(['./', './.rkd/templates']), undefined=StrictUndefined)\
                 .from_string(f.read().decode('utf-8'))
 
             try:

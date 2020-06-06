@@ -19,7 +19,8 @@ class GetEnvTask(TaskInterface):
         parser.add_argument('--name', '-e', help='Environment variable name', required=True)
 
     def execute(self, context: ExecutionContext) -> bool:
-        self.io().out(os.getenv(context.get_arg('--name')))
+        # @todo: test for case, when None then ''
+        self.io().out(os.getenv(context.get_arg('--name'), ''))
 
         return True
 

@@ -19,7 +19,13 @@ class RiotKitDoApplication:
 
     @staticmethod
     def load_environment():
-        load_dotenv()
+        paths = os.getenv('RKD_PATH', '').split(':')
+
+        for path in paths:
+            if os.path.isfile(path + '/.env'):
+                load_dotenv(path + '/.env')
+
+        load_dotenv(dotenv_path=os.getcwd() + '/.env')
 
     @staticmethod
     def prepend_development_paths():
