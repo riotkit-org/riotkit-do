@@ -24,6 +24,7 @@ class TestFunctional(unittest.TestCase):
     _stderr = None
 
     def setUp(self) -> None:
+        os.environ['RKD_DEPTH'] = '0'
         self._stdout = sys.stdout
         self._stderr = sys.stderr
 
@@ -156,11 +157,8 @@ class TestFunctional(unittest.TestCase):
     def test_tasks_whitelist_shows_only_selected_groups(self):
         """Test that when we set RKD_WHITELIST_GROUPS=:rkd, then we will see only tasks from [rkd] group"""
 
-        try:
-            os.environ['RKD_WHITELIST_GROUPS'] = ':rkd'
+        with self.environment({'RKD_WHITELIST_GROUPS': ':rkd'}):
             full_output, exit_code = self._run_and_capture_output([':tasks'])
-        finally:
-            os.environ['RKD_WHITELIST_GROUPS'] = ''
 
         self.assertIn(':rkd:create-structure', full_output)
         self.assertNotIn(':exec', full_output)
@@ -168,11 +166,8 @@ class TestFunctional(unittest.TestCase):
     def test_task_whitelist_shows_only_global_group(self):
         """Test that when we set RKD_WHITELIST_GROUPS=,, then we will see only tasks from [global] group"""
 
-        try:
-            os.environ['RKD_WHITELIST_GROUPS'] = ','
+        with self.environment({'RKD_WHITELIST_GROUPS': ','}):
             full_output, exit_code = self._run_and_capture_output([':tasks'])
-        finally:
-            os.environ['RKD_WHITELIST_GROUPS'] = ''
 
         self.assertIn(':tasks', full_output)
         self.assertNotIn(':rkd:create-structure', full_output)
@@ -180,11 +175,8 @@ class TestFunctional(unittest.TestCase):
     def test_task_alias_resolves_task(self):
         """Test that with RKD_ALIAS_GROUPS=":py->:class-war" the :class-war:build would be resolved to :py:build"""
 
-        try:
-            os.environ['RKD_ALIAS_GROUPS'] = ':class-war->:rkd'
+        with self.environment({'RKD_ALIAS_GROUPS': ':class-war->:rkd'}):
             full_output, exit_code = self._run_and_capture_output([':class-war:create-structure', '--help'])
-        finally:
-            os.environ['RKD_ALIAS_GROUPS'] = ''
 
         self.assertIn('usage: :rkd:create-structure', full_output)
 

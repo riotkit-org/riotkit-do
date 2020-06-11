@@ -11,6 +11,8 @@ from .executor import OneByOneTaskExecutor
 
 
 class TestTask(CallableTask):
+    _description = 'Test task for automated tests'
+
     def __init__(self):
         self._io = NullSystemIO()
 

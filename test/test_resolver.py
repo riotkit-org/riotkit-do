@@ -30,6 +30,7 @@ class TestResolver(unittest.TestCase):
         result_tasks = []
 
         def assertion_callback(declaration: TaskDeclaration,
+                               task_num: int,
                                parent: Union[GroupDeclaration, None] = None,
                                args: list = []):
             result_tasks.append(declaration.to_full_name() + ' ' + (' '.join(declaration.get_args())))
@@ -55,6 +56,7 @@ class TestResolver(unittest.TestCase):
         result_tasks = []
 
         def assertion_callback(declaration: TaskDeclaration,
+                               task_num: int,
                                parent: Union[GroupDeclaration, None] = None,
                                args: list = []):
             result_tasks.append(declaration.to_full_name())
@@ -79,6 +81,7 @@ class TestResolver(unittest.TestCase):
         result_tasks = []
 
         def assertion_callback(declaration: TaskDeclaration,
+                               task_num: int,
                                parent: Union[GroupDeclaration, None] = None,
                                args: list = []):
             result_tasks.append(declaration.to_full_name())
