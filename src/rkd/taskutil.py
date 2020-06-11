@@ -40,6 +40,9 @@ class TaskUtilities(AbstractClass):
         binary = sys.argv[0]
         sys_executable_basename = os.path.basename(sys.executable)
 
+        if binary == 'python3 -m unittest':
+            return 'python3 -m rkd'
+
         # as a Python module: "python -m rkd" for example
         if binary[:-3] == '.py':
             return '%s -m %s' % (sys.executable, os.path.basename(os.path.dirname(binary)))

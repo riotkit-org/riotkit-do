@@ -104,9 +104,7 @@ class TestFunctional(unittest.TestCase):
         self.assertNotIn('[global]', full_output)              # per-task (IO)
 
     def test_logging_tasks_into_separate_files(self):
-        """
-        Checks if RKD is able to log output to file per task
-        :return:
+        """Checks if RKD is able to log output to file per task
         """
 
         first = NamedTemporaryFile(delete=False)
@@ -212,3 +210,13 @@ class TestFunctional(unittest.TestCase):
             self.assertIn('Italian-American anarchist who was framed & executed', full_output)
             self.assertIn('#2 line: This is his short autobiography:', full_output)
             self.assertIn('#3 line: https://libcom.org/library/story-proletarian-life', full_output)
+
+    def test_depth_increased(self):
+        """Test that RKD_DEPTH is increased within next calls
+        """
+
+        full_output, exit_code = self._run_and_capture_output(
+            [':sh', '-c', '%RKD% :sh -c \'echo "DEPTH: [$RKD_DEPTH]"\'']
+        )
+
+        self.assertIn('DEPTH: [2]', full_output)
