@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 
 import unittest
-import os
 from rkd.standardlib import InitTask
 from rkd.contract import ExecutionContext
 from rkd.syntax import TaskDeclaration
 from rkd.exception import MissingInputException
 
-CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
-
-class TestTaskInterface(unittest.TestCase):
+class TestExecutionContext(unittest.TestCase):
     def test_get_arg_or_env(self):
         """Checks logic of fetching commandline switch, with fallback to environment variable
         """
