@@ -34,3 +34,16 @@ RKD_UI
 ~~~~~~
 
 Allows to toggle (true/false) the UI - messages like "Executing task X" or "Task finished", leaving only tasks stdout, stderr and logs.
+
+
+RKD_AUDIT_SESSION_LOG
+~~~~~~~~~~~~~~~~~~~~~
+
+Logs output of each executed task, when set to "true".
+
+**Example structure of logs:**
+
+.. code:: bash
+
+    # ls .rkd/logs/2020-06-11/11\:06\:02.068556/
+    task-1-init.log  task-2-harbor_service_list.log
