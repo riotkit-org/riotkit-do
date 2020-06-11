@@ -15,12 +15,12 @@ def decide_about_target_log_files(ctx: ApplicationContext, log_to_file: str, ses
 
     if session_log:
         date = ctx.get_creation_date()
-
+        time_with_seconds = date.strftime('%H:%M:%S.%f').replace(':', '_').replace('.', '-')
         template = '.rkd/logs/%DATE-DAY%/%DATE-SECOND%/task-%TASKNUM%-%NORMALIZED_TASKNAME%.log'
 
         log_files.append(
             template.replace('%DATE-DAY%', date.strftime('%Y-%m-%d'))
-                    .replace('%DATE-SECOND%', date.strftime('%H:%M:%S.%f'))
+                    .replace('%DATE-SECOND%', time_with_seconds)
                     .replace('%TASKNUM%', str(task_num))
                     .replace('%NORMALIZED_TASKNAME%', normalize_task_name_to_filename(declaration))
         )

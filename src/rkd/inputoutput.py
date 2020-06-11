@@ -1,6 +1,7 @@
 
 import sys
 import os
+import subprocess
 from typing import List
 from contextlib import contextmanager
 from datetime import datetime
@@ -80,30 +81,39 @@ class IO:
         outputs_stdout = []
         outputs_stderr = []
 
+        # 1. Prepare standard out/err
         if enable_standard_out:
             outputs_stdout.append(sys_stdout)
             outputs_stderr.append(sys_stderr)
 
+        # 2. Prepare logs
         for target_file in target_files:
-            os.makedirs(os.path.dirname(target_file), mode=0o740, exist_ok=True)
+            subprocess.call(['mkdir', '-p', os.path.dirname(target_file)])
 
             log_file = open(target_file, 'wb')
+            log_file.flush = lambda: None  # https://bugs.python.org/issue29130
             log_files.append(log_file)
 
             outputs_stdout.append(log_file)
             outputs_stderr.append(log_file)
 
+        # 3. Prepare StringIO
         if stream:
             outputs_stdout.append(stream)
             outputs_stderr.append(stream)
 
+        # 4. Mock
         sys.stdout = StandardOutputReplication(outputs_stdout)
         sys.stderr = StandardOutputReplication(outputs_stderr)
 
+        # 5. Action!
         yield
+
+        # 6. Revert standard out/err
         sys.stdout = sys_stdout
         sys.stderr = sys.stderr
 
+        # 7. Clean up: close all log files
         for log_file in log_files:
             log_file.close()
 
