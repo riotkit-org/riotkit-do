@@ -56,7 +56,8 @@ class StandardOutputReplication(object):
 
     def flush(self):
         for stream in self._out_streams:
-            stream.flush()
+            if hasattr(stream, 'noflush'):
+                stream.flush()
 
 
 class IO:
@@ -68,6 +69,9 @@ class IO:
     @contextmanager
     def capture_descriptors(self, target_files: List[str] = None, stream=None, enable_standard_out: bool = True):
         """Capture stdout and stderr from a block of code - use with 'with'"""
+
+        if target_files is None:
+            target_files = []
 
         if this.IS_CAPTURING_DESCRIPTORS:
             self.debug('Deep call to capture_descriptors()')
@@ -90,8 +94,8 @@ class IO:
         for target_file in target_files:
             subprocess.call(['mkdir', '-p', os.path.dirname(target_file)])
 
-            log_file = open(target_file, 'wb')
-            log_file.flush = lambda: None  # https://bugs.python.org/issue29130
+            log_file = open(target_file, 'wb', buffering=0)
+            log_file.no_flush = True
             log_files.append(log_file)
 
             outputs_stdout.append(log_file)
