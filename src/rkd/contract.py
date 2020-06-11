@@ -1,5 +1,6 @@
 
 
+from tabulate import tabulate
 from abc import abstractmethod, ABC as AbstractClass
 from typing import Dict, List, Union, Optional
 from argparse import ArgumentParser
@@ -241,4 +242,13 @@ class TaskInterface(TaskUtilities):
     def __str__(self):
         return 'Task<' + self.get_full_name() + '>'
 
+    @staticmethod
+    def table(header: list, body: list, tablefmt: str= "simple",
+              floatfmt: str = 'g',
+              numalign: str = "decimal",
+              stralign:str = "left",
+              missingval: str = '',
+              showindex: str = "default",
+              disable_numparse: bool = False,
+              colalign: str = None):
 
