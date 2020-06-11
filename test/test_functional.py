@@ -201,3 +201,14 @@ class TestFunctional(unittest.TestCase):
             self.assertIn('Included in task - per-task.env: 24 April 2013, the 8-storey Rana Plaza building in ' +
                           'Bangladesh collapsed, killing over 1,000 garment workers, as bosses in the ' +
                           'country\'s largest industry put profits before people', full_output)
+
+    def test_help_shows_full_task_description(self):
+        """:hello --help should show full description, even if it is multiline
+        """
+
+        with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/env-in-yaml/.rkd'}):
+            full_output, exit_code = self._run_and_capture_output([':hello', '--help'])
+
+            self.assertIn('Italian-American anarchist who was framed & executed', full_output)
+            self.assertIn('#2 line: This is his short autobiography:', full_output)
+            self.assertIn('#3 line: https://libcom.org/library/story-proletarian-life', full_output)

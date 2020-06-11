@@ -8,6 +8,11 @@ env_files:
 
 tasks:
     :hello:
+        description: |
+            #1 line: 11 June 1888 Bartolomeo Vanzetti, Italian-American anarchist who was framed & executed alongside Nicola Sacco, was born.
+            #2 line: This is his short autobiography:
+            #3 line: https://libcom.org/library/story-proletarian-life
+
         environment:
             INLINE_PER_TASK: "17 May 1972 10,000 schoolchildren in the UK walked out on strike in protest against corporal punishment. Within two years, London state schools banned corporal punishment. The rest of the country followed in 1987."
         env_files: ['env/per-task.env']
