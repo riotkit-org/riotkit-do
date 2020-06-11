@@ -1,16 +1,28 @@
 Loading priority
 ================
 
+.. _environment loading priority:
+
+Environment variables loading order from .env and from .rkd
+-----------------------------------------------------------
+
+*Legend: Top is most important, the variables loaded on higher level are not overridden by lower level*
+
+1. Operating system environment
+2. Current working directory .env file
+3. .env files from directories defined in RKD_PATH
+
 Environment variables loading order in YAML syntax
 --------------------------------------------------
 
 *Legend: Top - is most important*
 
 1. Operating system environment
-2. Per-task "environment" section
-3. Per-task "env_file" imports
-4. Global "environment" section
-5. Global "env_file" imports
+2. .env file
+3. Per-task "environment" section
+4. Per-task "env_file" imports
+5. Global "environment" section
+6. Global "env_file" imports
 
 Order of loading of makefile files in same .rkd directory
 ---------------------------------------------------------
