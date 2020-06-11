@@ -47,6 +47,9 @@ class InitTask(TaskInterface):
         :return:
         """
 
+        # increment RKD_DEPTH
+        os.environ['RKD_DEPTH'] = str(int(os.getenv('RKD_DEPTH', '0')) + 1)
+
         self._ctx.io  # type: SystemIO
         self._ctx.io.silent = context.args['silent']
 
@@ -54,11 +57,11 @@ class InitTask(TaskInterface):
         if context.args['log_level']:
             self._ctx.io.set_log_level(context.args['log_level'])
 
-        if int(context.get_env('RKD_DEPTH')) >= 1 or context.args['no_ui']:
-            self._ctx.io.set_display_ui(False)
-
         if context.get_env('RKD_UI'):
             self._ctx.io.set_display_ui(context.get_env('RKD_UI').lower() == 'true')
+
+        if int(context.get_env('RKD_DEPTH')) >= 2 or context.args['no_ui']:
+            self._ctx.io.set_display_ui(False)
 
         return True
 

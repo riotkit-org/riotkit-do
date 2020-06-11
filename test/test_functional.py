@@ -150,7 +150,7 @@ class TestFunctional(unittest.TestCase):
         """ :sh does not define any environment variables """
 
         full_output, exit_code = self._run_and_capture_output([':sh', '--help'])
-        self.assertNotIn('- RKD_DEPTH (default: 0)', full_output)
+        self.assertNotIn('- RKD_DEPTH (default: )', full_output)
         self.assertIn('-- No environment variables declared --', full_output)
 
     def test_tasks_whitelist_shows_only_selected_groups(self):

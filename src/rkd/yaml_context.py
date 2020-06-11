@@ -250,7 +250,7 @@ class YamlParser:
                 process_env = OrderedDict()
                 process_env.update(envs)
                 process_env.update(args)
-                process_env.update({'RKD_PATH': rkd_path, 'RKD_DEPTH': int(os.getenv('RKD_DEPTH', 0)) + 1})
+                process_env.update({'RKD_PATH': rkd_path, 'RKD_DEPTH': int(os.getenv('RKD_DEPTH'))})
 
                 this.sh(code, strict=True, env=process_env)
                 return True
