@@ -44,6 +44,10 @@ class TaskDeclarationInterface(AbstractClass):
     def get_description(self) -> str:
         pass
 
+    @abstractmethod
+    def get_full_description(self) -> str:
+        pass
+
 
 class GroupDeclarationInterface(AbstractClass):
     @abstractmethod
@@ -85,7 +89,8 @@ class ContextInterface(AbstractClass):
 
 class ExecutorInterface(AbstractClass):
     @abstractmethod
-    def execute(self, task: TaskDeclarationInterface, parent: Union[GroupDeclarationInterface, None] = None, args: list = []):
+    def execute(self, task: TaskDeclarationInterface, task_num: int,
+                parent: Union[GroupDeclarationInterface, None] = None, args: list = []):
         pass
 
 
@@ -252,3 +257,6 @@ class TaskInterface(TaskUtilities):
               disable_numparse: bool = False,
               colalign: str = None):
 
+        return tabulate(body, headers=header, floatfmt=floatfmt, numalign=numalign, tablefmt=tablefmt,
+                        stralign=stralign, missingval=missingval, showindex=showindex,
+                        disable_numparse=disable_numparse, colalign=colalign)

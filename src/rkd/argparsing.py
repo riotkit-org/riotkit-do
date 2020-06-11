@@ -91,6 +91,8 @@ class CommandlineParsingHelper(object):
         if argparse.description is None:
             argparse.description = ""
 
+        argparse.description += task.get_full_description() + "\n"
+
         # print all environment variables possible to use
         argparse.description += "\nEnvironment variables for task \"%s\":\n" % task.to_full_name()
 

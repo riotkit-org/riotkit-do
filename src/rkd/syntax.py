@@ -91,6 +91,14 @@ class TaskDeclaration(TaskDeclarationInterface):
 
         return task.__doc__.strip().split("\n")[0]
 
+    def get_full_description(self) -> str:
+        task = self.get_task_to_execute()
+
+        if task.get_description():
+            return task.get_description()
+
+        return task.__doc__.strip()
+
     @staticmethod
     def parse_name(name: str) -> tuple:
         split = name.split(':')
