@@ -3,6 +3,8 @@
 import os
 import sys
 import unittest
+import tempfile
+import subprocess
 from copy import deepcopy
 from tempfile import NamedTemporaryFile
 from typing import Tuple
@@ -225,9 +227,36 @@ class TestFunctional(unittest.TestCase):
         """Test that RKD in RKD will not show UI (fancy messages like "Executing ...")
         """
 
-        full_output, exit_code = self._run_and_capture_output(
-            ['--no-ui', ':sh', '-c', '%RKD% :tasks']
-        )
+        full_output, exit_code = self._run_and_capture_output([
+            '--no-ui', ':sh', '-c', '%RKD% :tasks'
+        ])
 
         self.assertIn(':tasks', full_output)
         self.assertNotIn('>> Executing', full_output)
+
+    def test_env_file_is_loaded_from_cwd(self):
+        """Assert that .env file is loaded from current working directory
+        """
+
+        cwd_backup = os.getcwd()
+
+        try:
+            # 1. Create new working directory
+            with tempfile.TemporaryDirectory() as tempdir:
+                os.chdir(tempdir)
+
+                # 2. Create example .env file
+                with open(tempdir + '/.env', 'w') as f:
+                    f.write("DURRUTI_BIRTHDAY_DATE=14.07.1896\n")
+
+                # 3. Run
+                full_output = subprocess.check_output(
+                    "python3 -m rkd :sh -c 'echo \"Durruti was born at $DURRUTI_BIRTHDAY_DATE\"'",
+                    env={'PYTHONPATH': SCRIPT_DIR_PATH + '/../src'},
+                    shell=True
+                )
+
+                # 4. Assert
+                self.assertIn('Durruti was born at 14.07.1896', full_output.decode('utf-8'))
+        finally:
+            os.chdir(cwd_backup)
