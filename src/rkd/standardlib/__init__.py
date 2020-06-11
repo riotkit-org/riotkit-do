@@ -60,7 +60,7 @@ class InitTask(TaskInterface):
         if context.get_env('RKD_UI'):
             self._ctx.io.set_display_ui(context.get_env('RKD_UI').lower() == 'true')
 
-        if int(context.get_env('RKD_DEPTH')) >= 2 or context.args['no_ui']:
+        if int(os.getenv('RKD_DEPTH')) >= 2 or context.args['no_ui']:
             self._ctx.io.set_display_ui(False)
 
         return True

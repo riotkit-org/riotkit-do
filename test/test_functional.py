@@ -220,3 +220,14 @@ class TestFunctional(unittest.TestCase):
         )
 
         self.assertIn('DEPTH: [2]', full_output)
+
+    def test_depth_above_2_disables_ui(self):
+        """Test that RKD in RKD will not show UI (fancy messages like "Executing ...")
+        """
+
+        full_output, exit_code = self._run_and_capture_output(
+            ['--no-ui', ':sh', '-c', '%RKD% :tasks']
+        )
+
+        self.assertIn(':tasks', full_output)
+        self.assertNotIn('>> Executing', full_output)
