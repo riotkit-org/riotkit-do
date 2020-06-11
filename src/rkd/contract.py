@@ -248,7 +248,7 @@ class TaskInterface(TaskUtilities):
         return 'Task<' + self.get_full_name() + '>'
 
     @staticmethod
-    def table(header: list, body: list, tablefmt: str= "simple",
+    def table(header: list, body: list, tablefmt: str = "simple",
               floatfmt: str = 'g',
               numalign: str = "decimal",
               stralign:str = "left",
