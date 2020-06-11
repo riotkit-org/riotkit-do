@@ -8,7 +8,10 @@ from .exception import NotSupportedEnvVariableError
 class TaskDeclarationValidator:
 
     @staticmethod
-    def assert_declaration_is_valid(task: TaskDeclaration, parent: Union[GroupDeclaration, None] = None, args: list = []):
+    def assert_declaration_is_valid(task: TaskDeclaration, task_num: int,
+                                    parent: Union[GroupDeclaration, None] = None,
+                                    args: list = []):
+
         # check if arguments are satisfied
         CommandlineParsingHelper.parse(task, args)
 

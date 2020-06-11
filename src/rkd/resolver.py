@@ -8,7 +8,7 @@ from .exception import TaskNotFoundException
 from .aliasgroups import AliasGroup
 
 
-CALLBACK_DEF = Callable[[TaskDeclaration, Union[GroupDeclaration, None], list], None]
+CALLBACK_DEF = Callable[[TaskDeclaration, int, Union[GroupDeclaration, None], list], None]
 
 
 class TaskResolver:
@@ -35,9 +35,13 @@ class TaskResolver:
         :return:
         """
 
+        task_num = 0
+
         for task_request in requested_tasks:
+            task_num += 1
+
             try:
-                self._resolve_element(task_request, callback)
+                self._resolve_element(task_request, callback, task_num)
             except InterruptExecution:
                 return
 
@@ -50,7 +54,7 @@ class TaskResolver:
             if resolved:
                 return resolved
 
-    def _resolve_element(self, task_request: TaskArguments, callback: CALLBACK_DEF):
+    def _resolve_element(self, task_request: TaskArguments, callback: CALLBACK_DEF, task_num: int):
         """Checks task by name if it was defined in context, if yes then unpacks declarations and prepares callbacks"""
 
         try:
@@ -77,6 +81,7 @@ class TaskResolver:
         for declaration in declarations:
             callback(
                 declaration,
+                task_num,
                 parent,
                 # the arguments there will be mixed in order:
                 #  - first: defined in Makefile

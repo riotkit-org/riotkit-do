@@ -1,6 +1,10 @@
 
-from contextlib import contextmanager
 import sys
+import os
+from typing import List
+from contextlib import contextmanager
+from datetime import datetime
+
 
 this = sys.modules[__name__]
 this.IS_CAPTURING_DESCRIPTORS = False
@@ -17,6 +21,14 @@ LOG_LEVELS = {
     'warning': LEVEL_WARNING,
     'error': LEVEL_ERROR,
     'fatal': LEVEL_FATAL
+}
+
+LOG_LEVEL_FORMATTING_MAPPING = {
+    'debug':   "\x1B[0m%TEXT%\x1B[0m",
+    'info':    "\x1B[1m%TEXT%\x1B[0m",
+    'warn':    "\x1B[93m%TEXT%\x1B[0m",
+    'error':   "\x1B[91m%TEXT%\x1B[0m",
+    'fatal':   "\x1B[91m\x1B[5m%TEXT%\x1B[0m"
 }
 
 
@@ -46,7 +58,6 @@ class StandardOutputReplication(object):
             stream.flush()
 
 
-
 class IO:
     """ Interacting with input and output - stdout/stderr/stdin, logging """
 
@@ -54,7 +65,7 @@ class IO:
     log_level = LEVEL_INFO
 
     @contextmanager
-    def capture_descriptors(self, target_file: str = None, stream=None, enable_standard_out: bool = True):
+    def capture_descriptors(self, target_files: List[str] = None, stream=None, enable_standard_out: bool = True):
         """Capture stdout and stderr from a block of code - use with 'with'"""
 
         if this.IS_CAPTURING_DESCRIPTORS:
@@ -64,7 +75,7 @@ class IO:
 
         sys_stdout = sys.stdout
         sys_stderr = sys.stderr
-        log_file = None
+        log_files = []
 
         outputs_stdout = []
         outputs_stderr = []
@@ -73,8 +84,12 @@ class IO:
             outputs_stdout.append(sys_stdout)
             outputs_stderr.append(sys_stderr)
 
-        if target_file:
+        for target_file in target_files:
+            os.makedirs(os.path.dirname(target_file), mode=0o740, exist_ok=True)
+
             log_file = open(target_file, 'wb')
+            log_files.append(log_file)
+
             outputs_stdout.append(log_file)
             outputs_stderr.append(log_file)
 
@@ -89,7 +104,7 @@ class IO:
         sys.stdout = sys_stdout
         sys.stderr = sys.stderr
 
-        if target_file:
+        for log_file in log_files:
             log_file.close()
 
         this.IS_CAPTURING_DESCRIPTORS = False
@@ -170,7 +185,7 @@ class IO:
 
         """
         if self.log_level >= LEVEL_DEBUG:
-            self.log(text)
+            self.log(text, 'debug')
 
     def info(self, text):
         """Logger: info
@@ -178,7 +193,7 @@ class IO:
         """
 
         if self.log_level >= LEVEL_INFO:
-            self.log(text)
+            self.log(text, 'info')
 
     def warn(self, text):
         """Logger: warn
@@ -186,7 +201,7 @@ class IO:
         """
 
         if self.log_level >= LEVEL_WARNING:
-            self.log(text)
+            self.log(text, 'warn')
 
     def error(self, text):
         """Logger: error
@@ -194,7 +209,7 @@ class IO:
         """
 
         if self.log_level >= LEVEL_ERROR:
-            self.log(text)
+            self.log(text, 'error')
 
     def critical(self, text):
         """Logger: critical
@@ -202,11 +217,14 @@ class IO:
         """
 
         if self.log_level >= LEVEL_FATAL:
-            self.log(text)
+            self.log(text, 'critical')
 
-    def log(self, text):
+    def log(self, text, level: str):
         if not self.is_silent():
-            self.outln(text)
+            current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+            level = LOG_LEVEL_FORMATTING_MAPPING[level].replace('%TEXT%', level)
+
+            self.outln("\x1B[2m[%s]\x1B[0m[%s]: \x1B[2m%s\x1B[0m" % (current_time, level, text))
 
     def print_group(self, text):
         """Prints a colored text inside brackets [text] (optional output)

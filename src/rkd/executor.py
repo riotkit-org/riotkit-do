@@ -1,4 +1,5 @@
 
+import os
 from typing import Union
 from traceback import print_exc
 from .argparsing import CommandlineParsingHelper
@@ -8,6 +9,7 @@ from .contract import ExecutorInterface, ExecutionContext
 from .inputoutput import IO, SystemIO
 from .results import ProgressObserver
 from .exception import InterruptExecution
+from .audit import decide_about_target_log_files
 
 
 class OneByOneTaskExecutor(ExecutorInterface):
@@ -22,7 +24,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
         self.io = ctx.io
         self._observer = ProgressObserver(ctx.io)
 
-    def execute(self, declaration: TaskDeclaration, parent: Union[GroupDeclaration, None] = None, args: list = []):
+    def execute(self, declaration: TaskDeclaration, task_num: int, parent: Union[GroupDeclaration, None] = None, args: list = []):
         """ Executes a single task passing the arguments, redirecting/capturing the output and handling the errors """
 
         result = False
@@ -31,18 +33,27 @@ class OneByOneTaskExecutor(ExecutorInterface):
         # 1. notify
         self._observer.task_started(declaration, parent, args)
 
-        # 2. execute
+        # 2. parse arguments
         parsed_args = CommandlineParsingHelper.parse(declaration, args)
+        log_level: str = parsed_args['log_level']
+        log_to_file: str = parsed_args['log_to_file']
+        is_silent: bool = parsed_args['silent']
+        keep_going: bool = parsed_args['keep_going']
+        session_log: bool = os.getenv('RKD_AUDIT_SESSION_LOG', '').lower() in ['true', '1', 'yes']
+
+        # 3. execute
         try:
             io = IO()
-            io.set_log_level(parsed_args['log_level'] if parsed_args['log_level'] else self.io.get_log_level())
+            io.set_log_level(log_level if log_level else self.io.get_log_level())
 
-            if parsed_args['silent']:
-                io.silent = parsed_args['silent']
+            if is_silent:
+                io.silent = is_silent
             else:
                 io.inherit_silent(self.io)  # fallback to system-wide
 
-            with io.capture_descriptors(target_file=parsed_args['log_to_file']):
+            with io.capture_descriptors(
+                    target_files=decide_about_target_log_files(self._ctx, log_to_file, session_log, declaration, task_num)):
+
                 task = declaration.get_task_to_execute()
                 task.internal_inject_dependencies(io, self._ctx, self)
 
@@ -55,10 +66,10 @@ class OneByOneTaskExecutor(ExecutorInterface):
                     )
                 )
 
-        # 3. capture result
+        # 4. capture result
         except Exception as e:
             # allows to keep going on, even if task fails
-            if not parsed_args['keep_going']:
+            if not keep_going:
                 print_exc()
                 raise InterruptExecution()
 
@@ -73,7 +84,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
                     self._observer.task_failed(declaration, parent)
 
                 # break the whole pipeline only if not --keep-going
-                if not parsed_args['keep_going']:
+                if not keep_going:
                     raise InterruptExecution()
 
     def get_observer(self) -> ProgressObserver:

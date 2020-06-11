@@ -1,6 +1,7 @@
 
 import os
 import sys
+from datetime import datetime
 from typing import Dict, List, Union
 from importlib.machinery import SourceFileLoader
 from traceback import print_exc
@@ -34,11 +35,13 @@ class ApplicationContext(ContextInterface):
     _imported_tasks: Dict[str, TaskDeclaration]
     _task_aliases: Dict[str, TaskAliasDeclaration]
     _compiled: Dict[str, Union[TaskDeclaration, GroupDeclaration]]
+    _created_at: datetime
     io: SystemIO
 
     def __init__(self, tasks: List[TaskDeclaration], aliases: List[TaskAliasDeclaration]):
         self._imported_tasks = {}
         self._task_aliases = {}
+        self._created_at = datetime.now()
 
         for task in tasks:
             self._add_component(task)
@@ -80,6 +83,9 @@ class ApplicationContext(ContextInterface):
 
     def find_all_tasks(self) -> Dict[str, Union[TaskDeclaration, GroupDeclaration]]:
         return self._compiled
+
+    def get_creation_date(self) -> datetime:
+        return self._created_at
 
     def _add_component(self, component: TaskDeclaration) -> None:
         self._imported_tasks[component.to_full_name()] = component
