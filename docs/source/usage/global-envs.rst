@@ -3,6 +3,9 @@
 Global environment variables
 ============================
 
+Global switches designed to customize RKD per project. Put environment variables into your **.env** file, so you will no have
+to prepend them in the commandline every time.
+
 RKD_WHITELIST_GROUPS
 ~~~~~~~~~~~~~~~~~~~~
 
