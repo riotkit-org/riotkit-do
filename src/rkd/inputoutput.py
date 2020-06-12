@@ -356,3 +356,6 @@ class BufferedSystemIO(SystemIO):
 
     def get_value(self):
         return self._buffer
+
+    def clear_buffer(self):
+        self._buffer = ''
