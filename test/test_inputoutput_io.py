@@ -82,3 +82,13 @@ class TestIO(unittest.TestCase):
             self.assertTrue(self.__getattribute__('is_text_optional'),
                             msg='%s: Expected that the text will be printed through opt_outln()' % str(method))
 
+    def test_get_log_level_raises_exception_on_unset_level(self):
+        """Check DEFAULT error level and validation of not set error logging"""
+
+        io = IO()
+
+        self.assertEqual('info', io.get_log_level())
+
+        io.log_level = None
+        self.assertRaises(Exception, lambda: io.get_log_level())
+
