@@ -48,6 +48,10 @@ class TaskDeclarationInterface(AbstractClass):
     def get_full_description(self) -> str:
         pass
 
+    @abstractmethod
+    def format_task_name(self, name: str) -> str:
+        pass
+
 
 class GroupDeclarationInterface(AbstractClass):
     @abstractmethod
@@ -243,6 +247,11 @@ class TaskInterface(TaskUtilities):
 
     def io(self):
         return self._io
+
+    def format_task_name(self, name: str) -> str:
+        """Allows to add a fancy formatting to the task name, when the task is displayed eg. on the :tasks list"""
+
+        return name
 
     def __str__(self):
         return 'Task<' + self.get_full_name() + '>'

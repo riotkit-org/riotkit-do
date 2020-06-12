@@ -6,7 +6,7 @@ PYTHONPATH = $(shell echo "$$(pwd)/src:$$(pwd)/subpackages/rkd_python/src")
 
 ## Run tests
 tests:
-	export PYTHONPATH=${PYTHONPATH}; cd src && python -m unittest discover -s ../test ${TEST_OPTS}
+	export PYTHONPATH=${PYTHONPATH}; cd src && python3 -m unittest discover -s ../test ${TEST_OPTS}
 
 ## Release
 release: package publish

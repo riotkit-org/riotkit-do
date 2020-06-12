@@ -8,6 +8,7 @@ from typing import Callable
 from copy import deepcopy
 from ..contract import TaskInterface, ExecutionContext, TaskDeclarationInterface
 from ..inputoutput import SystemIO
+from ..inputoutput import clear_formatting
 from ..aliasgroups import parse_alias_groups_from_env, AliasGroup
 
 
@@ -132,7 +133,10 @@ class TasksListingTask(TaskInterface):
                 except AttributeError:
                     text_description = ""
 
-                io.outln(task_name.ljust(50, ' ') + text_description)
+                io.outln(
+                    self.ljust_task_name(declaration, task_name)
+                    + text_description
+                )
 
             io.print_opt_line()
 
@@ -153,6 +157,14 @@ class TasksListingTask(TaskInterface):
                 return match
 
         return full_name
+
+    @staticmethod
+    def ljust_task_name(declaration: TaskDeclarationInterface, task_name: str) -> str:
+        with_fancy_formatting = declaration.format_task_name(task_name)
+        without_fancy_formatting = clear_formatting(with_fancy_formatting)
+        ljust_only = without_fancy_formatting.ljust(50, ' ')[len(without_fancy_formatting):]
+
+        return with_fancy_formatting + ljust_only
 
 
 class CallableTask(TaskInterface):

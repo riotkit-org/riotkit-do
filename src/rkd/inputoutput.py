@@ -1,4 +1,5 @@
 
+import re
 import sys
 import os
 import subprocess
@@ -357,3 +358,9 @@ class BufferedSystemIO(SystemIO):
 
     def clear_buffer(self):
         self._buffer = ''
+
+
+def clear_formatting(text: str) -> str:
+    text = re.sub("\\x1B\[([0-9]+)m", '', text)
+
+    return text

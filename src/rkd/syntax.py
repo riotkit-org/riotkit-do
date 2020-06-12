@@ -107,6 +107,9 @@ class TaskDeclaration(TaskDeclarationInterface):
 
         return task_name, group
 
+    def format_task_name(self, name: str) -> str:
+        return self.get_task_to_execute().format_task_name(name)
+
     def __str__(self):
         return 'TaskDeclaration<%s>' % self.get_task_to_execute().get_full_name()
 
