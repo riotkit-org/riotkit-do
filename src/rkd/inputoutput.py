@@ -55,9 +55,7 @@ class StandardOutputReplication(object):
         return 1
 
     def flush(self):
-        for stream in self._out_streams:
-            if hasattr(stream, 'noflush'):
-                stream.flush()
+        pass
 
 
 class IO:
