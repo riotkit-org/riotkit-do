@@ -7,6 +7,8 @@ before_script:
     - pip install -r ./subpackages/rkd_python/requirements.txt
 
 test_script: &test_script
+    - whereis python3
+    - ls -la /opt/python/3.6.7/
     - python --version
     - python3 --version
 
