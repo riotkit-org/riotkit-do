@@ -153,6 +153,9 @@ class GroupDeclaration(GroupDeclarationInterface):
     def get_description(self) -> str:
         return self._description
 
+    def format_task_name(self, name: str) -> str:
+        return name
+
 
 class TaskAliasDeclaration:
     """ Allows to define a custom task name that triggers other tasks in proper order """

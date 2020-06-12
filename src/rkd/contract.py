@@ -74,6 +74,10 @@ class GroupDeclarationInterface(AbstractClass):
     def get_description(self) -> str:
         pass
 
+    @abstractmethod
+    def format_task_name(self, name: str) -> str:
+        pass
+
 
 class ContextInterface(AbstractClass):
     @abstractmethod
