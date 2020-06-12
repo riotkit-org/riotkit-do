@@ -226,13 +226,15 @@ class VersionTask(TaskInterface):
     def execute(self, context: ExecutionContext) -> bool:
         self._io.outln('RKD version %s' % pkg_resources.get_distribution("rkd").version)
         self._io.print_opt_line()
-        self._io.print_separator()
+
+        table_body = []
 
         for name, declaration in self._ctx.find_all_tasks().items():
             if not isinstance(declaration, TaskDeclarationInterface):
                 continue
 
             task = declaration.get_task_to_execute()
+            class_name = str(task.__class__)
             module = task.__class__.__module__
             parts = module.split('.')
 
@@ -241,13 +243,18 @@ class VersionTask(TaskInterface):
 
                 try:
                     version = pkg_resources.get_distribution(try_module_name).version
-                    self._io.outln('- %s version %s' % (name, version))
+                    table_body.append([name, version, module, class_name])
 
                     break
                 except pkg_resources.DistributionNotFound:
                     parts = parts[:-1]
                 except ValueError:
-                    parts = parts[:-1]
+                    table_body.append([name, 'UNKNOWN (local module?)', module, class_name])
+
+        self.io().outln(self.table(
+            header=['Name', 'Version', 'Imported from', 'Representation'],
+            body=table_body
+        ))
 
         return True
 
