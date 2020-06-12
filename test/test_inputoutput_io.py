@@ -4,6 +4,7 @@ import unittest
 from rkd.inputoutput import IO
 from rkd.inputoutput import SystemIO
 from rkd.inputoutput import BufferedSystemIO
+from rkd.inputoutput import clear_formatting
 
 
 class TestIO(unittest.TestCase):
@@ -92,3 +93,15 @@ class TestIO(unittest.TestCase):
         io.log_level = None
         self.assertRaises(Exception, lambda: io.get_log_level())
 
+    def test_clear_formatting_clears_simple_bash_coloring(self):
+        """Test that clear_formatting() clears basic Bash coloring"""
+
+        colored = """\x1B[93m10 June 1927 in Italy, the trial of anarchist Gino Lucetti concluded for 
+attempting to assassinate Mussolini.
+He was sentenced to 30 years in prison; two others received 12 years. 
+He was killed by shelling in 1943 before the end of the war\x1B[0m"""
+
+        without_coloring = clear_formatting(colored)
+
+        self.assertFalse(without_coloring.startswith("\x1B[93m"))
+        self.assertFalse(without_coloring.endswith("\x1B[0m"))
