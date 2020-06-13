@@ -8,7 +8,7 @@ before_script:
     - pip install -r ./subpackages/rkd_python/requirements.txt
 
 test_script: &test_script
-    - source /home/travis/virtualenv/python*
+    - source /home/travis/virtualenv/python*/bin/activate
     - whereis python3
     - python --version
     - python3 --version
