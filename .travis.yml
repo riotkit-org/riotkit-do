@@ -6,20 +6,17 @@ python: 3.6
 
 before_script:
     # <travis hacks>
-    - source /home/travis/virtualenv/python3*/bin/activate
-    - whereis python3
+    - source /home/travis/virtualenv/python3*/bin/activate && pip install -r ./requirements.txt
     - alias python3=python
-    - python --version
-    - python3 --version
     - pip install -r ./requirements.txt
     # </travis hacks>
-    - pip install -r ./subpackages/rkd_python/requirements.txt
+    - source /home/travis/virtualenv/python3*/bin/activate && pip install -r ./subpackages/rkd_python/requirements.txt
 
 test_script: &test_script
     # RKD & RKD Core & Standardlib
-    - ./setup.py build
-    - ./setup.py sdist
-    - cd src && python3 -m unittest discover -s ../test
+    - source /home/travis/virtualenv/python3*/bin/activate && ./setup.py build
+    - source /home/travis/virtualenv/python3*/bin/activate && ./setup.py sdist
+    - source /home/travis/virtualenv/python3*/bin/activate && cd src && python3 -m unittest discover -s ../test
 
     # Subpackages: rkd_python
     - cd subpackages/rkd_python && make package tests
