@@ -77,7 +77,7 @@ RKD in action
 
 .. image:: ./docs/yaml-example.jpg
 
-.. image:: ./docs/makefile.jpg
+.. image:: ./docs/makefile.png
 
 Rules
 -----
