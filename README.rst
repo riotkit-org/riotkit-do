@@ -3,10 +3,14 @@ RKD - RiotKit DO
 
 .. image:: ./docs/background.png
 
+---
 
 .. image:: https://api.travis-ci.com/riotkit-org/riotkit-do.svg?branch=master
+
 .. image:: https://img.shields.io/badge/stability-stable-green.svg
+
 .. image:: https://img.shields.io/github/v/release/riotkit-org/riotkit-do?include_prereleases   :alt: GitHub release (latest by date including pre-releases)
+
 .. image:: https://img.shields.io/pypi/v/rkd   :alt: PyPI
 
 
