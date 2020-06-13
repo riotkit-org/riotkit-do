@@ -94,7 +94,6 @@ class TestFileRendererTask(unittest.TestCase):
                 },
                 # env variables
                 {
-                    # "MESSAGE" variable should be defined, but is not - to test if error will be raised
                 }
             )
         finally:
