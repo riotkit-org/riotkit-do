@@ -39,9 +39,13 @@ RKD - RiotKit DO
 	:alt: Issues open
 
 
-Task executor - balance between Makefile and Gradle [see documentation_], designed with :heart: by RiotKit for DevOps.
+Task executor - balance between Makefile and Gradle [see documentation_], designed with :heart:   by RiotKit for DevOps.
+----------------------------------------------------------------------------------------------------------------------
 
-Stop doing hacks in Makefile, use Python snippets for advanced usage, for the rest use simple few lines of Bash, share code between your projects using Python Packages.
+*Stop writing hacks in Makefile, use Python snippets for advanced usage, for the rest use simple few lines of Bash, share code between your projects using Python Packages.*
+
+Quick start
+~~~~~~~~~~~
 
 .. code:: bash
 
@@ -51,7 +55,8 @@ Stop doing hacks in Makefile, use Python snippets for advanced usage, for the re
     # 1) via PIPENV
     pipenv install rkd
 
-    # 2) rkd :rkd:create-structure
+    # 2) Create project
+    rkd :rkd:create-structure
 
 Please check available releases there: https://pypi.org/project/rkd/#history
 
