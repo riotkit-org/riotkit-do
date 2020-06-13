@@ -10,6 +10,7 @@ before_script:
 test_script: &test_script
     - source /home/travis/virtualenv/python3*/bin/activate
     - whereis python3
+    - alias python3=python
     - python --version
     - python3 --version
 
