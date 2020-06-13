@@ -1,23 +1,30 @@
 RKD - RiotKit DO
 ================
 
+.. image:: ./docs/background.png
+
+
 .. image:: https://api.travis-ci.com/riotkit-org/riotkit-do.svg?branch=master
+.. image:: https://img.shields.io/badge/stability-stable-green.svg
+.. image:: https://img.shields.io/github/v/release/riotkit-org/riotkit-do?include_prereleases   :alt: GitHub release (latest by date including pre-releases)
+.. image:: https://img.shields.io/pypi/v/rkd   :alt: PyPI
 
-Task executor - balance between Makefile and Gradle [see documentation_]
 
-.. image:: docs/background.png
+Task executor - balance between Makefile and Gradle [see documentation_], designed with :heart: by RiotKit for DevOps.
+
+Stop doing hacks in Makefile, use Python snippets for advanced usage, for the rest use simple few lines of Bash, share code between your projects using Python Packages.
 
 .. code:: bash
 
-    # via PIP
+    # 1) via PIP
     pip install rkd
 
-    # via PIPENV
+    # 1) via PIPENV
     pipenv install rkd
 
-Please check available releases there: https://pypi.org/project/rkd/#history
+    # 2) rkd :rkd:create-structure
 
-NOTICE: This project is in testing stage. There is no stable release yet, but it will come very soon. The API can change in upcoming days.
+Please check available releases there: https://pypi.org/project/rkd/#history
 
 **Goals:**
 
