@@ -163,9 +163,12 @@ class ExecutionContext:
             raise MissingInputException(name, env_name)
 
     def get_arg(self, name: str) -> Optional[str]:
-        arg_name = name[2:].replace('-', '_')
+        try:
+            arg_name = name[2:].replace('-', '_')
 
-        return self.args[arg_name]
+            return self.args[arg_name]
+        except KeyError:
+            return self.args[name]
 
 
 class TaskInterface(TaskUtilities):

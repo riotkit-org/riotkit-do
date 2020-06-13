@@ -63,8 +63,10 @@ class CommandlineParsingHelper(object):
 
                 current_task_name = part
                 current_group_elements = []
+
+            # is not an option (--some or -s) but an argument actually
             else:
-                raise TaskNotFoundException('Unknown task "%s"' % part)
+                current_group_elements.append(part)
 
             if cursor + 1 == max_cursor:
                 tasks.append(TaskArguments(current_task_name, current_group_elements))
