@@ -1,6 +1,8 @@
 
 import pkg_resources
 import os
+import re
+from subprocess import CalledProcessError
 from typing import Dict
 from typing import List
 from argparse import ArgumentParser
@@ -259,8 +261,79 @@ class VersionTask(TaskInterface):
         return True
 
 
+class LineInFileTask(TaskInterface):
+    """Adds or removes a line in file (works similar to the lineinfile from Ansible)"""
+
+    def get_name(self) -> str:
+        return ':line-in-file'
+
+    def get_group_name(self) -> str:
+        return ':file'
+
+    def configure_argparse(self, parser: ArgumentParser):
+        parser.add_argument('--regexp', '-r', help='Regexp to find existing occurrence of line', required=True)
+        parser.add_argument('--insert', '-i', help='Line to insert', required=True)
+        parser.add_argument('--only-first-occurrence', help='Stop at first occurrence', action='store_true')
+        parser.add_argument('--fail-on-no-occurrence', '-f', help='Return 1 exit code, when no any occurrence found',
+                            action='store_true')
+        parser.add_argument('file', help='File name')
+
+    def execute(self, context: ExecutionContext) -> bool:
+        file = context.get_arg('file')
+        line = context.get_arg('--insert')
+        regexp = context.get_arg('--regexp')
+        fail_on_no_occurrence = context.get_arg('--fail-on-no-occurrence')
+        only_first_occurrence = bool(context.get_arg('--only-first-occurrence'))
+
+        if not os.path.isfile(file):
+            self.io().info('Creating empty file "%s"' % file)
+            self.sh('touch "%s"' % file)
+
+        with open(file, 'r') as f:
+            content = f.readlines()
+
+        new_contents = ""
+        found = 0
+
+        for file_line in content:
+            match = re.match(regexp, file_line)
+
+            if match:
+                file_line = line + "\n"
+
+                if found and only_first_occurrence:
+                    new_contents += file_line
+                    continue
+
+                found += 1
+                group_num = 0
+
+                for value in list(match.groups()):
+                    var_to_replace = '$match[' + str(group_num) + ']'
+                    self.io().debug('Replacing "%s" with "%s"' % (var_to_replace, value))
+                    file_line = file_line.replace(var_to_replace, value)
+                    group_num += 1
+
+            new_contents += file_line
+
+        if not found:
+            if fail_on_no_occurrence:
+                self.io().error_msg('No matching line for selected regexp found')
+                return False
+
+            self.io().info('No existing line found, creating new one at the end of the file')
+            new_contents += line + "\n"
+
+        with open(file, 'w') as f:
+            f.write(new_contents)
+
+        self.io().success_msg('Replaced %i lines with "%s" in "%s"' % (found, line, file))
+
+        return True
+
+
 class CreateStructureTask(TaskInterface):
-    """ Creates a file structure in current directory """
+    """ Creates a RKD file structure in current directory """
 
     def get_name(self) -> str:
         return ':create-structure'
@@ -269,15 +342,88 @@ class CreateStructureTask(TaskInterface):
         return ':rkd'
 
     def configure_argparse(self, parser: ArgumentParser):
-        pass
+        parser.add_argument('--commit', '-c',
+                            help='Prepare RKD structure as a git commit (needs workspace to be clean)',
+                            action='store_true')
+        parser.add_argument('--no-venv', help='Do not create virtual env automatically', action='store_true')
 
     def execute(self, context: ExecutionContext) -> bool:
-        if os.path.isdir('.rkd'):
-            self._io.error_msg('Structure already created - ".rkd" directory is present')
+        commit_to_git = context.get_arg('--commit')
+        without_venv = context.get_arg('--no-venv')
+
+        if commit_to_git and not self.check_git_is_clean():
+            self.io().error_msg('Current working directory is dirty, you have working changes, ' +
+                                'please commit them or stash first')
             return False
 
-        self._io.info_msg('Creating a folder structure at %s' % os.getcwd())
+        rkd_version = pkg_resources.get_distribution("rkd").version
         template_structure_path = os.path.dirname(os.path.realpath(__file__)) + '/../misc/initial-structure'
-        self.sh('cp -pr %s/.rkd ./' % template_structure_path, verbose=True)
+
+        # 1) Create structure from template
+        if not os.path.isdir('.rkd'):
+            self._io.info_msg('Creating a folder structure at %s' % os.getcwd())
+            self.sh('cp -pr %s/.rkd ./' % template_structure_path, verbose=True)
+        else:
+            self.io().info_msg('Not creating .rkd directory, already present')
+
+        # 2) Populate git ignore
+        self.sh('touch .gitignore')
+
+        for file_path in ['.rkd/logs', '*.pyc', '*__pycache__*', '/.venv']:
+            self.rkd([':file:line-in-file',
+                      '.gitignore',
+                      '--regexp="%s"' % file_path.replace('*', '\*'),
+                      '--insert=%s' % file_path
+                      ])
+
+        # 3) Add RKD to requirements
+        self.io().info('Adding RKD to requirements.txt')
+        self.sh('touch requirements.txt')
+        self.rkd([':file:line-in-file',
+                  'requirements.txt',
+                  '--regexp="rkd(.*)"',
+                  '--insert="rkd==%s"' % rkd_version
+                  ])
+
+        # 4) Create virtual env
+        if not without_venv:
+            self.io().info('Setting up virtual environment')
+            self.sh('cp %s/setup-venv.sh ./' % template_structure_path)
+            self.sh('chmod +x setup-venv.sh')
+            self.sh('./setup-venv.sh')
+
+        if commit_to_git:
+            self.git_add('.gitignore')
+            self.git_add('setup-venv.sh')
+            self.git_add('requirements.txt')
+            self.git_add('.rkd')
+
+            self.commit_to_git()
+
+        self.io().success_msg("Structure created, use ./setup-venv.sh to enter Python\'s " +
+                              "virtual environment with installed desired RKD version from requirements.txt\n" +
+                              "Add libraries, task providers, tools to the requirements.txt " +
+                              "for reproducible environments")
 
         return True
+
+    def commit_to_git(self):
+        if not os.path.isdir('.git'):
+            return
+
+        try:
+            self.sh('git commit -m "Create RKD structure"')
+        except CalledProcessError as e:
+            if 'nothing to commit, working tree clean' in e.output:
+                return
+
+            raise e
+
+    def git_add(self, path: str):
+        if not os.path.isdir('.git'):
+            return
+
+        self.sh('git add "%s"' % path)
+
+    def check_git_is_clean(self):
+        return self.sh('git diff --stat || true', capture=True).strip() == ''

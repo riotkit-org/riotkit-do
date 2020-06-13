@@ -52,3 +52,31 @@ to create a task by defining a simple method as a callback.
 
 Creates a template structure used by RKD in current directory.
 
+
+:file:line-in-file
+~~~~~~~~~~~~~~~~~~
+
+.. jinja:: line_in_file
+   :file: source/templates/package-usage.rst
+
+Similar to the Ansible's lineinfile, replaces/creates/deletes a line in file.
+
+**Example usage:**
+
+.. code:: bash
+
+    echo "Number: 10" > test.txt
+
+    rkd -rl debug :file:line-in-file test.txt --regexp="Number: ([0-9]+)?(.*)" --insert='Number: $match[0] / new: 10'
+    cat test.txt
+
+    rkd -rl debug :file:line-in-file test.txt --regexp="Number: ([0-9]+)?(.*)" --insert='Number: $match[0] / new: 6'
+    cat test.txt
+
+    rkd -rl debug :file:line-in-file test.txt --regexp="Number: ([0-9]+)?(.*)" --insert='Number: 50'
+    cat test.txt
+
+    rkd -rl debug :file:line-in-file test.txt --regexp="Number: ([0-9]+)?(.*)" --insert='Number: $match[0] / new: 90'
+    cat test.txt
+
+

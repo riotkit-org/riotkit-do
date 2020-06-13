@@ -48,6 +48,15 @@ Task executor - balance between Makefile and Gradle [see documentation_], design
 **RKD can be used on PRODUCTION, for development, for testing, to replace some of Bash scripts inside docker containers,
 and for many more, where Makefile was used.**
 
+Example use cases
+~~~~~~~~~~~~~~~~~
+
+- Docker based production environment with multiple configuration files, procedures (see: Harbor project)
+- Database administrator workspace (importing dumps, creating new user accounts, plugging/unplugging databases)
+- Development environment (executing migrations, importing test database, splitting tests and running parallel)
+- On CI (prepare project to run on eg. Jenkins or Gitlab CI) - RKD is reproducible on local computer which makes inspection easier
+- Kubernetes/OKD deployment workspace (create shared YAML parts with JINJA2 between multiple environments and deploy from RKD)
+- Automate things like certificate regeneration on production server, RKD can generate any application configs using JINJA2
 
 Quick start
 ~~~~~~~~~~~
@@ -89,7 +98,13 @@ Rules
 RKD in action
 -------------
 
+YAML syntax example
+~~~~~~~~~~~~~~~~~~~
+
 .. image:: ./docs/yaml-example.jpg
+
+Python syntax example (makefile.py)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. image:: ./docs/makefile.png
 
