@@ -40,9 +40,14 @@ RKD - RiotKit DO
 
 
 Task executor - balance between Makefile and Gradle [see documentation_], designed with :heart:   by RiotKit for DevOps.
-----------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
 
 *Stop writing hacks in Makefile, use Python snippets for advanced usage, for the rest use simple few lines of Bash, share code between your projects using Python Packages.*
+
+
+**RKD can be used on PRODUCTION, for development, for testing, to replace some of Bash scripts inside docker containers,
+and for many more, where Makefile was used.**
+
 
 Quick start
 ~~~~~~~~~~~
@@ -52,10 +57,7 @@ Quick start
     # 1) via PIP
     pip install rkd
 
-    # 1) via PIPENV
-    pipenv install rkd
-
-    # 2) Create project
+    # 2) Create project (will create a virtual env and prepare files that could be commited to git)
     rkd :rkd:create-structure
 
 Please check available releases there: https://pypi.org/project/rkd/#history
@@ -63,9 +65,19 @@ Please check available releases there: https://pypi.org/project/rkd/#history
 **Goals:**
 
 - Define tasks as simple as in Makefile
+- Write tasks code in Python as simple as possible
 - Reuse code as simple as in Gradle (using extensions that provides tasks. Extensions are installable from PIP)
 - Simple configuration in Python
-- Write tasks code in Python as simple as possible
+- Integrates with GIT
+- Suitable for PRODUCTION (log as much as possible, log each executed task into separated \*.log files). We planned also extended logging of most important auditing information such as who executed action, and how the state looked in that time
+
+
+RKD in action
+-------------
+
+.. image:: ./docs/yaml-example.jpg
+
+.. image:: ./docs/makefile.jpg
 
 Rules
 -----
