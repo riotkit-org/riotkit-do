@@ -3,15 +3,40 @@ RKD - RiotKit DO
 
 .. image:: ./docs/background.png
 
----
 
-.. image:: https://api.travis-ci.com/riotkit-org/riotkit-do.svg?branch=master
+.. image:: http://www.repostatus.org/badges/latest/active.svg
+	:alt: Project Status: Active – The project has reached a stable, usable state and is being actively developed.
+	:target: http://www.repostatus.org/#active
 
-.. image:: https://img.shields.io/badge/stability-stable-green.svg
+.. PyPI version — https://badge.fury.io/py/
 
-.. image:: https://img.shields.io/github/v/release/riotkit-org/riotkit-do?include_prereleases   :alt: GitHub release (latest by date including pre-releases)
+.. image:: https://img.shields.io/github/v/release/riotkit-org/riotkit-do?include_prereleases
+	:target: https://img.shields.io/github/v/release/riotkit-org/riotkit-do?include_prereleases
+	:alt: Github Release
 
-.. image:: https://img.shields.io/pypi/v/rkd   :alt: PyPI
+.. image:: https://img.shields.io/badge/Made%20with-Python-1f425f.svg
+	:target: https://img.shields.io/badge/Made%20with-Python-1f425f.svg
+	:alt: Made with Python
+    
+.. image:: https://img.shields.io/pypi/l/rkd.svg
+	:target: https://img.shields.io/pypi/l/rkd.svg
+	:alt: License
+
+.. image:: https://travis-ci.com/riotkit-org/riotkit-do.svg?branch=master
+	:target: https://travis-ci.com/riotkit-org/riotkit-do
+	:alt: Travis CI
+    
+.. image:: https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square
+	:target: https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square
+	:alt: PRs welcome
+    
+.. image:: https://img.shields.io/github/issues-pr/riotkit-org/riotkit-do.svg
+	:target: https://img.shields.io/github/issues-pr/riotkit-org/riotkit-do.svg
+	:alt: PRs open
+
+.. image:: https://img.shields.io/github/issues/riotkit-org/riotkit-do.svg
+	:target: https://img.shields.io/github/issues/riotkit-org/riotkit-do.svg
+	:alt: Issues open
 
 
 Task executor - balance between Makefile and Gradle [see documentation_], designed with :heart: by RiotKit for DevOps.
