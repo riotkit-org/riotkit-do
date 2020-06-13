@@ -72,13 +72,6 @@ Please check available releases there: https://pypi.org/project/rkd/#history
 - Suitable for PRODUCTION (log as much as possible, log each executed task into separated \*.log files). We planned also extended logging of most important auditing information such as who executed action, and how the state looked in that time
 
 
-RKD in action
--------------
-
-.. image:: ./docs/yaml-example.jpg
-
-.. image:: ./docs/makefile.png
-
 Rules
 -----
 
@@ -92,6 +85,13 @@ Rules
 -  Do early validation. Runtime validation for long running builds is a pain-in-the-ass for the user.
 -  Show clear error messages as much as it is possible. Task not found? Tell the user - do not leave a stack trace. Import error in makefile.py? Tell the user + add stack trace. RESPECT TIME OF ALL OF US! :)
 -  Do not overuse libraries in RKD core - it must be installable in any environment, including Docker. Libraries count should be small, and the libraries cannot depend on GCC/G++
+
+RKD in action
+-------------
+
+.. image:: ./docs/yaml-example.jpg
+
+.. image:: ./docs/makefile.png
 
 Documentation
 -------------
