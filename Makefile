@@ -1,13 +1,14 @@
 #
 # https://github.com/riotkit-org/riotkit-do/issues/5
 #
+SHELL=/bin/bash
 TEST_OPTS=
 PYTHONPATH = $(shell echo "$$(pwd)/src:$$(pwd)/subpackages/rkd_python/src")
 
 ## Run tests
 tests:
 	env
-	source /home/travis/virtualenv/python3*/bin/activate; \
+	source /home/travis/virtualenv/python$TRAVIS_PYTHON_VERSION*/bin/activate; \
 	export PYTHONPATH=$${PYTHONPATH}:${PYTHONPATH}; cd src && python3 -m unittest discover -s ../test ${TEST_OPTS}
 
 ## Release
