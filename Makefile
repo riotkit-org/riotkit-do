@@ -6,6 +6,8 @@ PYTHONPATH = $(shell echo "$$(pwd)/src:$$(pwd)/subpackages/rkd_python/src")
 
 ## Run tests
 tests:
+	env
+	source /home/travis/virtualenv/python3*/bin/activate; \
 	export PYTHONPATH=$${PYTHONPATH}:${PYTHONPATH}; cd src && python3 -m unittest discover -s ../test ${TEST_OPTS}
 
 ## Release

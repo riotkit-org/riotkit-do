@@ -5,18 +5,16 @@ if: branch = master or tag IS present
 python: 3.6
 
 before_script:
-    # <travis hacks>
-    - source /home/travis/virtualenv/python3*/bin/activate && pip install -r ./requirements.txt
-    - alias python3=python
-    - pip install -r ./requirements.txt
-    # </travis hacks>
-    - source /home/travis/virtualenv/python3*/bin/activate && pip install -r ./subpackages/rkd_python/requirements.txt
+    - pip install -r ./subpackages/rkd_python/requirements.txt
 
 test_script: &test_script
+    - whereis python3
+    - python --version
+    - python3 --version
+
     # RKD & RKD Core & Standardlib
-    - source /home/travis/virtualenv/python3*/bin/activate && ./setup.py build
-    - source /home/travis/virtualenv/python3*/bin/activate && ./setup.py sdist
-    - source /home/travis/virtualenv/python3*/bin/activate && cd src && python3 -m unittest discover -s ../test
+    - make package
+    - make tests
 
     # Subpackages: rkd_python
     - cd subpackages/rkd_python && make package tests
