@@ -299,11 +299,11 @@ class LineInFileTask(TaskInterface):
             match = re.match(regexp, file_line)
 
             if match:
-                file_line = line + "\n"
-
                 if found and only_first_occurrence:
                     new_contents += file_line
                     continue
+
+                file_line = line + "\n"
 
                 found += 1
                 group_num = 0

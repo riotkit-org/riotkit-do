@@ -67,3 +67,44 @@ class TestLineInFileTask(unittest.TestCase):
             })
 
             self.assertIn("Symbol: 1 + 161", tmp_file.read().decode('utf-8'))
+
+    def test_fails_when_no_occurrence_and_flag_is_set(self):
+        """Test flag --fail-on-no-occurrence"""
+
+        with NamedTemporaryFile() as tmp_file:
+            io = self._execute_mocked_task({
+                'file': tmp_file.name,
+                '--regexp': 'Knock knock',
+                '--insert': 'Who\'s there?',
+                '--fail-on-no-occurrence': True,
+                '--only-first-occurrence': False
+            })
+
+            self.assertIn('No matching line for selected regexp found', io.get_value())
+
+    def test_replaces_only_first_occurrence(self):
+        """Test that only one occurrence will be replaced"""
+
+        with NamedTemporaryFile() as tmp_file:
+            # at first add initial file content
+            with open(tmp_file.name, 'w') as fw:
+                fw.write("Symbol: 1\n")
+                fw.write("Color: Red\n")
+                fw.write("Symbol: 2\n")
+                fw.write("\n\n")
+                fw.write("Dog or cat: Dog\n")
+
+            # then modify it
+            self._execute_mocked_task({
+                'file': tmp_file.name,
+                '--regexp': 'Symbol: ([0-9]+)',
+                '--insert': 'Symbol: 161',
+                '--fail-on-no-occurrence': True,
+                '--only-first-occurrence': True
+            })
+
+            processed_file_content = tmp_file.read().decode('utf-8')
+
+            self.assertIn("Symbol: 161", processed_file_content)
+            self.assertNotIn("Symbol: 1\n", processed_file_content)
+            self.assertIn("Symbol: 2", processed_file_content)

@@ -57,6 +57,7 @@ Example use cases
 - On CI (prepare project to run on eg. Jenkins or Gitlab CI) - RKD is reproducible on local computer which makes inspection easier
 - Kubernetes/OKD deployment workspace (create shared YAML parts with JINJA2 between multiple environments and deploy from RKD)
 - Automate things like certificate regeneration on production server, RKD can generate any application configs using JINJA2
+- Installers (RKD has built-in commands for replacing lines in files, modifying .env files)
 
 Quick start
 ~~~~~~~~~~~
