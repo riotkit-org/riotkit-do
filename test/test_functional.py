@@ -252,7 +252,7 @@ class TestFunctional(unittest.TestCase):
 
                 # 3. Run
                 full_output = subprocess.check_output(
-                    "python3 -m rkd :sh -c 'echo \"Durruti was born at $DURRUTI_BIRTHDAY_DATE\"'",
+                    "python -m rkd :sh -c 'echo \"Durruti was born at $DURRUTI_BIRTHDAY_DATE\"'",
                     env={'PYTHONPATH': SCRIPT_DIR_PATH + '/../src'},
                     shell=True
                 )
