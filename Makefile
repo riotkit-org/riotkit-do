@@ -6,11 +6,15 @@ TEST_OPTS=
 PYTHONPATH = $(shell echo "$$(pwd)/src:$$(pwd)/subpackages/rkd_python/src")
 
 ## Run tests
-tests:
+tests: refresh_git
 	export PYTHONPATH=$${PYTHONPATH}:${PYTHONPATH}; cd src && python3 -m unittest discover -s ../test ${TEST_OPTS}
 
 ## Release
-release: package publish
+release: refresh_git package publish
+
+## Refresh git
+refresh_git:
+	git fetch --tags
 
 ## Build local package
 package:
