@@ -16,8 +16,8 @@ release: package publish
 ## Build local package
 package:
 	source /home/travis/virtualenv/python${TRAVIS_PYTHON_VERSION}*/bin/activate; \
-	pip install -r requirements.txt \
-	pip install -r ./subpackages/rkd_python/requirements.txt \
+	pip install -r requirements.txt; \
+	pip install -r ./subpackages/rkd_python/requirements.txt; \
 	./setup.py build
 	./setup.py sdist
 
