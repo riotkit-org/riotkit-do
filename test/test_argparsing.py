@@ -54,3 +54,21 @@ class ArgParsingTest(unittest.TestCase):
         CommandlineParsingHelper.add_env_variables_to_argparse(parser, task)
         self.assertNotIn('Union (default: International Workers Association)', parser.description)
         self.assertIn('-- No environment variables declared --', parser.description)
+
+    def test_arguments_usage(self):
+        """Check that arguments are recognized"""
+
+        parsed = CommandlineParsingHelper.create_grouped_arguments([
+            ':strike:start', 'now'
+        ])
+
+        self.assertEqual("[Task<:strike:start (['now'])>]", str(parsed))
+
+    def test_arguments_usage_with_switch_before(self):
+        """Check that arguments are recognized - variant with an additional switch"""
+
+        parsed = CommandlineParsingHelper.create_grouped_arguments([
+            ':strike:start', '--general', 'now'
+        ])
+
+        self.assertEqual("[Task<:strike:start (['--general', 'now'])>]", str(parsed))
