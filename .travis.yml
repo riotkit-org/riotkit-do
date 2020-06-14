@@ -4,9 +4,6 @@ dist: bionic
 if: branch = master or tag IS present
 python: 3.6
 
-before_script:
-    - pip install -r ./subpackages/rkd_python/requirements.txt
-
 test_script: &test_script
     - whereis python3
     - python --version
