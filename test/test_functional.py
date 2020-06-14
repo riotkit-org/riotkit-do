@@ -126,7 +126,8 @@ class TestFunctional(unittest.TestCase):
                 content = first_handle.read()
 
                 self.assertIn('RKD version', content)  # RKD version globally as a tool
-                self.assertIn(':sh version', content)  # one of tasks
+                self.assertIn(':sh', content)  # one of tasks
+                self.assertIn('rkd.standardlib.VersionTask', content)
 
             with open(second.name) as second_handle:
                 content = second_handle.read()

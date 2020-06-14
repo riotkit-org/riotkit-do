@@ -16,13 +16,6 @@ class ArgParsingTest(unittest.TestCase):
 
         self.assertEqual("[Task<:harbor:start (['--profile=test', '--fast-fail'])>, Task<:status ([])>]", str(parsed))
 
-    def test_creates_grouped_arguments_into_tasks__raises_exception_on_unknown_part(self):
-        """ The task name should begin with ':' """
-
-        self.assertRaises(Exception, lambda: CommandlineParsingHelper.create_grouped_arguments([
-            'harbor:start'
-        ]))
-
     def test_creates_grouped_arguments_into_tasks__no_task_defined_goes_to_rkd_initialization(self):
         parsed = CommandlineParsingHelper.create_grouped_arguments([
             '--help'
