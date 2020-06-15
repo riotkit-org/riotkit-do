@@ -11,7 +11,7 @@ and for many more, where Makefile was used.**
 Example use cases
 ~~~~~~~~~~~~~~~~~
 
-- Docker based production environment with multiple configuration files, procedures (see: Harbor project)
+- Docker based production environment with multiple configuration files, procedures (see: `Harbor project <https://github.com/riotkit-org/riotkit-harbor>`_)
 - Database administrator workspace (importing dumps, creating new user accounts, plugging/unplugging databases)
 - Development environment (executing migrations, importing test database, splitting tests and running parallel)
 - On CI (prepare project to run on eg. Jenkins or Gitlab CI) - RKD is reproducible on local computer which makes inspection easier

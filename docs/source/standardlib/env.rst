@@ -13,7 +13,7 @@ RKD is always loading an .env file on startup, those tasks in this package allow
 
 **Example of usage:**
 
-.. code::bash
+.. code:: bash
 
     rkd :env:get --name COMPOSE_PROJECT_NAME
 
@@ -25,7 +25,7 @@ RKD is always loading an .env file on startup, those tasks in this package allow
 
 **Example of usage:**
 
-.. code::bash
+.. code:: bash
 
     rkd :env:set --name COMPOSE_PROJECT_NAME --value hello
     rkd :env:set --name COMPOSE_PROJECT_NAME --ask

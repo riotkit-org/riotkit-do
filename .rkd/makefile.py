@@ -13,6 +13,7 @@ TASKS = [
     Task(':test', [':py:unittest'], description='Run unit tests'),
     Task(':docs', [':sh', '-c', ''' set -x
         cd docs
+        rm -rf build
         sphinx-build -M html "source" "build"
     '''])
 ]

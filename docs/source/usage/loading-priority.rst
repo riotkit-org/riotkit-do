@@ -29,9 +29,9 @@ Order of loading of makefile files in same .rkd directory
 
 *Legend: Lower has higher priority (next is appending changes to previous)*
 
-1. *.py
-2. *.yaml
-3. *.yml
+1. \*.py
+2. \*.yaml
+3. \*.yml
 
 .. _Path and inheritance:
 

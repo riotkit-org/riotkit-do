@@ -1,11 +1,13 @@
 Shell
 =====
 
-.. jinja:: shell
-   :file: source/templates/package-usage.rst
+Provides tasks for shell commands execution - mostly used in YAML syntax and in Python modules.
 
 :sh
 ~~~
+
+.. jinja:: shell
+   :file: source/templates/package-usage.rst
 
 Executes a Bash script. Can be multi-line.
 
