@@ -3,23 +3,19 @@ os: linux
 dist: bionic
 if: branch = master or tag IS present
 python: 3.6
+services:
+    - docker
 
 before_script:
-    - pip install -r ./requirements.txt
-    - pip install -r ./subpackages/rkd_python/requirements.txt
-    - pip show pbr
+    - ./.ci/start.sh
 
 test_script: &test_script
-    - whereis python3
-    - python --version
-    - python3 --version
-
     # RKD & RKD Core & Standardlib
-    - make package
-    - make tests
+    - ./.ci/sh "make package"
+    - ./.ci/sh "make tests"
 
     # Subpackages: rkd_python
-    - cd subpackages/rkd_python && make package tests
+    - ./.ci/sh "cd subpackages/rkd_python && make package tests"
 
 # show stdout/stderr immediately in tests (in RKD itself the buffering is turned off)
 env:
@@ -47,8 +43,8 @@ jobs:
         - stage: Release
           python: 3.6
           script:
-              - make release
-              - cd subpackages/rkd_python && make release
+              - ./.ci/sh "make release"
+              - ./.ci/sh "cd subpackages/rkd_python && make release"
 
         - stage: Test on Python 3.9 (allowed to fail)
           env: CAN_FAIL=true
