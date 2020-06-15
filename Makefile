@@ -35,3 +35,6 @@ publish:
 documentation:
 	cd docs && sphinx-build -M html "source" "build"
 
+## Properly tag project
+tag:
+	git tag -am "Version ${NUM}" ${NUM}
