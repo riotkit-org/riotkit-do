@@ -10,17 +10,16 @@ tests: refresh_git
 	export PYTHONPATH=$${PYTHONPATH}:${PYTHONPATH}; cd src && python3 -m unittest discover -s ../test ${TEST_OPTS}
 
 ## Release
-release: refresh_git package publish
+release: package publish
 
 ## Refresh git
 refresh_git:
 	git fetch --tags
-
-## Build local package
-package:
 	git status
 	git tag -l
 
+## Build local package
+package: refresh_git
 	./setup.py build
 	./setup.py sdist
 
