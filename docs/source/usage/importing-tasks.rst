@@ -1,3 +1,5 @@
+.. _Importing tasks:
+
 Importing tasks
 ===============
 

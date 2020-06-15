@@ -1,59 +1,52 @@
 
-Riotkit Do (RKD)
+RiotKit-Do (RKD)
 ================
 
-RKD is delivered as a Python Package. To extend RKD with additional tasks you need to install them via PIP or (simpler) define without own code in makefile.py/makefile.yaml
-
-Bootstrap RKD in your project
------------------------------
-
-The preferred way to setup RKD is virtualenv.
-
-With requirements.txt and virtualenv you can fully control versioning of RKD and it's components provided by open-source community. You decide when you are ready to upgrade.
-
-.. code:: bash
-
-    virtualenv .venv
-    source .venv/bin/activate
-
-    echo "rkd<=0.5" > requirements.txt # better choose a stable tag and use fixed version for stability
-
-    # example of installing component from external package/repository
-    # later you need to activate it in makefile.yaml or in makefile.py - check later other chapter "Importing tasks"
-    # echo "rkt_ciutils<=3.0"
-
-    pip install -r requirements.txt
-    rkd :rkd:create-structure
-
-Conception
-----------
-
-Makefile, Gradle and other build systems are strictly for development, so RiotKit decided to create RKD **with DevOps in mind**.
-
-Everything could be done like in Makefile via YAML syntax, or in Python, because DevOps love Python! :)
+*Stop writing hacks in Makefile, use Python snippets for advanced usage, for the rest use simple few lines of Bash, share code between your projects using Python Packages.*
 
 
-In effect a simple task executor with clear rules and early validation of input parameters was created.
-Each task specified to be run is treated like a separate application - has it's own parameters, by default inherits global settings but those could be overridden.
-**The RKD version and version of any installed tasks are managed by Python Packaging - DevOps needs to have strict control over dependencies and upgrades.**
+**RKD can be used on PRODUCTION, for development, for testing, to replace some of Bash scripts inside docker containers,
+and for many more, where Makefile was used.**
 
-**Basic examples:**
+Example use cases
+~~~~~~~~~~~~~~~~~
+
+- Docker based production environment with multiple configuration files, procedures (see: Harbor project)
+- Database administrator workspace (importing dumps, creating new user accounts, plugging/unplugging databases)
+- Development environment (executing migrations, importing test database, splitting tests and running parallel)
+- On CI (prepare project to run on eg. Jenkins or Gitlab CI) - RKD is reproducible on local computer which makes inspection easier
+- Kubernetes/OKD deployment workspace (create shared YAML parts with JINJA2 between multiple environments and deploy from RKD)
+- Automate things like certificate regeneration on production server, RKD can generate any application configs using JINJA2
+- Installers (RKD has built-in commands for replacing lines in files, modifying .env files)
+
+Quick start
+~~~~~~~~~~~
 
 .. code:: bash
 
-    rkd :tasks
+    # 1) via PIP
+    pip install rkd
 
-    # runs two tasks ":sh" with different arguments
-    rkd :sh -c 'echo hello' :sh -c 'ps aux'
+    # 2) Create project (will create a virtual env and commit files to GIT)
+    rkd :rkd:create-structure --commit
 
-    # runs different tasks in order
-    rkd :py:clean :py:build :py:publish --user=__token__ --password=123456
 
-    # allows to fail one of tasks in our pipeline (does not interrupt the pipeline when first task fails)
-    rkd :sh -c 'exit 1' --keep-going :sh -c 'echo hello'
+Getting started with RKD
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-    # silent output, only tasks stdout and stderr is visible (for parsing outputs in scripts)
-    rkd --silent :sh -c "ps aux"
+The "Quick start" section will end up with a **.rkd** directory, a requirements.txt and setup-venv.sh
+
+1. Use setup-venv.sh to enter shell of your project, where RKD is installed with all dependencies
+2. Each time you install anything from **pip** in your project - add it to requirements.txt, you can install additional RKD tasks from pip
+3. In **.rkd/makefile.yaml** you can start adding your first tasks and imports
+
+
+Read more
+~~~~~~~~~
+
+- YAML syntax is described in :ref:`Tasks development` section
+- Writing Python code in makefile.yaml requires to lookup :ref:`Tasks API`
+- Learn how to import installed tasks via pip - :ref:`Importing tasks`
 
 
 .. image:: ../tasks.png

@@ -1,3 +1,5 @@
+.. _Tasks development:
+
 Tasks development
 =================
 

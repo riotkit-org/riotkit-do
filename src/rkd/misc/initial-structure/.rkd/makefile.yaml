@@ -1,2 +1,27 @@
 version: org.riotkit.rkd/1.0
-tasks: {}
+imports: []
+tasks:
+    :hello:
+        description: Hello world task
+        arguments:
+            "--name":
+                help: "Your name"
+                required: True
+        steps: |
+            echo "Hello $ARG_NAME"
+
+    :hello:python:
+        description: Hello world task
+        arguments:
+            "--name":
+                help: "Your name"
+                required: True
+        steps: |
+            #!python
+
+            # those two lines are optional (for your eyes and for IDE - you can also import those classes there)
+            ctx: ExecutionContext
+            this: TaskInterface
+
+            print('Hello %s' % ctx.get_arg('--name'))
+            return True
