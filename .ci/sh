@@ -1,4 +1,4 @@
 #!/bin/bash
 
 cd .ci
-exec docker-compose -p ci exec -T builder /bin/bash -c "$@"
+exec docker-compose -p ci exec -T builder "$@"
