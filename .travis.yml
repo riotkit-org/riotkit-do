@@ -4,10 +4,12 @@ dist: bionic
 if: branch = master or tag IS present
 python: 3.6
 
+# important: with limited depth the tags are not cloned properly - the PBR does not work
+git:
+   depth: false
+
 before_script:
-    - pip install -r ./requirements.txt
     - pip install -r ./subpackages/rkd_python/requirements.txt
-    - pip show pbr
 
 test_script: &test_script
     - whereis python3
