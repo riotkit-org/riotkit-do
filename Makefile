@@ -14,6 +14,7 @@ release: package publish
 
 ## Refresh git
 refresh_git:
+	git fetch --tags
 	git status
 	git tag -l
 
