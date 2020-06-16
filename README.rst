@@ -117,6 +117,13 @@ Please read the documentation_ here_.
 .. _documentation: https://riotkit-do.readthedocs.io/en/latest/
 .. _here: https://riotkit-do.readthedocs.io/en/latest/
 
+Releasing
+---------
+
+1. git tag -s v1.0.0
+2. Create a release in Github releases
+3. Wait for pipeline to build and publish to PyPI
+
 From authors
 ------------
 
