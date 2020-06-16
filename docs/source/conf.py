@@ -117,6 +117,9 @@ jinja_contexts = {
     }
 }
 
+autodoc_inherit_docstrings = True
+autodoc_default_flags = 'show-inheritance'
+
 jinja_base = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + '/../')
 
 templates_path = ['_templates']

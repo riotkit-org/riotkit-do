@@ -123,11 +123,10 @@ class ExecutionContext:
         self.env = env
 
     def get_env(self, name: str, error_on_not_used: bool = False):
-        """ Get environment variable value """
+        """Get environment variable value"""
         return self.declaration.get_task_to_execute().internal_getenv(name, self.env,
                                                                       error_on_not_used=error_on_not_used)
 
-    # @todo: Coverage + static analysis in validator?
     def get_arg_or_env(self, name: str) -> Union[str, None]:
         """Provides value of user input
 
@@ -163,6 +162,19 @@ class ExecutionContext:
             raise MissingInputException(name, env_name)
 
     def get_arg(self, name: str) -> Optional[str]:
+        """Get argument or option
+
+        Usage:
+            ctx.get_arg('--name')  # for options
+            ctx.get_arg('name')    # for arguments
+
+        Raises:
+            KeyError when argument/option was not defined
+
+        Returns:
+            Actual value or default value
+        """
+
         try:
             arg_name = name[2:].replace('-', '_')
 
@@ -185,7 +197,6 @@ class TaskInterface(TaskUtilities):
 
     def copy_internal_dependencies(self, task):
         """Allows to execute a task-in-task, by copying dependent services from one task to other task
-        :api 0.2
         """
 
         task.internal_inject_dependencies(self._io, self._ctx, self._executor)
@@ -193,15 +204,12 @@ class TaskInterface(TaskUtilities):
     @abstractmethod
     def get_name(self) -> str:
         """Task name  eg. ":sh"
-        :api 0.2
         """
         pass
 
     @abstractmethod
     def get_group_name(self) -> str:
-        """
-        Group name where the task belongs eg. ":publishing", can be empty.
-        :api 0.2
+        """Group name where the task belongs eg. ":publishing", can be empty.
         """
 
         pass
@@ -249,16 +257,56 @@ class TaskInterface(TaskUtilities):
         return envs[env_name]
 
     def is_silent_in_observer(self) -> bool:
-        """ Internally used property """
+        """"""  # sphinx: skip
         return False
 
-    def io(self):
+    def io(self) -> IO:
+        """Gives access to Input/Output object"""
+
         return self._io
 
     def format_task_name(self, name: str) -> str:
         """Allows to add a fancy formatting to the task name, when the task is displayed eg. on the :tasks list"""
 
         return name
+
+    def sh(self, cmd: str, capture: bool = False, verbose: bool = False, strict: bool = True,
+           env: dict = None) -> Union[str, None]:
+        """Executes a shell script in bash. Throws exception on error.
+        To capture output set capture=True
+
+            NOTICE: Use instead of subprocess. Raw subprocess is less supported and output from raw subprocess
+                    may be not catch properly into the logs
+        """
+        return super().sh(
+            cmd=cmd, capture=capture, verbose=verbose, strict=strict, env=env
+        )
+
+    def exec(self, cmd: str, capture: bool = False, background: bool = False) -> Union[str, None]:
+        """Starts a process in shell. Throws exception on error.
+        To capture output set capture=True
+
+        NOTICE: Use instead of subprocess. Raw subprocess is less supported and output from raw subprocess
+                may be not catch properly into the logs
+        """
+        return super().exec(cmd=cmd, capture=capture, background=background)
+
+    def rkd(self, args: list, verbose: bool = False, capture: bool = False) -> str:
+        """Spawns an RKD subprocess
+
+        NOTICE: Use instead of subprocess. Raw subprocess is less supported and output from raw subprocess
+                may be not catch properly into the logs
+        """
+        return super().rkd(args=args, verbose=verbose, capture=capture)
+
+    def silent_sh(self, cmd: str, verbose: bool = False, strict: bool = True,
+                  env: dict = None) -> bool:
+        """sh() shortcut that catches errors and displays using IO().error_msg()
+
+        NOTICE: Use instead of subprocess. Raw subprocess is less supported and output from raw subprocess
+                may be not catch properly into the logs
+        """
+        return super().silent_sh(cmd=cmd, verbose=verbose, strict=strict, env=env)
 
     def __str__(self):
         return 'Task<' + self.get_full_name() + '>'
@@ -272,6 +320,24 @@ class TaskInterface(TaskUtilities):
               showindex: str = "default",
               disable_numparse: bool = False,
               colalign: str = None):
+
+        """Renders a table
+
+        Parameters:
+            header:
+            body:
+            tablefmt:
+            floatfmt:
+            numalign:
+            stralign:
+            missingval:
+            showindex:
+            disable_numparse:
+            colalign:
+
+        Returns:
+            Formatted table as string
+        """
 
         return tabulate(body, headers=header, floatfmt=floatfmt, numalign=numalign, tablefmt=tablefmt,
                         stralign=stralign, missingval=missingval, showindex=showindex,
