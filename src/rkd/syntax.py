@@ -97,7 +97,7 @@ class TaskDeclaration(TaskDeclarationInterface):
         if task.get_description():
             return task.get_description()
 
-        return task.__doc__.strip()
+        return task.__doc__.strip() if task.__doc__ else ''
 
     @staticmethod
     def parse_name(name: str) -> tuple:
