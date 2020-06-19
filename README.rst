@@ -117,6 +117,15 @@ Please read the documentation_ here_.
 .. _documentation: https://riotkit-do.readthedocs.io/en/latest/
 .. _here: https://riotkit-do.readthedocs.io/en/latest/
 
+Projects using RKD
+------------------
+
+- `Taiga - automatic packaging into PRODUCTION docker image <https://github.com/riotkit-org/docker-taiga>`_
+- `Taiga Events - automatic packaging into PRODUCTION docker image <https://github.com/riotkit-org/docker-taiga-events>`_
+- `RiotKit Harbor (upcoming 2.0 version uses RKD) - Automated docker-compose PRODUCTION environment with Service Discovery, automatic SSL, rolling deployments and more! <https://github.com/riotkit-org/riotkit-harbor>`_
+- `Harbor Simple Router - docker image <https://github.com/riotkit-org/harbor-simple-router>`_
+- `Kubernetes/OKD workspace - create deployments with reusable YAMLs <https://github.com/riotkit-org/riotkit-do-example-kubernetes-workspace>`_
+
 Releasing
 ---------
 
