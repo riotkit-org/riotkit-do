@@ -2,73 +2,76 @@
 Basics
 ======
 
-Tasks are prefixed always with ":".
-Each task can handle it's own arguments.
+RKD command-line usage is highly inspired by GNU Make and Gradle, but it has its own extended possibilities to
+make your scripts smaller and more readable.
 
-Tasks arguments usage
-~~~~~~~~~~~~~~~~~~~~~
+- Tasks are prefixed always with ":".
+- Each task can handle it's own arguments (unique in RKD)
+- "@" allows to propagate arguments to next tasks (unique in RKD)
 
-*makefile.py*
+Tasks arguments usage in shell and in scripts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code:: python
-
-
-    from rkd.syntax import TaskDeclaration, TaskAliasDeclaration
-    from rkd.standardlib.python import PublishTask
-
-    IMPORTS = [
-        TaskDeclaration(PublishTask())
-    ]
-
-    TASKS = [
-        TaskAliasDeclaration(':my:test', [':py:publish', '--username=...', '--password=...'])
-    ]
-
-**Example of calling same task twice, but with different input**
-
-Notes for this example: The "username" parameter is a default defined in
-``makefile.py`` in this case.
+**Executing multiple tasks in one command:**
 
 .. code:: bash
 
-    $ rkd :my:test --password=first :my:test --password=second
-     >> Executing :py:publish
-    Publishing
-    {'username': '...', 'password': 'first'}
+    rkd :task1 :task2
 
-     >> Executing :py:publish
-    Publishing
-    {'username': '...', 'password': 'second'}
 
-**Example of calling same task twice, with no extra arguments**
-
-In this example the argument values "..." are taken from ``makefile.py``
+**Multiple tasks with different switches:**
 
 .. code:: bash
 
-    $ rkd :my:test :my:test
-     >> Executing :py:publish
-    Publishing
-    {'username': '...', 'password': '...'}
+    rkd :task1 --hello  :task2 --world
 
-     >> Executing :py:publish
-    Publishing
-    {'username': '...', 'password': '...'}
 
-**Example of --help per command:**
+**Tasks sharing the same switches**
+
+Both tasks will receive switch "--hello"
 
 .. code:: bash
 
-    $ rkd :my:test :my:test --help
-    usage: :py:publish [-h] [--username USERNAME] [--password PASSWORD]
+    # expands to:
+    #  :task1 --hello
+    #  :task2 --hello
+    rkd @ --hello :task1 :task2
 
-    optional arguments:
-      -h, --help           show this help message and exit
-      --username USERNAME  Username
-      --password PASSWORD  Password
+    # handy, huh?
 
-Simplified - YAML syntax
-~~~~~~~~~~~~~~~~~~~~~~~~
+**Advanced usage of shared switches**
+
+Operator "@" can set switches anytime, it can also clear or replace switches in **NEXT TASKS**.
+
+.. code:: bash
+
+    # expands to:
+    #   :task1 --hello
+    #   :task2 --hello
+    #   :task3
+    #   :task4 --world
+    #   :task5 --world
+    rkd @ --hello :task1 :task2 @ :task3 @ --world :task4 :task5
+
+
+**Written as a pipeline (regular bash syntax)**
+
+It's exactly the same example as above, but written multiline. It's recommended to write multiline commands if they are longer.
+
+.. code:: bash
+
+    rkd @ --hello \
+        :task1 \
+        :task2 \
+        @
+        :task3 \
+        @ --world \
+        :task4 \
+        :task5
+
+
+YAML syntax - makefile.yaml
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 YAML syntax has an advantage of simplicity and clean syntax, custom bash tasks can be defined there easier than in Python.
 To use YAML you need to define **makefile.yaml** file in .rkd directory.
