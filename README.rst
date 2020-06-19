@@ -129,7 +129,7 @@ Projects using RKD
 Alternative ways of installation
 --------------------------------
 
-- `Arch Linux AUR package<https://aur.archlinux.org/packages/riotkit-do/>`_ `made by ragouel<https://github.com/ragouel>`_
+- `Arch Linux AUR package <https://aur.archlinux.org/packages/riotkit-do/>`_ `made by ragouel <https://github.com/ragouel>`_
 
 Releasing
 ---------
