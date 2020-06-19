@@ -126,6 +126,11 @@ Projects using RKD
 - `Harbor Simple Router - NGINX image with predefined templates, controlled by environment variables <https://github.com/riotkit-org/harbor-simple-router>`_
 - `Kubernetes/OKD workspace - create deployments with reusable YAMLs <https://github.com/riotkit-org/riotkit-do-example-kubernetes-workspace>`_
 
+Alternative ways of installation
+--------------------------------
+
+- `Arch Linux AUR package<https://aur.archlinux.org/packages/riotkit-do/>`_ `made by ragouel<https://github.com/ragouel>`_
+
 Releasing
 ---------
 
