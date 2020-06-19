@@ -34,3 +34,12 @@ class TestTaskDeclaration(unittest.TestCase):
         self.assertIn('Polish prisoners', declaration.get_full_description())
         self.assertIn('Auschwitz Birkenau', declaration.get_full_description())
         self.assertIn('managed to escape', declaration.get_full_description())
+
+    def test_get_full_description_allows_empty_doc(self):
+        """Test that description can be not defined at all"""
+
+        declaration = get_test_declaration()
+        declaration.get_task_to_execute().get_description = lambda: None
+        declaration.get_task_to_execute().__doc__ = None
+
+        self.assertEqual('', declaration.get_full_description())

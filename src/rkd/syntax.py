@@ -89,7 +89,7 @@ class TaskDeclaration(TaskDeclarationInterface):
         if task.get_description():
             return task.get_description()
 
-        return task.__doc__.strip().split("\n")[0]
+        return task.__doc__.strip().split("\n")[0] if task.__doc__ else ''
 
     def get_full_description(self) -> str:
         task = self.get_task_to_execute()
