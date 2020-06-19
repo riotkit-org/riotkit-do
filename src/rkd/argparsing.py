@@ -30,8 +30,8 @@ class CommandlineParsingHelper(object):
     Extends argparse functionality by grouping arguments into tasks -> tasks arguments
     """
 
-    @staticmethod
-    def create_grouped_arguments(commandline: List[str]) -> List[TaskArguments]:
+    @classmethod
+    def create_grouped_arguments(cls, commandline: List[str]) -> List[TaskArguments]:
         current_group_elements = []
         current_task_name = 'rkd:initialize'
         tasks = []
@@ -45,7 +45,7 @@ class CommandlineParsingHelper(object):
             part = part.strip()
 
             is_flag = part[0:1] == "-"
-            is_task = part[0:1] == ":"
+            is_task = part[0:1] in (':', '@')
             previous_is_flag = commandline[cursor-1][0:1] == "-" if cursor >= 1 else False
 
             # option name or flag
@@ -59,7 +59,7 @@ class CommandlineParsingHelper(object):
             # new task
             elif is_task:
                 if current_task_name != 'rkd:initialize':
-                    tasks.append(TaskArguments(current_task_name, current_group_elements))
+                    tasks.append([current_task_name, current_group_elements])
 
                 current_task_name = part
                 current_group_elements = []
@@ -69,9 +69,41 @@ class CommandlineParsingHelper(object):
                 current_group_elements.append(part)
 
             if cursor + 1 == max_cursor:
-                tasks.append(TaskArguments(current_task_name, current_group_elements))
+                tasks.append([current_task_name, current_group_elements])
 
-        return tasks
+        return cls._map_to_task_arguments(
+            cls._parse_shared_arguments(tasks)
+        )
+
+    @classmethod
+    def _map_to_task_arguments(cls, tasks: list) -> List[TaskArguments]:
+        return list(map(
+            lambda task: TaskArguments(task[0], task[1]),
+            tasks
+        ))
+
+    @classmethod
+    def _parse_shared_arguments(cls, tasks: list) -> list:
+        """Apply arguments from task "@" that is before a group of tasks
+           "@" without any arguments is clearing previous "@" with arguments
+        """
+
+        global_group_elements = []
+        edited_tasks = []
+
+        for task in tasks:
+            task_name, group_elements = task
+
+            if task_name == '@':
+                global_group_elements = group_elements
+                continue
+
+            edited_tasks.append([
+                task_name,
+                group_elements + global_group_elements
+            ])
+
+        return edited_tasks
 
     @classmethod
     def parse(cls, task: TaskDeclarationInterface, args: list):
