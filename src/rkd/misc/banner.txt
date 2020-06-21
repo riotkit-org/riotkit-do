@@ -20,39 +20,10 @@ You can run multiple tasks in one pipeline:
 Each task can take arguments after it's name - let we pass username to publish task
   \x1B[37mrkd :py:build :py:publish --username=__token__\x1B[0m
 
-
-\x1B[93mBuilding own tasks lists
-========================\x1B[0m
-
-Create a file in ./.rkd/makefile.py, then import tasks here and define your own tasks and alias existing tasks with
-custom options.
-
-    \x1B[37m# makefile.py
-    from rkd.syntax import TaskAliasDeclaration as Task, TaskDeclaration
-    from rkd.standardlib.python import BuildTask, PublishTask, UnitTestTask
-
-    IMPORTS = [
-        TaskDeclaration(PublishTask()),
-        TaskDeclaration(BuildTask()),
-        TaskDeclaration(UnitTestTask())
-    ]
-
-    TASKS = [
-        Task(':release', description='Release RKD to PyPI (snapshot when on master, release on tag)', to_execute=[
-            ':py:build', ':py:publish', '--username=__token__', '--password=${PYPI_TOKEN}'
-        ]),
-
-        Task(':test', [':py:unittest'], description='Run unit tests')
-    ]\x1B[0m
-
 See \x1B[93mhttps://github.com/riotkit-org/riotkit-do\x1B[0m for more documentation.
 
 \x1B[0mCheck out also those fantastic initiatives we created this tool in mind for:\x1B[33m
 \x1B[0m- International Workers Association (\x1B[93mhttps://iwa-ait.org\x1B[0m)
-\x1B[0m- Federacja Anarchistyczna (\x1B[93mhttp://federacja-anarchistyczna.pl\x1B[0m)
-\x1B[0m- Związek Syndykalistów Polski (\x1B[93mhttps://zsp.net.pl\x1B[0m) \x1B[0m(Polish section of IWA-AIT)
 \x1B[0m- Komitet Obrony Praw Lokatorów (\x1B[93mhttps://lokatorzy.info.pl\x1B[0m)
-\x1B[0m- Solidarity Federation (\x1B[93mhttps://solfed.org.uk\x1B[0m)
-\x1B[0m- Priama Akcia (\x1B[93mhttps://priamaakcia.sk\x1B[0m
-\x1B[0m- Anarchist Black Cross Philadelphia (\x1B[93mhttps://pl-pl.facebook.com/PhillyABC/\x1B[0m)
+\x1B[0m- Anarchist Black Cross Federation (\x1B[93mhttp://www.abcf.net/about-us/\x1B[0m)
 \x1B[0m
