@@ -1,0 +1,103 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["version"],
+    "properties": {
+        "version": {
+            "type": "string",
+            "minLength": 5
+        },
+        "imports": {
+            "type": "array",
+            "minItems": 0,
+            "items": {
+                "$ref": "#/definitions/import"
+            }
+        },
+        "tasks": {
+            "type": "object",
+            "minItems": 0,
+            "additionalProperties": {
+                "$ref": "#/definitions/task"
+            }
+        },
+        "environment": {
+            "type": "object",
+            "minItems": 0
+        },
+        "env_files": {
+            "type": "array"
+        }
+    },
+
+    "definitions": {
+        "task": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+
+                "arguments": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/task-argument"
+                    },
+                    "minItems": 0
+                },
+
+                "steps": {
+                    "type": ["array", "string"],
+                    "minItems": 1
+                },
+
+                "environment": {
+                    "type": "object",
+                    "minItems": 0
+                },
+
+                "env_files": {
+                    "type": "array"
+                }
+            }
+        },
+        "task-argument": {
+            "type": "object",
+            "properties": {
+                "help": {
+                    "type": "string"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "action": {
+                    "type": "string"
+                },
+                "metavar": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "nargs": {
+                    "type": "string"
+                },
+                "default": {
+                    "type": "string"
+                },
+                "const": {
+                    "type": "string"
+                },
+                "choices": {
+                    "type": "array"
+                },
+                "dest": {
+                    "type": "string"
+                }
+            }
+        },
+        "import": {
+            "type": "string"
+        }
+    }
+}

@@ -42,7 +42,7 @@ def mock_task(task: TaskInterface, io: IO = None) -> TaskInterface:
     if io is None:
         io = NullSystemIO()
 
-    ctx = ApplicationContext([], [])
+    ctx = ApplicationContext([], [], '')
     ctx.io = io
 
     task.internal_inject_dependencies(

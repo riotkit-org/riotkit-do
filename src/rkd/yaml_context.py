@@ -17,32 +17,43 @@ from .contract import ExecutionContext
 from .contract import TaskInterface
 from .standardlib import CallableTask
 from .inputoutput import IO
+from .yaml_parser import YamlFileLoader
 
 
-class YamlParser:
+class YamlSyntaxInterpreter:
     """
     Translates YAML syntax into Python syntax of makefile (makefile.yaml -> makefile.py)
     """
 
     io: IO
+    loader: YamlFileLoader
 
-    def __init__(self, io: IO):
+    def __init__(self, io: IO, loader: YamlFileLoader):
         self.io = io
+        self.loader = loader
 
     def parse(self, content: str, rkd_path: str, file_path: str) -> Tuple[List[TaskDeclaration], List[TaskAliasDeclaration]]:
         """ Parses whole YAML into entities same as in makefile.py - IMPORTS, TASKS """
 
-        parsed = yaml.load(content, yaml.FullLoader)
+        pre_parsed = yaml.load(content, yaml.FullLoader)
+
+        if 'version' not in pre_parsed:
+            raise YamlParsingException('"version" is not specified in YAML file')
+
+        parsed = self.loader.load(content, pre_parsed['version'])
+
         imports = []
         global_envs = self.parse_env(parsed, file_path)
 
         if "imports" in parsed:
             imports = self.parse_imports(parsed['imports'])
 
-        if "tasks" not in parsed or not isinstance(parsed, dict):
-            raise YamlParsingException('"tasks" section not found in YAML file')
-
-        tasks = self.parse_tasks(parsed['tasks'], rkd_path, file_path, global_envs)
+        tasks = self.parse_tasks(
+            parsed['tasks'] if 'tasks' in parsed else {},
+            rkd_path,
+            file_path,
+            global_envs
+        )
 
         return imports + tasks, []
 

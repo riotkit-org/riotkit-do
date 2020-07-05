@@ -1,4 +1,4 @@
-version: org.riotkit.rkd/0.3
+version: org.riotkit.rkd/yaml/v1
 imports:
   - rkd.standardlib.docker.TagImageTask
 

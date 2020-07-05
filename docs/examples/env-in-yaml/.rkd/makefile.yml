@@ -1,4 +1,4 @@
-version: org.riotkit.rkd/0.3
+version: org.riotkit.rkd/yaml/v1
 
 environment:
     GLOBALLY_DEFINED: "16 May 1966, seamen across the UK walked out on a nationwide strike for the first time in half a century. Holding solid for seven weeks, they won a reduction in working hours from 56 to 48 per week "

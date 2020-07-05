@@ -4,7 +4,8 @@ import unittest
 import os
 import yaml
 from io import StringIO
-from rkd.yaml_context import YamlParser
+from rkd.yaml_context import YamlSyntaxInterpreter
+from rkd.yaml_parser import YamlFileLoader
 from rkd.inputoutput import IO, NullSystemIO, BufferedSystemIO
 from rkd.exception import DeclarationException, YamlParsingException
 from rkd.contract import ExecutionContext
@@ -15,13 +16,13 @@ SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 class TestYamlContext(unittest.TestCase):
     def test_parse_imports_successful_case_single_task(self):
-        factory = YamlParser(NullSystemIO())
+        factory = YamlSyntaxInterpreter(NullSystemIO(), YamlFileLoader([]))
         imported = factory.parse_imports(['rkd.standardlib.docker.PushTask'])
 
         self.assertEqual(':docker:push', imported[0].to_full_name())
 
     def test_parse_imports_successful_case_module(self):
-        factory = YamlParser(NullSystemIO())
+        factory = YamlSyntaxInterpreter(NullSystemIO(), YamlFileLoader([]))
         imported = factory.parse_imports(['rkd.standardlib.docker'])
 
         names_of_imported_tasks = []
@@ -34,20 +35,20 @@ class TestYamlContext(unittest.TestCase):
 
     def test_parse_imports_wrong_class_type_but_existing(self):
         def test():
-            factory = YamlParser(NullSystemIO())
+            factory = YamlSyntaxInterpreter(NullSystemIO(), YamlFileLoader([]))
             factory.parse_imports(['rkd.exception.ContextException'])
 
         self.assertRaises(DeclarationException, test)
 
     def test_parse_imports_cannot_import_non_existing_class(self):
         def test():
-            factory = YamlParser(NullSystemIO())
+            factory = YamlSyntaxInterpreter(NullSystemIO(), YamlFileLoader([]))
             factory.parse_imports(['rkd.standardlib.python.WRONG_NAME'])
 
         self.assertRaises(YamlParsingException, test)
 
     def test_parse_imports_importing_whole_module_without_submodules(self):
-        factory = YamlParser(NullSystemIO())
+        factory = YamlSyntaxInterpreter(NullSystemIO(), YamlFileLoader([]))
         imported = factory.parse_imports(['rkd_python'])
 
         names_of_imported_tasks = []
@@ -80,7 +81,7 @@ class TestYamlContext(unittest.TestCase):
 
         io = IO()
         out = StringIO()
-        factory = YamlParser(io)
+        factory = YamlSyntaxInterpreter(io, YamlFileLoader([]))
         parsed_tasks = factory.parse_tasks(input_tasks, '', './makefile.yaml', {})
 
         self.assertEqual(':resistentia', parsed_tasks[0].to_full_name(),
@@ -113,7 +114,7 @@ print(syntax-error-here)
         }
 
         io = BufferedSystemIO()
-        factory = YamlParser(io)
+        factory = YamlSyntaxInterpreter(io, YamlFileLoader([]))
         parsed_tasks = factory.parse_tasks(input_tasks, '', 'makefile.yaml', {})
 
         declaration = parsed_tasks[0]
@@ -132,7 +133,7 @@ print(syntax-error-here)
         if not io:
             io = BufferedSystemIO()
 
-        factory = YamlParser(io)
+        factory = YamlSyntaxInterpreter(io, YamlFileLoader([]))
 
         declaration = get_test_declaration()
 
@@ -197,7 +198,7 @@ return "ExecutionContext" in str(ctx) and "Task" in str(this)
         """
 
         io = IO()
-        factory = YamlParser(io)
+        factory = YamlSyntaxInterpreter(io, YamlFileLoader([]))
         envs = factory.parse_env({
             'environment': {
                 'EVENT_NAME': 'In memory of Maxwell Itoya, an Nigerian immigrant killed by police at flea market.' +
@@ -213,7 +214,7 @@ return "ExecutionContext" in str(ctx) and "Task" in str(this)
         """
 
         io = IO()
-        factory = YamlParser(io)
+        factory = YamlSyntaxInterpreter(io, YamlFileLoader([]))
         envs = factory.parse_env({
             'env_files': [
                 SCRIPT_DIR_PATH + '/../docs/examples/env-in-yaml/.rkd/env/global.env'
@@ -247,7 +248,7 @@ environment:
             parsed = yaml.load(yaml_content, yaml.FullLoader)
 
             io = IO()
-            factory = YamlParser(io)
+            factory = YamlSyntaxInterpreter(io, YamlFileLoader([]))
             envs = factory.parse_env(parsed, 'makefile.yaml')
 
             names_in_order = []

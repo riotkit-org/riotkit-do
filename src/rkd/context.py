@@ -15,7 +15,8 @@ from .exception import TaskNotFoundException
 from .exception import ContextFileNotFoundException
 from .exception import PythonContextFileNotFoundException
 from .exception import NotImportedClassException
-from .yaml_context import YamlParser
+from .yaml_context import YamlSyntaxInterpreter
+from .yaml_parser import YamlFileLoader
 
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -36,12 +37,16 @@ class ApplicationContext(ContextInterface):
     _task_aliases: Dict[str, TaskAliasDeclaration]
     _compiled: Dict[str, Union[TaskDeclaration, GroupDeclaration]]
     _created_at: datetime
+    _directory: str
+    directories: []
     io: SystemIO
 
-    def __init__(self, tasks: List[TaskDeclaration], aliases: List[TaskAliasDeclaration]):
+    def __init__(self, tasks: List[TaskDeclaration], aliases: List[TaskAliasDeclaration], directory: str):
         self._imported_tasks = {}
         self._task_aliases = {}
         self._created_at = datetime.now()
+        self._directory = directory
+        self.directories = [directory] if directory else []
 
         for task in tasks:
             self._add_component(task)
@@ -53,7 +58,7 @@ class ApplicationContext(ContextInterface):
     def merge(cls, first, second):
         """ Add one context to other context. Produces immutable new context. """
 
-        new_ctx = cls([], [])
+        new_ctx = cls([], [], '')
 
         for context in [first, second]:
             context: ApplicationContext
@@ -63,6 +68,8 @@ class ApplicationContext(ContextInterface):
 
             for name, task in context._task_aliases.items():
                 new_ctx._add_task(task)
+
+            new_ctx.directories += context.directories
 
         return new_ctx
 
@@ -134,7 +141,7 @@ class ContextFactory:
         if not os.path.isdir(path):
             raise Exception('Path "%s" not found' % path)
 
-        ctx = ApplicationContext([], [])
+        ctx = ApplicationContext([], [], path)
         contexts = []
 
         if os.path.isfile(path + '/makefile.py'):
@@ -158,8 +165,8 @@ class ContextFactory:
         makefile_path = path + '/' + filename
 
         with open(makefile_path, 'rb') as handle:
-            imports, tasks = YamlParser(self._io).parse(handle.read().decode('utf-8'), path, makefile_path)
-            return ApplicationContext(tasks=imports, aliases=tasks)
+            imports, tasks = YamlSyntaxInterpreter(self._io, YamlFileLoader([])).parse(handle.read().decode('utf-8'), path, makefile_path)
+            return ApplicationContext(tasks=imports, aliases=tasks, directory=path)
 
     @staticmethod
     def _load_from_py(path: str):
@@ -178,7 +185,8 @@ class ContextFactory:
 
         return ApplicationContext(
             tasks=makefile.IMPORTS if "IMPORTS" in dir(makefile) else [],
-            aliases=makefile.TASKS if "TASKS" in dir(makefile) else []
+            aliases=makefile.TASKS if "TASKS" in dir(makefile) else [],
+            directory=path
         )
 
     def create_unified_context(self, chdir: str = '') -> ApplicationContext:
@@ -207,7 +215,7 @@ class ContextFactory:
         # export for usage inside in makefiles
         os.environ['RKD_PATH'] = ":".join(paths)
 
-        ctx = ApplicationContext([], [])
+        ctx = ApplicationContext([], [], '')
 
         for path in paths:
             # not all paths could exist, we consider this, we look where it is possible

@@ -22,7 +22,8 @@ class TestResolver(unittest.TestCase):
             aliases=[
                 TaskAliasDeclaration(':test', [':sh', '-c', 'uname -a', ':sh', '-c', 'ps aux'],
                                      description='Task for testing')
-            ]
+            ],
+            directory=''
         )
 
         context.compile()
@@ -48,7 +49,8 @@ class TestResolver(unittest.TestCase):
 
         context = ApplicationContext(
             tasks=[TaskDeclaration(ShellCommandTask())],
-            aliases=[]
+            aliases=[],
+            directory=''
         )
 
         context.compile()
@@ -75,7 +77,8 @@ class TestResolver(unittest.TestCase):
 
         context = ApplicationContext(
             tasks=[TaskDeclaration(ShellCommandTask())],
-            aliases=[]
+            aliases=[],
+            directory=''
         )
         context.compile()
         result_tasks = []

@@ -1,3 +1,4 @@
+from jsonschema import ValidationError
 
 
 class ContextException(Exception):
@@ -34,6 +35,15 @@ class NotSupportedEnvVariableError(UserInputException):
 
 class YamlParsingException(ContextException):
     """Logic or syntax errors in makefile.yaml"""
+
+
+class YAMLFileValidationError(YamlParsingException):
+    """Errors related to schema validation"""
+
+    def __init__(self, err: ValidationError):
+        super().__init__('YAML schema validation failed at path "%s" with error: %s' % (
+            '.'.join(err.path), err.message
+        ))
 
 
 class DeclarationException(ContextException):

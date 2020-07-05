@@ -4,7 +4,6 @@ from typing import List
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
 from .contract import TaskDeclarationInterface
-from .exception import TaskNotFoundException
 
 
 class TaskArguments(object):

@@ -60,6 +60,25 @@ class ContextTest(unittest.TestCase):
             filename='makefile.py'
         )
 
+    def test_context_remembers_directories_from_which_it_was_loaded(self):
+        """Verify that whenever we merge contexts, the 'directories' attribute is also merged"""
+
+        ctx1 = ApplicationContext([], [], '/home/iwa-ait')
+        ctx2 = ApplicationContext([], [], '/home/black-lives-matters')
+
+        ctx_merged = ApplicationContext.merge(ctx1, ctx2)
+
+        self.assertEqual(['/home/iwa-ait'], ctx1.directories)
+        self.assertEqual(['/home/iwa-ait', '/home/black-lives-matters'], ctx_merged.directories)
+
+    def test_context_empty_path_is_not_applied_to_directories(self):
+        """Test that '' path will not be added to directories list"""
+
+        ctx = ApplicationContext([], [], '')
+
+        self.assertEqual([], ctx.directories)
+        self.assertEqual(0, len(ctx.directories))
+
     def _common_test_loads_task_from_file(self, path: str, task: str, filename: str):
         os.environ['RKD_PATH'] = path
         ctx = None
