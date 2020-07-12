@@ -2,6 +2,7 @@
 
 import unittest
 import os
+import tempfile
 from rkd.yaml_parser import YamlFileLoader
 from rkd.exception import YAMLFileValidationError
 
@@ -62,13 +63,13 @@ class TestLoader(unittest.TestCase):
 
         try:
             yaml_loader.load('''
-                        version: org.riotkit.rkd/yaml/v1
-                        imports: []
-                        tasks: 
-                            :join:iwa-ait:
-                                description: Subscribe to any local section of IWA-AIT, workers have common interest
-                                arguments:
-                                    - not a list
+version: org.riotkit.rkd/yaml/v1
+imports: []
+tasks: 
+    :join:iwa-ait:
+        description: Subscribe to any local section of IWA-AIT, workers have common interest
+        arguments:
+            - not a list
                         ''', schema_name='org.riotkit.rkd/yaml/v1')
         except YAMLFileValidationError as e:
             self.assertIn("tasks.:join:iwa-ait.arguments", str(e))
@@ -76,3 +77,53 @@ class TestLoader(unittest.TestCase):
             return
 
         self.fail('Expected an exception to be raised')
+
+    def test_loads_from_file_is_searching_in_rkd_path(self):
+        """Assert that makefile.yml will be searched in RKD_PATH"""
+
+        yaml_loader = YamlFileLoader([])
+
+        d = tempfile.TemporaryDirectory()
+        os.environ['RKD_PATH'] = d.name
+
+        with open(d.name + '/makefile.yml', 'w') as f:
+            f.write('''
+version: org.riotkit.rkd/yaml/v1
+imports: []
+tasks: 
+    :join:iwa-ait:
+        description: Subscribe to any local section of IWA-AIT, workers have common interest
+        arguments:
+            - not a list
+            ''')
+
+        try:
+            self.assertRaises(YAMLFileValidationError,
+                              lambda: yaml_loader.load_from_file('makefile.yml', 'org.riotkit.rkd/yaml/v1'))
+        finally:
+            d.cleanup()
+            os.environ['RKD_PATH'] = ''
+
+    def test_invalid_file_path_is_causing_exception(self):
+        """Test that invalid path will be reported quickly"""
+
+        yaml_loader = YamlFileLoader([])
+        self.assertRaises(FileNotFoundError,
+                          lambda: yaml_loader.load_from_file('non-existing-file.yml', 'org.riotkit.rkd/yaml/v1'))
+
+    def test_get_lookup_paths_includes_internal_path_as_well_as_rkd_path(self):
+        """Verify that lookup paths includes RKD_PATH and internal RKD directories"""
+
+        yaml_loader = YamlFileLoader([])
+        os.environ['RKD_PATH'] = 'SOME-PATH-THERE'
+
+        try:
+            paths = yaml_loader.get_lookup_paths('harbor-internal/')
+        finally:
+            os.environ['RKD_PATH'] = ''
+
+        defined_by_rkd_path = paths.index('SOME-PATH-THERE/harbor-internal/')
+        internal_path = paths.index(os.path.realpath(SCRIPT_DIR_PATH + '/../src') + '/harbor-internal/')
+
+        self.assertGreater(defined_by_rkd_path, internal_path, msg='defined_by_rkd_path should be favored')
+

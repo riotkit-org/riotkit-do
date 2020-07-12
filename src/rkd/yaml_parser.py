@@ -31,7 +31,6 @@ class YamlFileLoader(object):
     def __init__(self, paths: List[str]):
         self.paths = paths
 
-    # @todo: Tests coverage
     def load_from_file(self, filename: str, schema_name: str):
         """Loads a YAML file from given path, a wrapper to load()"""
 
@@ -79,7 +78,6 @@ class YamlFileLoader(object):
 
         return ''
 
-    # @todo: Unit tests coverage
     def get_lookup_paths(self, subdirectory: str) -> List[str]:
         paths = [os.getcwd(), os.getcwd() + '/' + subdirectory, os.getcwd() + '/.rkd/' + subdirectory]
         global_paths = os.getenv('RKD_PATH', '').split(':')
