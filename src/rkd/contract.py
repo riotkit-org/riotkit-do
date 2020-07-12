@@ -80,6 +80,8 @@ class GroupDeclarationInterface(AbstractClass):
 
 
 class ContextInterface(AbstractClass):
+    directories: []
+
     @abstractmethod
     def merge(cls, first, second):
         pass
