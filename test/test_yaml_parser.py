@@ -127,3 +127,34 @@ tasks:
 
         self.assertGreater(defined_by_rkd_path, internal_path, msg='defined_by_rkd_path should be favored')
 
+    def test_find_path_by_name_founds_path(self):
+        """Assert that makefile.yml will be searched in RKD_PATH"""
+
+        yaml_loader = YamlFileLoader([])
+
+        d = tempfile.TemporaryDirectory()
+        os.environ['RKD_PATH'] = d.name
+
+        with open(d.name + '/makefile.yml', 'w') as f:
+            f.write('''
+        version: org.riotkit.rkd/yaml/v1
+        imports: []
+        tasks: 
+            :join:iwa-ait:
+                description: Subscribe to any local section of IWA-AIT, workers have common interest
+                arguments:
+                    - not a list
+                    ''')
+
+        try:
+            path = yaml_loader.find_path_by_name('makefile.yml', '/')
+            self.assertTrue(len(path) > 0)
+        finally:
+            d.cleanup()
+            os.environ['RKD_PATH'] = ''
+
+    def test_find_path_by_name_does_not_found_anything(self):
+        """Verify that find_path_by_name() will not return anything if nothing searched was found"""
+
+        yaml_loader = YamlFileLoader([])
+        self.assertEqual('', yaml_loader.find_path_by_name('some-file-that-does-not-exists', ''))

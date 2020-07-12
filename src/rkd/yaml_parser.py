@@ -65,7 +65,6 @@ class YamlFileLoader(object):
 
         return parsed
 
-    # @todo: Unit tests coverage
     def find_path_by_name(self, filename: str, subdir: str) -> str:
         """Find schema in one of RKD directories or in current path
         """
