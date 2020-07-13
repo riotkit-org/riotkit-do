@@ -333,7 +333,10 @@ class LineInFileTask(TaskInterface):
 
 
 class CreateStructureTask(TaskInterface):
-    """ Creates a RKD file structure in current directory """
+    """ Creates a RKD file structure in current directory
+
+This task is designed to be extended, see methods marked as "interface methods".
+    """
 
     def get_name(self) -> str:
         return ':create-structure'
@@ -347,9 +350,9 @@ class CreateStructureTask(TaskInterface):
                             action='store_true')
         parser.add_argument('--no-venv', help='Do not create virtual env automatically', action='store_true')
 
-    def execute(self, context: ExecutionContext) -> bool:
-        commit_to_git = context.get_arg('--commit')
-        without_venv = context.get_arg('--no-venv')
+    def execute(self, ctx: ExecutionContext) -> bool:
+        commit_to_git = ctx.get_arg('--commit')
+        without_venv = ctx.get_arg('--no-venv')
 
         if commit_to_git and not self.check_git_is_clean():
             self.io().error_msg('Current working directory is dirty, you have working changes, ' +
@@ -359,17 +362,20 @@ class CreateStructureTask(TaskInterface):
         rkd_version = pkg_resources.get_distribution("rkd").version
         template_structure_path = os.path.dirname(os.path.realpath(__file__)) + '/../misc/initial-structure'
 
+        self.on_startup(ctx)
+
         # 1) Create structure from template
         if not os.path.isdir('.rkd'):
             self._io.info_msg('Creating a folder structure at %s' % os.getcwd())
             self.sh('cp -pr %s/.rkd ./' % template_structure_path, verbose=True)
+            self.on_files_copy(ctx)
         else:
             self.io().info_msg('Not creating .rkd directory, already present')
 
         # 2) Populate git ignore
         self.sh('touch .gitignore')
 
-        for file_path in ['.rkd/logs', '*.pyc', '*__pycache__*', '/.venv']:
+        for file_path in self.get_patterns_to_add_to_gitignore(ctx):
             self.rkd([':file:line-in-file',
                       '.gitignore',
                       '--regexp="%s"' % file_path.replace('*', '\*'),
@@ -384,15 +390,18 @@ class CreateStructureTask(TaskInterface):
                   '--regexp="rkd(.*)"',
                   '--insert="rkd==%s"' % rkd_version
                   ])
+        self.on_requirements_txt_write(ctx)
 
         # 4) Create virtual env
         if not without_venv:
             self.io().info('Setting up virtual environment')
+            self.on_creating_venv(ctx)
             self.sh('cp %s/setup-venv.sh ./' % template_structure_path)
             self.sh('chmod +x setup-venv.sh')
             self.sh('./setup-venv.sh')
 
         if commit_to_git:
+            self.on_git_add(ctx)
             self.git_add('.gitignore')
             self.git_add('setup-venv.sh')
             self.git_add('requirements.txt')
@@ -400,12 +409,68 @@ class CreateStructureTask(TaskInterface):
 
             self.commit_to_git()
 
-        self.io().success_msg("Structure created, use ./setup-venv.sh to enter Python\'s " +
+        self.print_success_msg(ctx)
+
+        return True
+
+    def on_requirements_txt_write(self, ctx: ExecutionContext) -> None:
+        """After requirements.txt file is written
+
+        Interface method: to be overridden
+        """
+
+        pass
+
+    def get_patterns_to_add_to_gitignore(self, ctx: ExecutionContext) -> list:
+        """List of patterns to write to .gitignore
+
+        Interface method: to be overridden
+        """
+
+        return ['.rkd/logs', '*.pyc', '*__pycache__*', '/.venv', '.venv-setup.log']
+
+    def on_startup(self, ctx: ExecutionContext) -> None:
+        """When the command is triggered, and the git is not dirty
+
+        Interface method: to be overridden
+        """
+
+        pass
+
+    def on_files_copy(self, ctx: ExecutionContext) -> None:
+        """When files are copied
+
+        Interface method: to be overridden
+        """
+
+        pass
+
+    def on_creating_venv(self, ctx: ExecutionContext) -> None:
+        """When creating virtual environment
+
+        Interface method: to be overridden
+        """
+
+        pass
+
+    def on_git_add(self, ctx: ExecutionContext) -> None:
+        """Action on, when adding files via `git add`
+
+        Interface method: to be overridden
+        """
+
+        pass
+
+    def print_success_msg(self, ctx: ExecutionContext) -> None:
+        """Emits a success message
+
+        Interface method: to be overridden
+        """
+
+        self.io().success_msg("Structure created, use eval $(./setup-venv.sh) to enter Python\'s " +
                               "virtual environment with installed desired RKD version from requirements.txt\n" +
                               "Add libraries, task providers, tools to the requirements.txt " +
                               "for reproducible environments")
-
-        return True
 
     def commit_to_git(self):
         if not os.path.isdir('.git'):
