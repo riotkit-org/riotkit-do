@@ -37,7 +37,7 @@ class YamlSyntaxInterpreter:
 
         """ Parses whole YAML into entities same as in makefile.py - IMPORTS, TASKS """
 
-        pre_parsed = yaml.load(content, yaml.FullLoader)
+        pre_parsed = yaml.load(content, yaml.Loader)
 
         if 'version' not in pre_parsed:
             raise YamlParsingException('"version" is not specified in YAML file')
