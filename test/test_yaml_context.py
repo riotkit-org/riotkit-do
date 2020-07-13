@@ -17,21 +17,21 @@ SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 class TestYamlContext(unittest.TestCase):
     def test_parse_imports_successful_case_single_task(self):
         factory = YamlSyntaxInterpreter(NullSystemIO(), YamlFileLoader([]))
-        imported = factory.parse_imports(['rkd.standardlib.docker.PushTask'])
+        imported = factory.parse_imports(['rkd.standardlib.jinja.RenderDirectoryTask'])
 
-        self.assertEqual(':docker:push', imported[0].to_full_name())
+        self.assertEqual(':j2:directory-to-directory', imported[0].to_full_name())
 
     def test_parse_imports_successful_case_module(self):
         factory = YamlSyntaxInterpreter(NullSystemIO(), YamlFileLoader([]))
-        imported = factory.parse_imports(['rkd.standardlib.docker'])
+        imported = factory.parse_imports(['rkd.standardlib.jinja'])
 
         names_of_imported_tasks = []
 
         for task in imported:
             names_of_imported_tasks.append(task.to_full_name())
 
-        self.assertIn(':docker:tag', names_of_imported_tasks)
-        self.assertIn(':docker:push', names_of_imported_tasks)
+        self.assertIn(':j2:render', names_of_imported_tasks)
+        self.assertIn(':j2:directory-to-directory', names_of_imported_tasks)
 
     def test_parse_imports_wrong_class_type_but_existing(self):
         def test():

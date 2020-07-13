@@ -1,6 +1,6 @@
 version: org.riotkit.rkd/yaml/v1
 imports:
-  - rkd.standardlib.docker.TagImageTask
+  - rkd.standardlib.jinja.RenderDirectoryTask
 
 tasks:
   # see this task in "rkd :tasks"
