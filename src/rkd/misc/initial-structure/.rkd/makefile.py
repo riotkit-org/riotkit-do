@@ -1,7 +1,6 @@
 
 import os
 from rkd.syntax import TaskAliasDeclaration as Task, TaskDeclaration
-from rkd.standardlib.docker import imports as DockerImports
 from rkd.standardlib import CallableTask
 from rkd.contract import ExecutionContext
 
@@ -14,8 +13,6 @@ from rkd.contract import ExecutionContext
 IMPORTS = []
 TASKS = []
 
-# # optionally, import docker-related and python-related tasks from Python packages
-# IMPORTS = [] + DockerImports()
 #
 # # optionally, add a custom task written in pure Python
 # IMPORTS += [TaskDeclaration(CallableTask(':create-union', create_union_task_as_method))]

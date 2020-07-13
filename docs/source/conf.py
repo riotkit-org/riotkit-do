@@ -65,16 +65,6 @@ jinja_contexts = {
         'PKG_CLASS_NAME': 'rkd.standardlib.jinja.RenderDirectoryTask',
         'PKG_PIP': 'rkd'
     },
-    'docker_tag': {
-        'PKG_NAME': 'rkd.standardlib.docker',
-        'PKG_CLASS_NAME': 'rkd.standardlib.docker.TagImageTask',
-        'PKG_PIP': 'rkd'
-    },
-    'docker_push': {
-        'PKG_NAME': 'rkd.standardlib.docker',
-        'PKG_CLASS_NAME': 'rkd.standardlib.docker.PushTask',
-        'PKG_PIP': 'rkd'
-    },
     'init': {
         'PKG_NAME': 'rkd.standardlib',
         'PKG_CLASS_NAME': 'rkd.standardlib.InitTask',

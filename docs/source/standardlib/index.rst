@@ -7,7 +7,6 @@ Tasks
 
    shell
    technical
-   docker
    python
    env
    jinja
