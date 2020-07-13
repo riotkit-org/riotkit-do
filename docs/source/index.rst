@@ -36,7 +36,7 @@ Getting started with RKD
 
 The "Quick start" section will end up with a **.rkd** directory, a requirements.txt and setup-venv.sh
 
-1. Use setup-venv.sh to enter shell of your project, where RKD is installed with all dependencies
+1. Use **eval $(setup-venv.sh)** to enter shell of your project, where RKD is installed with all dependencies
 2. Each time you install anything from **pip** in your project - add it to requirements.txt, you can install additional RKD tasks from pip
 3. In **.rkd/makefile.yaml** you can start adding your first tasks and imports
 
