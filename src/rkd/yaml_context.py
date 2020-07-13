@@ -32,7 +32,9 @@ class YamlSyntaxInterpreter:
         self.io = io
         self.loader = loader
 
-    def parse(self, content: str, rkd_path: str, file_path: str) -> Tuple[List[TaskDeclaration], List[TaskAliasDeclaration]]:
+    def parse(self, content: str, rkd_path: str, file_path: str) \
+            -> Tuple[List[TaskDeclaration], List[TaskAliasDeclaration]]:
+
         """ Parses whole YAML into entities same as in makefile.py - IMPORTS, TASKS """
 
         pre_parsed = yaml.load(content, yaml.FullLoader)

@@ -12,3 +12,4 @@ Usage
    global-envs
    custom-distribution
    tasks-api
+   schema-validation
