@@ -38,7 +38,7 @@ The schema file cannot be found, the name is invalid or file missing. The schema
 
 It means you created a list (starts with "-") instead of dictionary at "tasks" path.
 
-**Example went is wrong:**
+**Example what went wrong:**
 
 .. code:: yaml
 
