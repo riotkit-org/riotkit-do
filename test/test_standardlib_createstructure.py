@@ -128,8 +128,12 @@ class CreateStructureTaskTest(unittest.TestCase):
                         call_history
                     )
 
-                # reset
+                #
+                # Reset to perform a test checking, that any next same task execution results in skipped files copying
+                #
                 call_history = []
+                subprocess.check_call('echo "new" > new-file.txt; git add new-file.txt', shell=True)
+
                 self._execute_mocked_task({'--commit': True, '--no-venv': False}, {}, task=task)
 
                 with self.subTest('Any next time should not copy files over and over again'):
