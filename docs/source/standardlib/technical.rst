@@ -43,6 +43,8 @@ to create a task by defining a simple method as a callback.
 
 .. literalinclude:: ../../examples/callback/.rkd/makefile.py
 
+.. autoclass:: rkd.standardlib.CallableTask
+   :members:
 
 :rkd:create-structure
 ~~~~~~~~~~~~~~~~~~~~~
@@ -52,6 +54,16 @@ to create a task by defining a simple method as a callback.
 
 Creates a template structure used by RKD in current directory.
 
+
+**API for developers:**
+
+This task is extensible by class inheritance, you can override methods to implement your own task with changed behavior.
+It was designed to allow to create customized installers for tools based on RKD (custom RKD distributions), the example is RiotKit Harbor.
+
+Look for "interface methods" in class code, those methods are guaranteed to not change from minor version to minor version.
+
+.. autoclass:: rkd.standardlib.CreateStructureTask
+   :members:
 
 :file:line-in-file
 ~~~~~~~~~~~~~~~~~~
