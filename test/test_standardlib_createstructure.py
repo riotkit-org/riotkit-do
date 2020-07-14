@@ -11,10 +11,12 @@ from rkd.inputoutput import BufferedSystemIO
 
 class CreateStructureTaskTest(unittest.TestCase):
     @staticmethod
-    def _execute_mocked_task(params: dict, envs: dict = {}) -> BufferedSystemIO:
+    def _execute_mocked_task(params: dict, envs: dict = {}, task: CreateStructureTask = None) -> BufferedSystemIO:
         io = BufferedSystemIO()
 
-        task: CreateStructureTask = CreateStructureTask()
+        if not task:
+            task: CreateStructureTask = CreateStructureTask()
+
         mock_task(task, io=io)
         task.execute(mock_execution_context(task, params, envs))
 
@@ -86,6 +88,55 @@ class CreateStructureTaskTest(unittest.TestCase):
                 self.assertTrue(os.path.isfile(tempdir + '/requirements.txt'),
                                 msg='Expected requirements.txt file to be present')
                 self.assertFalse(os.path.isfile(tempdir + '/.venv/bin/activate'))
+
+            finally:
+                os.chdir(cwd)
+
+    def test_functional_interface_methods_are_called(self):
+        """Verify that all defined extensible interface methods are called"""
+
+        with TemporaryDirectory() as tempdir:
+            cwd = os.getcwd()
+
+            try:
+                os.chdir(tempdir)
+                subprocess.call(['git', 'init'])
+
+                # verification
+                call_history = []
+
+                # mock
+                task = CreateStructureTask()
+                task.on_startup = lambda ctx: call_history.append('on_startup')
+                task.on_files_copy = lambda ctx: call_history.append('on_files_copy')
+                task.on_requirements_txt_write = lambda ctx: call_history.append('on_requirements_txt_write')
+                task.on_creating_venv = lambda ctx: call_history.append('on_creating_venv')
+                task.on_git_add = lambda ctx: call_history.append('on_git_add')
+                task.get_patterns_to_add_to_gitignore = lambda ctx: [
+                    'lets-ignore-all-the-opposites-of-fate-and-rise-up',
+                    '.venv-setup.log'
+                ]
+
+                # action
+                self._execute_mocked_task({'--commit': True, '--no-venv': False}, {}, task=task)
+
+                # assert that actions will be called in order
+
+                with self.subTest('First time should copy files, create virtual env'):
+                    self.assertEqual(
+                        ['on_startup', 'on_files_copy', 'on_requirements_txt_write', 'on_creating_venv', 'on_git_add'],
+                        call_history
+                    )
+
+                # reset
+                call_history = []
+                self._execute_mocked_task({'--commit': True, '--no-venv': False}, {}, task=task)
+
+                with self.subTest('Any next time should not copy files over and over again'):
+                    self.assertEqual(
+                        ['on_startup', 'on_requirements_txt_write', 'on_creating_venv', 'on_git_add'],
+                        call_history
+                    )
 
             finally:
                 os.chdir(cwd)
