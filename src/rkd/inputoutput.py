@@ -3,9 +3,12 @@ import re
 import sys
 import os
 import subprocess
+from json import dumps as json_encode
+from time import sleep
 from typing import List
 from contextlib import contextmanager
 from datetime import datetime
+from .exception import InterruptExecution
 
 
 this = sys.modules[__name__]
@@ -358,6 +361,75 @@ class BufferedSystemIO(SystemIO):
 
     def clear_buffer(self):
         self._buffer = ''
+
+
+class Wizard(object):
+    _max_retries: int = 3
+    answers: dict
+    io: 'IO'
+    task: 'TaskInterface'
+
+    def __init__(self, task: 'TaskInterface'):
+        self.answers = {}
+        self.task = task
+        self.io = task.io()
+
+    def ask(self, title: str, attribute: str, regexp: str = '', to_env: bool = False, default: str = None) -> 'Wizard':
+        """Asks user a question"""
+
+        retried = 0
+        value = None
+        full_text_to_ask = title
+
+        if regexp:
+            full_text_to_ask += " [%s]" % regexp
+
+        if default:
+            full_text_to_ask += " [default: %s]" % default
+
+        full_text_to_ask += ": "
+
+        while value is None or not self.is_valid(value, regexp):
+            self.io.out(full_text_to_ask + "\n -> ")
+            value = input()
+
+            if default and not value.strip():
+                value = default
+
+            if retried >= self._max_retries:
+                raise InterruptExecution('Invalid value given')
+
+            if self.is_valid(value, regexp):
+                break
+
+            retried += 1
+            sleep(1)
+
+        if to_env:
+            self.task.rkd(
+                [':env:set', '--name="%s"' % attribute, '--value="%s"' % value],
+                verbose=False,
+                capture=True
+            )
+            return self
+
+        self.answers[attribute] = value
+        return self
+
+    @staticmethod
+    def is_valid(value: any, regexp: str = ''):
+        if not regexp:
+            return True
+
+        return re.match(regexp, value) is not None
+
+    def finish(self) -> 'Wizard':
+        self.io.info('Writing to .rkd/tmp-wizard.json')
+
+        with open('.rkd/tmp-wizard.json', 'wb') as f:
+            f.write(json_encode(self.answers).encode('utf-8'))
+
+        return self
 
 
 def clear_formatting(text: str) -> str:
