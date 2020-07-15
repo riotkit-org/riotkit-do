@@ -370,12 +370,14 @@ class Wizard(object):
     task: 'TaskInterface'
     to_env: dict
     sleep_time = 1
+    filename: str
 
-    def __init__(self, task: 'TaskInterface'):
+    def __init__(self, task: 'TaskInterface', filename: str = 'tmp-wizard.json'):
         self.answers = {}
         self.task = task
         self.io = task.io()
         self.to_env = {}
+        self.filename = filename
 
     def ask(self, title: str, attribute: str, regexp: str = '', to_env: bool = False, default: str = None,
             choices: list = []) -> 'Wizard':
@@ -438,8 +440,8 @@ class Wizard(object):
         return True
 
     def finish(self) -> 'Wizard':
-        self.io.info('Writing to .rkd/tmp-wizard.json')
-        with open('.rkd/tmp-wizard.json', 'wb') as f:
+        self.io.info('Writing to .rkd/' + self.filename)
+        with open('.rkd/' + self.filename, 'wb') as f:
             f.write(json_encode(self.answers).encode('utf-8'))
 
         self.io.info('Writing to .env')
