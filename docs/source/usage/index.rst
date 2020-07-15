@@ -13,3 +13,4 @@ Usage
    custom-distribution
    tasks-api
    schema-validation
+   wizard
