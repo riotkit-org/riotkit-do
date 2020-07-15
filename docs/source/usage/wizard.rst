@@ -31,6 +31,14 @@ Example Wizard
         -> redis
 
 
+Using Wizard results internally
+-------------------------------
+
+Wizard is designed to keep the data on the disk, so you can access it in any other task executed, but this is not mandatory.
+You can skip committing changes to disk by not using :code:`finish()` which **is flushing data to json and to .env files.**
+
+Use :code:`wizard.answers` to see all answers that would be put into json file, and :code:`wizard.to_env` to browse all environment variables that would be set in .env if :code:`finish()` would be used.
+
 Example of loading stored values by other task
 ----------------------------------------------
 
