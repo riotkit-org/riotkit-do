@@ -451,6 +451,8 @@ class Wizard(object):
         self.to_env = deepcopy(os.environ)
 
     def finish(self) -> 'Wizard':
+        """Commit all pending changes into json and .env files"""
+
         self.io.info('Writing to .rkd/' + self.filename)
         with open('.rkd/' + self.filename, 'wb') as f:
             f.write(json_encode(self.answers).encode('utf-8'))
