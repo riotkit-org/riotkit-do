@@ -383,7 +383,16 @@ class Wizard(object):
 
     def ask(self, title: str, attribute: str, regexp: str = '', to_env: bool = False, default: str = None,
             choices: list = []) -> 'Wizard':
-        """Asks user a question"""
+        """Asks user a question
+
+        Usage:
+            wizard = Wizard(self)
+            wizard.ask('In which year the Spanish social revolution has begun?',
+                       attribute='year',
+                       choices=['1936', '1910'])
+            wizard.finish()
+
+        """
 
         retried = 0
         value = None
