@@ -368,18 +368,25 @@ class Wizard(object):
     answers: dict
     io: 'IO'
     task: 'TaskInterface'
+    to_env: dict
+    sleep_time = 1
 
     def __init__(self, task: 'TaskInterface'):
         self.answers = {}
         self.task = task
         self.io = task.io()
+        self.to_env = {}
 
-    def ask(self, title: str, attribute: str, regexp: str = '', to_env: bool = False, default: str = None) -> 'Wizard':
+    def ask(self, title: str, attribute: str, regexp: str = '', to_env: bool = False, default: str = None,
+            choices: list = []) -> 'Wizard':
         """Asks user a question"""
 
         retried = 0
         value = None
         full_text_to_ask = title
+
+        if choices and regexp:
+            raise Exception('Please choose between regexp and choices validation.')
 
         if regexp:
             full_text_to_ask += " [%s]" % regexp
@@ -387,11 +394,14 @@ class Wizard(object):
         if default:
             full_text_to_ask += " [default: %s]" % default
 
+        if choices:
+            full_text_to_ask += " [%s]" % ', '.join(choices)
+
         full_text_to_ask += ": "
 
-        while value is None or not self.is_valid(value, regexp):
+        while value is None or not self.is_valid(value, regexp, choices):
             self.io.out(full_text_to_ask + "\n -> ")
-            value = input()
+            value = self.input()
 
             if default and not value.strip():
                 value = default
@@ -403,31 +413,42 @@ class Wizard(object):
                 break
 
             retried += 1
-            sleep(1)
+            sleep(self.sleep_time)
 
         if to_env:
-            self.task.rkd(
-                [':env:set', '--name="%s"' % attribute, '--value="%s"' % value],
-                verbose=False,
-                capture=True
-            )
+            self.to_env[attribute] = value
             return self
 
         self.answers[attribute] = value
         return self
 
-    @staticmethod
-    def is_valid(value: any, regexp: str = ''):
-        if not regexp:
-            return True
+    def input(self):
+        """Extracted for unit testing to be possible easier"""
 
-        return re.match(regexp, value) is not None
+        return input()
+
+    @staticmethod
+    def is_valid(value: any, regexp: str = '', choices: list = []):
+        if choices:
+            return value in choices
+
+        if regexp:
+            return re.match(regexp, value) is not None
+
+        return True
 
     def finish(self) -> 'Wizard':
         self.io.info('Writing to .rkd/tmp-wizard.json')
-
         with open('.rkd/tmp-wizard.json', 'wb') as f:
             f.write(json_encode(self.answers).encode('utf-8'))
+
+        self.io.info('Writing to .env')
+        for attribute, value in self.to_env.items():
+            self.task.rkd(
+                [':env:set', '--name="%s"' % attribute, '--value="%s"' % value],
+                verbose=False,
+                capture=True
+            )
 
         return self
 
