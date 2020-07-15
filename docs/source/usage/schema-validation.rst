@@ -57,3 +57,9 @@ It means you created a list (starts with "-") instead of dictionary at "tasks" p
         second:
             description: second
 
+
+API
+---
+
+.. autoclass:: rkd.yaml_parser.YamlFileLoader
+   :members:
