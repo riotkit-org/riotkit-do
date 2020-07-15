@@ -4,6 +4,8 @@ import sys
 import os
 import subprocess
 from json import dumps as json_encode
+from json import loads as json_decode
+from copy import deepcopy
 from time import sleep
 from typing import List
 from contextlib import contextmanager
@@ -438,6 +440,15 @@ class Wizard(object):
             return re.match(regexp, value) is not None
 
         return True
+
+    def load_previously_stored_values(self):
+        """Load previously saved values"""
+
+        if os.path.isfile('.rkd/' + self.filename):
+            with open('.rkd/' + self.filename, 'rb') as f:
+                self.answers = json_decode(f.read())
+
+        self.to_env = deepcopy(os.environ)
 
     def finish(self) -> 'Wizard':
         self.io.info('Writing to .rkd/' + self.filename)

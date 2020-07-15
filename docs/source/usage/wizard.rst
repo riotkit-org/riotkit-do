@@ -12,8 +12,8 @@ Concept
 - At the end the :code:`finish()` is called, which acts as a commit, saves answers into :code:`.rkd/tmp-wizard.json` by default and into the :code:`.env` file (depends on if to_env=true was specified)
 - Next RKD task executed can read :code:`.rkd/tmp-wizard.json` looking for answers, the answers placed in .env are already loaded automatically as part of standard mechanism of environment variables support
 
-Example
--------
+Example Wizard
+--------------
 
 .. code:: python
 
@@ -29,6 +29,24 @@ Example
 
     Service name [([A-Za-z0-9_]+)] [default: redis]:
         -> redis
+
+
+Example of loading stored values by other task
+----------------------------------------------
+
+Wizard stores values into file and into .env file, so it can read it from file after it was stored there.
+This allows you to separate Wizard questions into one RKD task, and the rest of logic/steps into other RKD tasks.
+
+.. code:: python
+
+    from rkd.inputoutput import Wizard
+
+    # ... assuming that previously the Wizard was completed by user and the finish() method was called ...
+
+    wizard = Wizard(self)
+    wizard.load_previously_stored_values()
+
+    print(wizard.answers, wizard.to_env)
 
 
 API
