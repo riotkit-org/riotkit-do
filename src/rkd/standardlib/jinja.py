@@ -80,6 +80,9 @@ class RenderDirectoryTask(TaskInterface):
                 source_full_path = root + '/' + file
                 target_full_path = target_root + '/' + source_full_path[len(source_root):]
 
+                if target_full_path.endswith('.j2'):
+                    target_full_path = target_full_path[:-3]
+
                 if not self._is_file_matching_filter(pattern, source_full_path):
                     self.io().info_msg('Skipping file "%s" (filtered out)' % source_full_path)
                     continue
