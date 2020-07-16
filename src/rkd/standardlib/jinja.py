@@ -72,6 +72,8 @@ class RenderDirectoryTask(TaskInterface):
         target_root = context.get_arg('--target')
         delete_source_files = context.get_arg('--delete-source-files')
         pattern = re.compile(context.get_arg('--pattern'))
+        exclude_pattern = re.compile(context.get_arg('--exclude-pattern')) if context.get_arg('--exclude-pattern') else None
+        copy_not_matched = context.get_arg('--copy-not-matching-files')
 
         self.io().info_msg('Pattern is `%s`' % context.get_arg('--pattern'))
 
@@ -83,8 +85,18 @@ class RenderDirectoryTask(TaskInterface):
                 if target_full_path.endswith('.j2'):
                     target_full_path = target_full_path[:-3]
 
+                if exclude_pattern and self._is_file_matching_filter(exclude_pattern, source_full_path):
+                    self.io().info_msg('Skipping file "%s" - (filtered out by --exclude-pattern)' % source_full_path)
+                    continue
+
                 if not self._is_file_matching_filter(pattern, source_full_path):
-                    self.io().info_msg('Skipping file "%s" (filtered out)' % source_full_path)
+                    if copy_not_matched:
+                        self.io().info_msg('Copying "%s" regular file' % source_full_path)
+                        self._copy_file(source_full_path, target_full_path)
+
+                        continue
+
+                    self.io().info_msg('Skipping file "%s" (filtered out by --pattern)' % source_full_path)
                     continue
 
                 self.io().info_msg('Rendering file "%s" into "%s"' % (source_full_path, target_full_path))
@@ -97,6 +109,10 @@ class RenderDirectoryTask(TaskInterface):
                     self._delete_file(source_full_path)
 
         return True
+
+    def _copy_file(self, source_full_path: str, target_full_path: str):
+        self.sh('mkdir -p "%s"' % os.path.dirname(target_full_path))
+        self.sh('cp -p "%s" "%s"' % (source_full_path, target_full_path))
 
     def _render(self, source_path: str, target_path: str) -> bool:
         try:
@@ -121,6 +137,9 @@ class RenderDirectoryTask(TaskInterface):
                             action='store_true')
         parser.add_argument('--pattern', '-p', help='Optional regexp pattern to match full paths',
                             default='(.*).j2')
+        parser.add_argument('--exclude-pattern', '-xp', help='Optional regexp for a pattern exclude, to exclude files')
+        parser.add_argument('--copy-not-matching-files', '-c', help='Copy all files that are not matching the pattern' +
+                                                                    ' instead of skipping them')
 
 
 def imports():

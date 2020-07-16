@@ -17,13 +17,16 @@ class TestRenderDirectoryTask(unittest.TestCase):
         calls = []
         deletions = []
 
-        # mocks _render() method
         def mock__render(source_path: str, target_path: str) -> bool:
             calls.append('"%s" -> "%s"' % (source_path, target_path))
 
             return True
 
+        def mock__sh(*args, **kwargs):
+            calls.append('sh(' + ' '.join(args) + ')')
+
         task._render = mock__render
+        task.sh = mock__sh
         task._delete_file = lambda file: deletions.append(file)
 
         # run task
@@ -51,6 +54,33 @@ class TestRenderDirectoryTask(unittest.TestCase):
         # directories should not be included
         self.assertNotIn('"../src/" -> "/tmp/src/"', renderings)
         self.assertNotIn('"../src" -> "/tmp/src"', renderings)
+
+    def test_files_are_copied_when_not_matching_pattern_but_switch_was_used(self):
+        """Test --copy-not-matching-files switch that adds a possibility to copy all files from SOURCE to DESTINATION
+        The difference is that those files that does not match PATTERN will be copied without rendering.
+
+        Additionally uses "--exclude-pattern" to exclude redundant files
+        """
+
+        renderings, deletions = self._execute_mocked_task({
+            'source': '../test',
+            'target': '/tmp',
+            'delete_source_files': False,
+            'pattern': '(.*).j2',
+            '--exclude-pattern': '(.*).pyc',
+            '--copy-not-matching-files': True
+        })
+
+        flatten_list_as_str = ' '.join(renderings)
+
+        with self.subTest('Check --copy-not-matching-files - the non (.*).j2 files should be just copied ' +
+                          'instead of rendered'):
+
+            self.assertIn('sh(cp -p "../test/test_standardlib_jinja_render_directory.py" ' +
+                          '"/tmp//test_standardlib_jinja_render_directory.py")', renderings)
+
+        with self.subTest('Check --exclude-pattern'):
+            self.assertNotIn('.pyc', flatten_list_as_str)
 
     def test_without_pattern(self):
         """What happens if we specify no pattern?
