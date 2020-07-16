@@ -44,11 +44,14 @@ class TestRenderDirectoryTask(unittest.TestCase):
             'source': '../',
             'target': '/tmp',
             'delete_source_files': False,
-            'pattern': '(.*)(src|test)/(.*).py$'
+            'pattern': '(.*)(src|test)/(.*).py$',
+            '--exclude-pattern': '',
+            '--copy-not-matching-files': False
         })
 
         # example files (please correct if changed in filesystem)
-        self.assertIn('"../test/test_standardlib_jinja_render_directory.py" -> "/tmp/test/test_standardlib_jinja_render_directory.py"', renderings)
+        self.assertIn('"../test/test_standardlib_jinja_render_directory.py" ' +
+                      '-> "/tmp/test/test_standardlib_jinja_render_directory.py"', renderings)
         self.assertIn('"../src/__init__.py" -> "/tmp/src/__init__.py"', renderings)
 
         # directories should not be included
@@ -89,7 +92,9 @@ class TestRenderDirectoryTask(unittest.TestCase):
             'source': '../',
             'target': '/tmp',
             'delete_source_files': False,
-            'pattern': ''
+            'pattern': '',
+            '--exclude-pattern': '',
+            '--copy-not-matching-files': False
         })
 
         # example files (please correct if changed in filesystem)
@@ -102,7 +107,9 @@ class TestRenderDirectoryTask(unittest.TestCase):
             'source': '../',
             'target': '/tmp',
             'delete_source_files': False,
-            'pattern': ''
+            'pattern': '',
+            '--exclude-pattern': '',
+            '--copy-not-matching-files': False
         })
 
         self.assertEqual([], deletions)
@@ -112,7 +119,9 @@ class TestRenderDirectoryTask(unittest.TestCase):
             'source': '../',
             'target': '/tmp',
             'delete_source_files': True,
-            'pattern': '(.*)test_standardlib_jinja_render_directory.py$'
+            'pattern': '(.*)test_standardlib_jinja_render_directory.py$',
+            '--exclude-pattern': '',
+            '--copy-not-matching-files': False
         })
 
         self.assertEqual(['../test/test_standardlib_jinja_render_directory.py'], deletions)
