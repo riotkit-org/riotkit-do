@@ -139,7 +139,7 @@ class RenderDirectoryTask(TaskInterface):
                             default='(.*).j2')
         parser.add_argument('--exclude-pattern', '-xp', help='Optional regexp for a pattern exclude, to exclude files')
         parser.add_argument('--copy-not-matching-files', '-c', help='Copy all files that are not matching the pattern' +
-                                                                    ' instead of skipping them')
+                                                                    ' instead of skipping them', action='store_true')
 
 
 def imports():
