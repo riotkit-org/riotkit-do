@@ -438,6 +438,9 @@ class Wizard(object):
     def input(self):
         """Extracted for unit testing to be possible easier"""
 
+        if os.getenv('__WIZARD_INPUT'):
+            return os.getenv('__WIZARD_INPUT')
+
         return input()
 
     @staticmethod
