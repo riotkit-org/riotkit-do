@@ -398,7 +398,7 @@ This task is designed to be extended, see methods marked as "interface methods".
             self.on_creating_venv(ctx)
             self.sh('cp %s/setup-venv.sh ./' % template_structure_path)
             self.sh('chmod +x setup-venv.sh')
-            self.sh('./setup-venv.sh > /dev/null')
+            self.sh('./setup-venv.sh')
 
         if commit_to_git:
             self.on_git_add(ctx)

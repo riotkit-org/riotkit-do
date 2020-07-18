@@ -6,7 +6,7 @@ if test -d .venv; then
     exit 0
 fi
 
-virtualenv .venv > .venv-setup.log 2>&1
+virtualenv .venv
 source ./.venv/bin/activate
-pip install -r requirements.txt >> .venv-setup.log 2>&1
+pip install -r requirements.txt
 echo "source ./.venv/bin/activate"
