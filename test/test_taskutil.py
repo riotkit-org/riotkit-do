@@ -82,6 +82,7 @@ class TestTaskUtil(unittest.TestCase):
 
             self.assertEqual("FIRST\nSECOND\nTHIRD\n", out.getvalue())
 
+    @unittest.skip("To be fixed in github issue #30")
     def test_sh_rkd_in_rkd_shows_first_lines_on_error(self):
         """Bugfix: sh() was loosing first line(s) of output, when exception was raised
 
