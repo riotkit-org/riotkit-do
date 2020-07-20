@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
+import os
 import unittest
 from rkd.standardlib.jinja import RenderDirectoryTask
 from rkd.test import mock_task, mock_execution_context
+
+TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestRenderDirectoryTask(unittest.TestCase):
@@ -10,7 +13,7 @@ class TestRenderDirectoryTask(unittest.TestCase):
     """
 
     @staticmethod
-    def _execute_mocked_task(params: dict) -> tuple:
+    def _execute_mocked_task(params: dict, env: dict = {}) -> tuple:
         task: RenderDirectoryTask = RenderDirectoryTask()
         mock_task(task)
 
@@ -30,7 +33,7 @@ class TestRenderDirectoryTask(unittest.TestCase):
         task._delete_file = lambda file: deletions.append(file)
 
         # run task
-        task.execute(mock_execution_context(task, params))
+        task.execute(mock_execution_context(task, params, env))
 
         return calls, deletions
 
@@ -46,7 +49,8 @@ class TestRenderDirectoryTask(unittest.TestCase):
             'delete_source_files': False,
             'pattern': '(.*)(src|test)/(.*).py$',
             '--exclude-pattern': '',
-            '--copy-not-matching-files': False
+            '--copy-not-matching-files': False,
+            '--template-filenames': False
         })
 
         # example files (please correct if changed in filesystem)
@@ -71,7 +75,8 @@ class TestRenderDirectoryTask(unittest.TestCase):
             'delete_source_files': False,
             'pattern': '(.*).j2',
             '--exclude-pattern': '(.*).pyc',
-            '--copy-not-matching-files': True
+            '--copy-not-matching-files': True,
+            '--template-filenames': False
         })
 
         flatten_list_as_str = ' '.join(renderings)
@@ -94,7 +99,8 @@ class TestRenderDirectoryTask(unittest.TestCase):
             'delete_source_files': False,
             'pattern': '',
             '--exclude-pattern': '',
-            '--copy-not-matching-files': False
+            '--copy-not-matching-files': False,
+            '--template-filenames': False
         })
 
         # example files (please correct if changed in filesystem)
@@ -109,7 +115,8 @@ class TestRenderDirectoryTask(unittest.TestCase):
             'delete_source_files': False,
             'pattern': '',
             '--exclude-pattern': '',
-            '--copy-not-matching-files': False
+            '--copy-not-matching-files': False,
+            '--template-filenames': False
         })
 
         self.assertEqual([], deletions)
@@ -121,7 +128,61 @@ class TestRenderDirectoryTask(unittest.TestCase):
             'delete_source_files': True,
             'pattern': '(.*)test_standardlib_jinja_render_directory.py$',
             '--exclude-pattern': '',
-            '--copy-not-matching-files': False
+            '--copy-not-matching-files': False,
+            '--template-filenames': False
         })
 
         self.assertEqual(['../test/test_standardlib_jinja_render_directory.py'], deletions)
+
+    def test_replace_vars_in_filename(self):
+        name = RenderDirectoryTask().replace_vars_in_filename({'Word': 'triumph'}, 'that-agony-is-your---Word--.txt')
+
+        self.assertEqual('that-agony-is-your-triumph.txt', name)
+
+    def test_replace_vars_in_filename_multiple_occurrences(self):
+        name = RenderDirectoryTask()\
+            .replace_vars_in_filename({'word': 'pueblo', 'word2': 'hijos'}, '--word2--_del_--word--(--word--_version)')
+
+        self.assertEqual('hijos_del_pueblo(pueblo_version)', name)
+
+    def test_filename_templating_when_switch_is_on(self):
+        """Assert that variables in filenames are also replaced, not only in the content
+
+        Condition: When the "--template-filenames" is used
+        """
+
+        renderings, deletions = self._execute_mocked_task({
+            'source': TESTS_DIR + '/internal-samples/jinja2-filename-templating',
+            'target': '/tmp',
+            'delete_source_files': True,
+            'pattern': '(.*).j2',
+            '--exclude-pattern': '',
+            '--copy-not-matching-files': True,
+            '--template-filenames': True
+        }, env={
+            'song_name': 'hijos-del-pueblo',
+            'song2_name': 'a-las-barricadas'
+        })
+
+        self.assertIn('-> "/tmp//lyrics-hijos-del-pueblo.txt"', ' '.join(renderings),
+                      msg='Expected that the matching .j2 file would have changed name')
+        self.assertIn('"/tmp//lyrics2-a-las-barricadas.txt"', ' '.join(renderings),
+                      msg='Expected that the non-j2 file would have also changed name')
+
+    def test_filename_templating_is_not_replacing_vars_when_switch_is_not_used(self):
+        """Checks if the variable replacing in filenames can be turned off by not using
+        "--template-filenames" switch"""
+
+        renderings, deletions = self._execute_mocked_task({
+            'source': TESTS_DIR + '/internal-samples/jinja2-filename-templating',
+            'target': '/tmp',
+            'delete_source_files': True,
+            'pattern': '(.*).j2',
+            '--exclude-pattern': '',
+            '--copy-not-matching-files': False,
+            '--template-filenames': False
+        }, env={
+            'song_name': 'hijos-del-pueblo'
+        })
+
+        self.assertIn('-> "/tmp//lyrics---song_name--.txt"', ' '.join(renderings))

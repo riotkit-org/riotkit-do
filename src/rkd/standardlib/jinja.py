@@ -74,6 +74,7 @@ class RenderDirectoryTask(TaskInterface):
         pattern = re.compile(context.get_arg('--pattern'))
         exclude_pattern = re.compile(context.get_arg('--exclude-pattern')) if context.get_arg('--exclude-pattern') else None
         copy_not_matched = context.get_arg('--copy-not-matching-files')
+        template_filenames = context.get_arg('--template-filenames')
 
         self.io().info_msg('Pattern is `%s`' % context.get_arg('--pattern'))
 
@@ -84,6 +85,9 @@ class RenderDirectoryTask(TaskInterface):
 
                 if target_full_path.endswith('.j2'):
                     target_full_path = target_full_path[:-3]
+
+                if template_filenames:
+                    target_full_path = self.replace_vars_in_filename(context.env, target_full_path)
 
                 if exclude_pattern and self._is_file_matching_filter(exclude_pattern, source_full_path):
                     self.io().info_msg('Skipping file "%s" - (filtered out by --exclude-pattern)' % source_full_path)
@@ -109,6 +113,13 @@ class RenderDirectoryTask(TaskInterface):
                     self._delete_file(source_full_path)
 
         return True
+
+    @staticmethod
+    def replace_vars_in_filename(env_vars: dict, filename: str) -> str:
+        for name, value in env_vars.items():
+            filename = filename.replace('--%s--' % name, value)
+
+        return filename
 
     def _copy_file(self, source_full_path: str, target_full_path: str):
         self.sh('mkdir -p "%s"' % os.path.dirname(target_full_path))
@@ -140,6 +151,9 @@ class RenderDirectoryTask(TaskInterface):
         parser.add_argument('--exclude-pattern', '-xp', help='Optional regexp for a pattern exclude, to exclude files')
         parser.add_argument('--copy-not-matching-files', '-c', help='Copy all files that are not matching the pattern' +
                                                                     ' instead of skipping them', action='store_true')
+        parser.add_argument('--template-filenames', '-tf',
+                            help='Replace variables in filename eg. --VAR--, ' +
+                                 'where VAR is a name of environment variable', action='store_true')
 
 
 def imports():

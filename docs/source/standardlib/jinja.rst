@@ -28,7 +28,9 @@ Renders a single file from JINJA2.
 Renders all files recursively in given directory to other directory.
 Can remove source files after rendering them to the output files.
 
-*Pattern is a regexp pattern that matches whole path, not only file name*
+*Note: Pattern is a regexp pattern that matches whole path, not only file name*
+
+*Note: Exclude pattern is matching on SOURCE files, not on target files*
 
 
 **Example usage:**
