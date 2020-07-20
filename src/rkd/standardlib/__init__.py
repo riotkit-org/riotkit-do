@@ -359,7 +359,6 @@ This task is designed to be extended, see methods marked as "interface methods".
                                 'please commit them or stash first')
             return False
 
-        rkd_version = pkg_resources.get_distribution("rkd").version
         template_structure_path = os.path.dirname(os.path.realpath(__file__)) + '/../misc/initial-structure'
 
         self.on_startup(ctx)
@@ -388,7 +387,7 @@ This task is designed to be extended, see methods marked as "interface methods".
         self.rkd([':file:line-in-file',
                   'requirements.txt',
                   '--regexp="rkd(.*)"',
-                  '--insert="rkd==%s"' % rkd_version
+                  '--insert="rkd%s"' % self.get_rkd_version_selector()
                   ])
         self.on_requirements_txt_write(ctx)
 
@@ -412,6 +411,11 @@ This task is designed to be extended, see methods marked as "interface methods".
         self.print_success_msg(ctx)
 
         return True
+
+    @staticmethod
+    def get_rkd_version_selector():
+        rkd_version = pkg_resources.get_distribution("rkd").version
+        return '==%s' % rkd_version
 
     def on_requirements_txt_write(self, ctx: ExecutionContext) -> None:
         """After requirements.txt file is written

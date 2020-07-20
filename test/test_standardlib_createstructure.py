@@ -30,10 +30,13 @@ class CreateStructureTaskTest(unittest.TestCase):
 
             try:
                 os.chdir(tempdir)
+                task = CreateStructureTask()
+                task.get_rkd_version_selector = lambda: ''
+
                 self._execute_mocked_task({
                     '--commit': False,
                     '--no-venv': False
-                }, {})
+                }, {}, task=task)
 
                 self.assertTrue(os.path.isdir(tempdir + '/.rkd'),
                                 msg='Expected that .rkd directory would be created')
@@ -63,10 +66,12 @@ class CreateStructureTaskTest(unittest.TestCase):
                 # make the working tree dirty by editing a file without a commit
                 subprocess.call('echo "changed" > test-file.txt', shell=True)
 
+                task = CreateStructureTask()
+                task.get_rkd_version_selector = lambda: ''
                 io = self._execute_mocked_task({
                     '--commit': True,
                     '--no-venv': False
-                }, {})
+                }, {}, task=task)
 
                 self.assertIn('Current working directory is dirty', io.get_value())
             finally:
@@ -107,6 +112,9 @@ class CreateStructureTaskTest(unittest.TestCase):
 
                 # mock
                 task = CreateStructureTask()
+                # do not set fixed version, as on local environment it could be some dev version not released yet
+                task.get_rkd_version_selector = lambda: ''
+
                 task.on_startup = lambda ctx: call_history.append('on_startup')
                 task.on_files_copy = lambda ctx: call_history.append('on_files_copy')
                 task.on_requirements_txt_write = lambda ctx: call_history.append('on_requirements_txt_write')
