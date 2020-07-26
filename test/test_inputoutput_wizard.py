@@ -15,12 +15,12 @@ class TestWizard(unittest.TestCase):
         wizard.io = BufferedSystemIO()
 
         with self.subTest('Input is matching regexp'):
-            wizard.input = lambda: 'Buenaventura'
+            wizard.input = lambda secret: 'Buenaventura'
             wizard.ask('What\'s your name?', 'name', regexp='([A-Za-z]+)')
             self.assertIn('name', wizard.answers)
 
         with self.subTest('Input is not matching regexp'):
-            wizard.input = lambda: '...'
+            wizard.input = lambda secret: '...'
             self.assertRaises(InterruptExecution, lambda: wizard.ask('What\'s your name?', 'name', regexp='([A-Za-z]+)'))
 
     def test_input_is_retried_when_validation_fails(self):
@@ -29,7 +29,7 @@ class TestWizard(unittest.TestCase):
         wizard.io = BufferedSystemIO()
         self.retry_num = 0
 
-        def mocked_input():
+        def mocked_input(secret: bool = False):
             self.retry_num = self.retry_num + 1
 
             return ['...', '...', 'Buenaventura'][self.retry_num]
@@ -55,7 +55,7 @@ class TestWizard(unittest.TestCase):
     def test_is_question_pretty_formatted_for_choice_validation(self):
         wizard = Wizard(TestTask())
         wizard.io = BufferedSystemIO()
-        wizard.input = lambda: '1936'
+        wizard.input = lambda secret: '1936'
 
         wizard.ask('In which year the Spanish social revolution has begun?',
                    attribute='year',
@@ -66,7 +66,7 @@ class TestWizard(unittest.TestCase):
     def test_is_question_pretty_formatted_for_regexp_validation(self):
         wizard = Wizard(TestTask())
         wizard.io = BufferedSystemIO()
-        wizard.input = lambda: '1936'
+        wizard.input = lambda secret: '1936'
 
         wizard.ask('In which year the Spanish social revolution has begun?',
                    attribute='year',
@@ -77,7 +77,7 @@ class TestWizard(unittest.TestCase):
     def test_is_question_pretty_formatted_for_default_value_and_choice(self):
         wizard = Wizard(TestTask())
         wizard.io = BufferedSystemIO()
-        wizard.input = lambda: '1936'
+        wizard.input = lambda secret: '1936'
 
         wizard.ask('In which year the Spanish social revolution has begun?',
                    attribute='year',
@@ -97,16 +97,27 @@ class TestWizard(unittest.TestCase):
             wizard = Wizard(task)
             wizard.io = BufferedSystemIO()
 
-            wizard.input = lambda: '1936'
+            wizard.input = lambda secret: '1936'
             wizard.ask('In which year the Spanish social revolution has begun?',
                        attribute='year',
                        regexp='([0-9]{4})',
                        default='1936')
 
-            wizard.input = lambda: 'ait'
+            wizard.input = lambda secret: 'ait'
             wizard.ask('Enter new value for COMPOSE_PROJECT_NAME', attribute='COMPOSE_PROJECT_NAME', to_env=True)
             wizard.finish()
 
             # assertions
             tmp_wizard_file.assert_called_once_with('.rkd/tmp-wizard.json', 'wb')
             self.assertEqual([':env:set', '--name="COMPOSE_PROJECT_NAME"', '--value="ait"'], rkd_shell_calls[0][0])
+
+    def test_getpass_is_used_when_secret_switch_is_used(self):
+        """Test a secret=True switch in wizard.input() which is used by ask()"""
+
+        wizard = Wizard(TestTask())
+        wizard.io = BufferedSystemIO()
+
+        with patch('rkd.inputoutput.getpass') as getpass:
+            getpass.return_value = 'organize!'
+
+            self.assertEqual('organize!', wizard.input(secret=True))

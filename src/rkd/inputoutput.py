@@ -8,6 +8,7 @@ from json import loads as json_decode
 from copy import deepcopy
 from time import sleep
 from typing import List
+from getpass import getpass
 from contextlib import contextmanager
 from datetime import datetime
 from .exception import InterruptExecution
@@ -382,7 +383,7 @@ class Wizard(object):
         self.filename = filename
 
     def ask(self, title: str, attribute: str, regexp: str = '', to_env: bool = False, default: str = None,
-            choices: list = []) -> 'Wizard':
+            choices: list = [], secret: bool = False) -> 'Wizard':
         """Asks user a question
 
         Usage:
@@ -414,7 +415,7 @@ class Wizard(object):
 
         while value is None or not self.is_valid(value, regexp, choices):
             self.io.out(full_text_to_ask + "\n -> ")
-            value = self.input()
+            value = self.input(secret=secret)
 
             if default and not value.strip():
                 value = default
@@ -435,11 +436,14 @@ class Wizard(object):
         self.answers[attribute] = value
         return self
 
-    def input(self):
+    def input(self, secret: bool = False):
         """Extracted for unit testing to be possible easier"""
 
         if os.getenv('__WIZARD_INPUT'):
             return os.getenv('__WIZARD_INPUT')
+
+        if secret:
+            return getpass(prompt='')
 
         return input()
 
