@@ -10,6 +10,7 @@ from .inputoutput import IO, SystemIO
 from .results import ProgressObserver
 from .exception import InterruptExecution
 from .audit import decide_about_target_log_files
+from .temp import TempManager
 
 
 class OneByOneTaskExecutor(ExecutorInterface):
@@ -55,7 +56,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
                     target_files=decide_about_target_log_files(self._ctx, log_to_file, session_log, declaration, task_num)):
 
                 task = declaration.get_task_to_execute()
-                task.internal_inject_dependencies(io, self._ctx, self)
+                task.internal_inject_dependencies(io, self._ctx, self, TempManager())
 
                 result = task.execute(
                     ExecutionContext(
@@ -77,6 +78,8 @@ class OneByOneTaskExecutor(ExecutorInterface):
             is_exception = True
 
         finally:
+            TempManager.finally_clean_up()
+
             if result is True:
                 self._observer.task_succeed(declaration, parent)
             else:

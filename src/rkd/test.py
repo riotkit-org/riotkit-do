@@ -8,6 +8,7 @@ from .inputoutput import NullSystemIO
 from .inputoutput import IO
 from .context import ApplicationContext
 from .executor import OneByOneTaskExecutor
+from .temp import TempManager
 
 
 class TestTask(CallableTask):
@@ -48,7 +49,8 @@ def mock_task(task: TaskInterface, io: IO = None) -> TaskInterface:
     task.internal_inject_dependencies(
         io=io,
         ctx=ctx,
-        executor=OneByOneTaskExecutor(ctx)
+        executor=OneByOneTaskExecutor(ctx),
+        temp_manager=TempManager()
     )
 
     return task

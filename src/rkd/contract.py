@@ -9,6 +9,7 @@ from .exception import UndefinedEnvironmentVariableUsageError
 from .exception import EnvironmentVariableNotUsed
 from .exception import MissingInputException
 from .taskutil import TaskUtilities
+from .temp import TempManager
 
 
 class TaskDeclarationInterface(AbstractClass):
@@ -189,19 +190,22 @@ class TaskInterface(TaskUtilities):
     _io: IO
     _ctx: ContextInterface
     _executor: ExecutorInterface
+    temp: TempManager
 
-    def internal_inject_dependencies(self, io: IO, ctx: ContextInterface, executor: ExecutorInterface):
+    def internal_inject_dependencies(self, io: IO, ctx: ContextInterface,
+                                     executor: ExecutorInterface, temp_manager: TempManager):
         """"""  # sphinx: skip
 
         self._io = io
         self._ctx = ctx
         self._executor = executor
+        self.temp = temp_manager
 
     def copy_internal_dependencies(self, task):
         """Allows to execute a task-in-task, by copying dependent services from one task to other task
         """
 
-        task.internal_inject_dependencies(self._io, self._ctx, self._executor)
+        task.internal_inject_dependencies(self._io, self._ctx, self._executor, self.temp)
 
     @abstractmethod
     def get_name(self) -> str:

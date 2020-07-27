@@ -20,3 +20,7 @@ Interaction with input and output
 .. autoclass:: rkd.inputoutput.IO
    :members:
 
+Storing temporary files
+-----------------------
+.. autoclass:: rkd.temp.TempManager
+   :members:
