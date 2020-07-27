@@ -43,6 +43,8 @@ class OneByOneTaskExecutor(ExecutorInterface):
         session_log: bool = os.getenv('RKD_AUDIT_SESSION_LOG', '').lower() in ['true', '1', 'yes']
 
         # 3. execute
+        temp = TempManager()
+
         try:
             io = IO()
             io.set_log_level(log_level if log_level else self.io.get_log_level())
@@ -56,7 +58,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
                     target_files=decide_about_target_log_files(self._ctx, log_to_file, session_log, declaration, task_num)):
 
                 task = declaration.get_task_to_execute()
-                task.internal_inject_dependencies(io, self._ctx, self, TempManager())
+                task.internal_inject_dependencies(io, self._ctx, self, temp)
 
                 result = task.execute(
                     ExecutionContext(
@@ -78,7 +80,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
             is_exception = True
 
         finally:
-            TempManager.finally_clean_up()
+            temp.finally_clean_up()
 
             if result is True:
                 self._observer.task_succeed(declaration, parent)
