@@ -1,12 +1,13 @@
 
 import os
 from typing import Union
-from traceback import print_exc
 from .argparsing import CommandlineParsingHelper
 from .syntax import TaskDeclaration, GroupDeclaration
 from .context import ApplicationContext
 from .contract import ExecutorInterface, ExecutionContext
-from .inputoutput import IO, SystemIO
+from .inputoutput import IO
+from .inputoutput import SystemIO
+from .inputoutput import output_formatted_exception
 from .results import ProgressObserver
 from .exception import InterruptExecution
 from .audit import decide_about_target_log_files
@@ -73,7 +74,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
         except Exception as e:
             # allows to keep going on, even if task fails
             if not keep_going:
-                print_exc()
+                output_formatted_exception(e, str(task.get_full_name()), self.io)
                 raise InterruptExecution()
 
             self._observer.task_errored(declaration, e)

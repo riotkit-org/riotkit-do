@@ -3,6 +3,7 @@ import re
 import sys
 import os
 import subprocess
+from traceback import format_exc as py_format_exception
 from json import dumps as json_encode
 from json import loads as json_decode
 from copy import deepcopy
@@ -488,3 +489,46 @@ def clear_formatting(text: str) -> str:
     text = re.sub("\\x1B\[([0-9]+)m", '', text)
 
     return text
+
+
+def output_formatted_exception(exc: Exception, title: str, io: IO):
+    """Formats a catched exception and displays as user-friendly by default (without a stack trace)
+
+    When at least there is a "debug" level of error reporting, then an original stack trace would be displayed
+    Everything goes through the RKD's IO, not directly to the stdout/stderr. The stderr is used there naturally.
+    """
+
+    try:
+        io.errln('During "%s" a critical error happened' % title)
+        io.print_line()
+
+        if io.is_log_level_at_least('debug'):
+            io.errln(py_format_exception())
+            return
+
+        cause = exc.__cause__
+
+        while cause is not None:
+            io.errln('\x1B[91m(Caused by) %s: \x1B[93m%s\x1B[0m' % (
+                cause.__class__.__name__,
+                indent_new_lines(str(cause), 4)
+            ))
+
+            cause = cause.__cause__
+
+        io.errln('\x1B[91m%s: \x1B[93m%s\x1B[0m' % (exc.__class__.__name__, indent_new_lines(str(exc), 4)))
+        io.print_line()
+        io.errln('\x1B[37mRetry with "-rl debug" switch before failed task to see stacktrace\x1B[0m')
+
+    except Exception:
+        print('FATAL: During exception formatting there was an unrecoverable error')
+        print(py_format_exception())
+        sys.exit(1)
+
+    return
+
+
+def indent_new_lines(text: str, num: int = 4):
+    """Inserts spaces at the beginning of each new line"""
+
+    return text.replace("\n", "\n" + (" " * num))
