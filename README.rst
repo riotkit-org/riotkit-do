@@ -117,6 +117,13 @@ Please read the documentation_ here_.
 .. _documentation: https://riotkit-do.readthedocs.io/en/latest/
 .. _here: https://riotkit-do.readthedocs.io/en/latest/
 
+Roadmap
+-------
+
+Check our github milestones_, to see what's actually planned for next releases.
+
+.. _milestones: https://github.com/riotkit-org/riotkit-do/milestones
+
 Projects using RKD
 ------------------
 
