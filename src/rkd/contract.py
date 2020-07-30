@@ -116,14 +116,17 @@ class ExecutionContext:
     env: Dict[str, str]
     ctx: ContextInterface
     executor: ExecutorInterface
+    defined_args: Dict[str, dict]
 
     def __init__(self, declaration: TaskDeclarationInterface,
                  parent: Union[GroupDeclarationInterface, None] = None, args: Dict[str, str] = {},
-                 env: Dict[str, str] = {}):
+                 env: Dict[str, str] = {},
+                 defined_args: Dict[str, dict] = {}):
         self.declaration = declaration
         self.parent = parent
         self.args = args
         self.env = env
+        self.defined_args = defined_args
 
     def get_env(self, name: str, error_on_not_used: bool = False):
         """Get environment variable value"""
@@ -134,24 +137,45 @@ class ExecutionContext:
         """Provides value of user input
 
         Usage:
-            get_arg_or_env('--file-path') resolves into FILE_PATH env variable, and --file-path switch (file_path in argparse)
+            get_arg_or_env('--file-path') resolves into FILE_PATH env variable, and --file-path switch
+            (file_path in argparse)
 
         Behavior:
             When user provided explicitly switch eg. --history-id, then it's value will be taken in priority.
             If switch --history-id was not used, but user provided HISTORY_ID environment variable,
             then it will be considered.
 
-            If no switch provided and no environment variable provided, but a switch has default value - it would be returned.
-            If no switch provided and no environment variable provided, the switch does not have default, but environment variable has a default value defined, it would be returned.
+            If no switch provided and no environment variable provided, but a switch has
+            default value - it would be returned.
+
+            If no switch provided and no environment variable provided, the switch does not have default,
+            but environment variable has a default value defined, it would be returned.
+
+            When the --switch has default value (user does not use it, or user sets it explicitly to default value),
+            and environment variable SWITCH is defined, then environment variable would be taken.
 
         Raises:
             MissingInputException: When no switch and no environment variable was provided, then an exception is thrown.
         """
         env_name = name[2:].replace('-', '_').upper()
+        env_value = None
 
-        # --some-switch was used
+        try:
+            env_value = self.get_env(env_name, error_on_not_used=True)
+            is_env_variable_defined = True
+
+        except EnvironmentVariableNotUsed:
+            is_env_variable_defined = False
+
+        # case 1: a --switch was used
+        # case 2: --switch as default value set, environment variable is set, then pick env
         try:
             value = self.get_arg(name)
+
+            # https://github.com/riotkit-org/riotkit-do/issues/23
+            # When --switch has same value as default, and environment variable is not empty, then env has priority
+            if self.defined_args[name]['default'] == value and is_env_variable_defined:
+                return env_value
 
             if value is not None:
                 return value
@@ -159,10 +183,12 @@ class ExecutionContext:
         except KeyError:
             pass
 
-        try:
-            return self.get_env(env_name, error_on_not_used=True)
-        except EnvironmentVariableNotUsed:
+        # case: No --switch defined, no ENV defined
+        if not is_env_variable_defined:
             raise MissingInputException(name, env_name)
+
+        # case: No --switch defined, ENV defined
+        return env_value
 
     def get_arg(self, name: str) -> Optional[str]:
         """Get argument or option

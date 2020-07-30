@@ -16,53 +16,95 @@ class TestExecutionContext(unittest.TestCase):
             'env, switch = switch': {
                 'switches': {'revolution': 'yes'},
                 'envs': {'REVOLUTION': 'no'},
+                'defined_args': {
+                    '--revolution': {'default': None}
+                },
+                'declared_envs': {
+                    'REVOLUTION': None
+                },
                 'expects': 'yes',
-                'raises': None
+                'raises': None,
+                'test_switch': '--revolution'
             },
 
             'ENV - NO switch = env': {
                 'switches': {'revolution': None},
                 'envs': {'REVOLUTION': 'yup'},
+                'defined_args': {
+                    '--revolution': {'default': None}
+                },
+                'declared_envs': {
+                    'REVOLUTION': None
+                },
                 'expects': 'yup',
-                'raises': None
+                'raises': None,
+                'test_switch': '--revolution'
             },
 
             'NO env, NO switch = raise': {
                 'switches': {'revolution': None},
                 'envs': {},
+                'defined_args': {
+                    '--revolution': {'default': None}
+                },
+                'declared_envs': {
+                    'REVOLUTION': None
+                },
                 'expects': '',
-                'raises': MissingInputException
+                'raises': MissingInputException,
+                'test_switch': '--revolution'
             },
 
             'NO env, switch = switch': {
                 'switches': {'revolution': 'yes'},
                 'envs': {},
+                'defined_args': {
+                    '--revolution': {'default': None}
+                },
+                'declared_envs': {
+                    'REVOLUTION': None
+                },
                 'expects': 'yes',
-                'raises': None
-            }
-        }
+                'raises': None,
+                'test_switch': '--revolution'
+            },
 
-        task = InitTask()
-        task.get_declared_envs = lambda: {
-            'REVOLUTION': None
+            'ENV present, SWITCH is set to DEFAULT VALUE = env': {
+                'switches': {'person': 'Nobody'},
+                'defined_args': {
+                    '--person': {'default': 'Nobody'}
+                },
+                'envs': {'PERSON': 'Gaetano Bresci'},
+                'declared_envs': {
+                    'PERSON': None
+                },
+                'expects': 'Gaetano Bresci',
+                'raises': False,
+                'test_switch': '--person'
+            }
         }
 
         #
         # Actual test code
         #
         def test(dataset_name, dataset):
-            context = ExecutionContext(TaskDeclaration(task), args=dataset['switches'], env=dataset['envs'])
-            self.assertEqual(dataset['expects'], context.get_arg_or_env('--revolution'),
+            task = InitTask()
+            task.get_declared_envs = lambda: dataset['declared_envs']
+
+            context = ExecutionContext(TaskDeclaration(task), args=dataset['switches'], env=dataset['envs'],
+                                       defined_args=dataset['defined_args'])
+            self.assertEqual(dataset['expects'], context.get_arg_or_env(dataset['test_switch']),
                              msg='Dataset failed: %s' % dataset_name)
 
         #
         # Iteration over datasets
         #
         for dataset_name, dataset in datasets.items():
-            if dataset['raises']:
-                with self.assertRaises(dataset['raises']):
+            with self.subTest(dataset_name):
+                if dataset['raises']:
+                    with self.assertRaises(dataset['raises']):
+                        test(dataset_name, dataset)
+                else:
                     test(dataset_name, dataset)
-            else:
-                test(dataset_name, dataset)
 
 

@@ -1,9 +1,38 @@
 #!/usr/bin/env python3
 
 from typing import List
+from typing import Tuple
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
 from .contract import TaskDeclarationInterface
+
+
+class TraceableArgumentParser(ArgumentParser):
+    """Traces options inserted into ArgumentParser for later interpretation
+
+    Example case: ArgumentParser does not allow to check what is the default defined value for argument
+                  but we need this information somewhere, so we track add_argument() parameters
+                  (it is safe as the API is stable)
+    """
+
+    traced_arguments: dict
+
+    def __init__(self, *args, **kwargs):
+        self.traced_arguments = {}
+        super().__init__(*args, **kwargs)
+
+    def add_argument(self, *args, **kwargs):
+        self._trace_argument(args, kwargs)
+        super().add_argument(*args, **kwargs)
+
+    def _trace_argument(self, args: tuple, kwargs: dict):
+        for arg in args:
+            self.traced_arguments[arg] = {
+                'default': kwargs['default'] if 'default' in kwargs else None
+            }
+
+    def get_traced_argument(self, name: str):
+        return self.traced_arguments[name]
 
 
 class TaskArguments(object):
@@ -105,8 +134,19 @@ class CommandlineParsingHelper(object):
         return edited_tasks
 
     @classmethod
-    def parse(cls, task: TaskDeclarationInterface, args: list):
-        argparse = ArgumentParser(task.to_full_name(), formatter_class=RawTextHelpFormatter)
+    def parse(cls, task: TaskDeclarationInterface, args: list) -> Tuple[dict, dict]:
+        """Parses ArgumentParser arguments defined by tasks
+
+        Behavior:
+          - Adds RKD-specific arguments
+          - Includes task's specific arguments
+          - Formats description, including documentation of environment variables
+
+        Returns:
+          Tuple of two dicts. First dict: arguments key=>value, Second dict: arguments definitions for advanced usae
+        """
+
+        argparse = TraceableArgumentParser(task.to_full_name(), formatter_class=RawTextHelpFormatter)
 
         argparse.add_argument('--log-to-file', '-rf', help='Capture stdout and stderr to file')
         argparse.add_argument('--log-level', '-rl', help='Log level: debug,info,warning,error,fatal')
@@ -117,7 +157,7 @@ class CommandlineParsingHelper(object):
         task.get_task_to_execute().configure_argparse(argparse)
         cls.add_env_variables_to_argparse(argparse, task)
 
-        return vars(argparse.parse_args(args))
+        return vars(argparse.parse_args(args)), argparse.traced_arguments
 
     @classmethod
     def add_env_variables_to_argparse(cls, argparse: ArgumentParser, task: TaskDeclarationInterface):

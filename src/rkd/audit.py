@@ -1,14 +1,16 @@
 
+import os
 import re
 from .syntax import TaskDeclaration
 from .context import ApplicationContext
 
 
-def decide_about_target_log_files(ctx: ApplicationContext, log_to_file: str, session_log: bool, declaration: TaskDeclaration,
+def decide_about_target_log_files(ctx: ApplicationContext, log_to_file: str, declaration: TaskDeclaration,
                                   task_num: int):
     """Decides where to save logs"""
 
     log_files = []
+    session_log: bool = os.getenv('RKD_AUDIT_SESSION_LOG', '').lower() in ['true', '1', 'yes']
 
     if log_to_file:
         log_files.append(log_to_file)

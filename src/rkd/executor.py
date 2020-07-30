@@ -26,7 +26,9 @@ class OneByOneTaskExecutor(ExecutorInterface):
         self.io = ctx.io
         self._observer = ProgressObserver(ctx.io)
 
-    def execute(self, declaration: TaskDeclaration, task_num: int, parent: Union[GroupDeclaration, None] = None, args: list = []):
+    def execute(self, declaration: TaskDeclaration, task_num: int, parent: Union[GroupDeclaration, None] = None,
+                args: list = []):
+
         """ Executes a single task passing the arguments, redirecting/capturing the output and handling the errors """
 
         result = False
@@ -36,12 +38,11 @@ class OneByOneTaskExecutor(ExecutorInterface):
         self._observer.task_started(declaration, parent, args)
 
         # 2. parse arguments
-        parsed_args = CommandlineParsingHelper.parse(declaration, args)
+        parsed_args, defined_args = CommandlineParsingHelper.parse(declaration, args)
         log_level: str = parsed_args['log_level']
         log_to_file: str = parsed_args['log_to_file']
         is_silent: bool = parsed_args['silent']
         keep_going: bool = parsed_args['keep_going']
-        session_log: bool = os.getenv('RKD_AUDIT_SESSION_LOG', '').lower() in ['true', '1', 'yes']
 
         # 3. execute
         temp = TempManager()
@@ -55,8 +56,9 @@ class OneByOneTaskExecutor(ExecutorInterface):
             else:
                 io.inherit_silent(self.io)  # fallback to system-wide
 
-            with io.capture_descriptors(
-                    target_files=decide_about_target_log_files(self._ctx, log_to_file, session_log, declaration, task_num)):
+            where_to_store_logs = decide_about_target_log_files(self._ctx, log_to_file, declaration, task_num)
+
+            with io.capture_descriptors(target_files=where_to_store_logs):
 
                 task = declaration.get_task_to_execute()
                 task.internal_inject_dependencies(io, self._ctx, self, temp)
@@ -66,7 +68,8 @@ class OneByOneTaskExecutor(ExecutorInterface):
                         declaration=declaration,
                         parent=parent,
                         args=parsed_args,
-                        env=declaration.get_env()
+                        env=declaration.get_env(),
+                        defined_args=defined_args
                     )
                 )
 
