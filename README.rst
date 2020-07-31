@@ -51,13 +51,13 @@ and for many more, where Makefile was used.**
 Example use cases
 ~~~~~~~~~~~~~~~~~
 
-- Docker based production environment with multiple configuration files, procedures (see: `Harbor project <https://github.com/riotkit-org/riotkit-harbor>`_)
+- `Docker based production environment <https://github.com/riotkit-org/riotkit-harbor>`_ with multiple configuration files, procedures
 - Database administrator workspace (importing dumps, creating new user accounts, plugging/unplugging databases)
 - Development environment (executing migrations, importing test database, splitting tests and running parallel)
 - On CI (prepare project to run on eg. Jenkins or Gitlab CI) - RKD is reproducible on local computer which makes inspection easier
-- Kubernetes/OKD deployment workspace (create shared YAML parts with JINJA2 between multiple environments and deploy from RKD)
+- `Kubernetes/OKD deployment workspace <https://github.com/riotkit-org/riotkit-do-example-kubernetes-workspace>`_ (create shared YAML parts with JINJA2 between multiple environments and deploy from RKD)
 - Automate things like certificate regeneration on production server, RKD can generate any application configs using JINJA2
-- Installers (RKD has built-in commands for replacing lines in files, modifying .env files)
+- `Installers <https://riotkit-do.readthedocs.io/en/latest/usage/wizard.html>`_ (RKD has built-in commands for replacing lines in files, modifying .env files)
 
 Quick start
 ~~~~~~~~~~~
@@ -88,8 +88,7 @@ Rules
 -  No hooks eg. task.executeAfter(otherTask), no complex dependencies
 -  No in-memory state between tasks. State could be only changed in files/database/kv-store like it is in other build systems
 -  No dynamic tasks names eg. by turning on Publish component it should
-   not create tasks eg. :publishIWAToDockerRegistry (where IWA is the
-   project name)
+   not create tasks eg. :publishIWAToDockerRegistry (where IWA is the project name)
 -  Don't pack too many features into the core, do this in external modules. Keep the RKD core clean!
 -  Full static analysis, you can work on makefile.py and on task's code in PyCharm with full code completion!
 -  Do early validation. Runtime validation for long running builds is a pain-in-the-ass for the user.

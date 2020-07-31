@@ -30,6 +30,7 @@ Example Wizard
     Service name [([A-Za-z0-9_]+)] [default: redis]:
         -> redis
 
+.. image:: https://github.com/riotkit-org/rkd-coop/raw/master/docs/demo.gif
 
 Using Wizard results internally
 -------------------------------
