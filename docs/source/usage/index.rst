@@ -14,3 +14,4 @@ Usage
    tasks-api
    schema-validation
    wizard
+   good-practices
