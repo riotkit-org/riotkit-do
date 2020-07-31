@@ -19,6 +19,8 @@ Define your environment variables
 By using :code:`context.get_env()` you are enforced to implement a :code:`TaskInterface.get_declared_envs()` returning
 a list of all environment variables used in your task code.
 
+All defined environment variables will land in --help, which is considered as a task self-documentation.
+
 Use sh(), exec(), rkd() and silent_sh()
 ---------------------------------------
 
