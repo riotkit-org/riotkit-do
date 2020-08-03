@@ -2,7 +2,7 @@
 import os
 import sys
 from datetime import datetime
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Tuple
 from importlib.machinery import SourceFileLoader
 from traceback import print_exc
 from .syntax import TaskDeclaration
@@ -165,8 +165,14 @@ class ContextFactory:
         makefile_path = path + '/' + filename
 
         with open(makefile_path, 'rb') as handle:
-            imports, tasks = YamlSyntaxInterpreter(self._io, YamlFileLoader([])).parse(handle.read().decode('utf-8'), path, makefile_path)
-            return ApplicationContext(tasks=imports, aliases=tasks, directory=path)
+            imported, tasks = YamlSyntaxInterpreter(self._io, YamlFileLoader([])).parse(
+                handle.read().decode('utf-8'), path, makefile_path
+            )
+
+            # Issue 33: Support mixed declarations in imports()
+            imports, aliases = distinct_imports(makefile_path, imported)
+
+            return ApplicationContext(tasks=imports, aliases=tasks + aliases, directory=path)
 
     @staticmethod
     def _load_from_py(path: str):
@@ -183,9 +189,12 @@ class ContextFactory:
             print_exc()
             raise NotImportedClassException(e)
 
+        # Issue 33: Support mixed declarations in imports()
+        imports, aliases = distinct_imports(makefile_path, makefile.IMPORTS if "IMPORTS" in dir(makefile) else [])
+
         return ApplicationContext(
-            tasks=makefile.IMPORTS if "IMPORTS" in dir(makefile) else [],
-            aliases=makefile.TASKS if "TASKS" in dir(makefile) else [],
+            tasks=imports,
+            aliases=(makefile.TASKS if "TASKS" in dir(makefile) else []) + aliases,
             directory=path
         )
 
@@ -231,3 +240,27 @@ class ContextFactory:
         ctx.io = self._io
 
         return ctx
+
+
+def distinct_imports(file_path: str, imported: List[Union[TaskDeclaration, TaskAliasDeclaration]]) \
+        -> Tuple[List[TaskDeclaration], List[TaskAliasDeclaration]]:
+
+    """Separates TaskDeclaration and TaskAliasDeclaration into separate lists, doing validation by the way
+
+    :url: https://github.com/riotkit-org/riotkit-do/issues/33
+    """
+
+    aliases = []
+    imports = []
+
+    for declaration in imported:
+        if isinstance(declaration, TaskAliasDeclaration):
+            aliases.append(declaration)
+        elif isinstance(declaration, TaskDeclaration):
+            imports.append(declaration)
+        else:
+            raise Exception('"imports()" from "%s" contains invalid type declaration "%s"' % (
+                file_path, str(declaration)
+            ))
+
+    return imports, aliases
