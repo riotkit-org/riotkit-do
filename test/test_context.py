@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 
 import unittest
+import unittest.mock
 import os
+from tempfile import NamedTemporaryFile
 from rkd.context import ContextFactory
 from rkd.context import ApplicationContext
+from rkd.context import distinct_imports
 from rkd.inputoutput import NullSystemIO
+from rkd.exception import ContextException
+from rkd.syntax import TaskDeclaration
+from rkd.syntax import TaskAliasDeclaration
+from rkd.test import TestTask
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -78,6 +85,72 @@ class ContextTest(unittest.TestCase):
 
         self.assertEqual([], ctx.directories)
         self.assertEqual(0, len(ctx.directories))
+
+    def test_distint_imports_on_py_file(self):
+        """Case: PY file can define a variable IMPORTS that can contain both TaskDeclaration and TaskAliasDeclaration
+        """
+
+        with NamedTemporaryFile() as tmp_file:
+            tmp_file.write(b'''
+            from rkd.syntax import TaskAliasDeclaration as Task
+            
+            IMPORTS = [
+                TaskAliasDeclaration(':hello', [':test'])
+            ]
+            ''')
+
+            with unittest.mock.patch('rkd.context.os.path.isfile', return_value=True):
+                with unittest.mock.patch('rkd.context.SourceFileLoader.load_module') as src_loader_method:
+                    class TestImported:
+                        IMPORTS = []
+                        TASKS = []
+
+                    src_loader_method.return_value = TestImported()
+                    src_loader_method.return_value.IMPORTS = [TaskAliasDeclaration(':hello', [':test'])]
+                    src_loader_method.return_value.TASKS = []
+
+                    ctx_factory = ContextFactory(NullSystemIO())
+                    ctx = ctx_factory._load_from_py(tmp_file.name)
+
+                    self.assertIn(':hello', ctx._task_aliases)
+
+    def test_distinct_imports_on_yaml_file(self):
+        """Case: YAML file can import a module that contains imports() method
+        And that method returns list of Union[TaskDeclaration, TaskAliasDeclaration]
+        """
+
+        with NamedTemporaryFile() as tmp_file:
+            tmp_file.write(b'''
+            version: org.riotkit.rkd/yaml/v1
+            imports:
+                - fictional
+            ''')
+
+            with unittest.mock.patch('rkd.context.YamlSyntaxInterpreter.parse') as parse_method:
+                parse_method.return_value = ([TaskAliasDeclaration(':hello', [':test'])], [])
+
+                ctx_factory = ContextFactory(NullSystemIO())
+                ctx = ctx_factory._load_from_yaml(os.path.dirname(tmp_file.name), os.path.basename(tmp_file.name))
+
+                self.assertIn(':hello', ctx._task_aliases)
+
+    def test_distinct_imports_raises_exception_when_unknown_type_object_added_to_list(self):
+        self.assertRaises(ContextException,
+                          lambda: distinct_imports('hello', ['string-should-not-be-there-even-IDE-knows-that']))
+
+    def test_distinct_imports_does_not_raise_any_exception_when_no_data(self):
+        self.assertEqual(([], []), distinct_imports('hello', []))
+
+    def test_distinct_imports_separtes_lists(self):
+        """A successful case for distinct_imports()"""
+
+        imports, aliases = distinct_imports('hello', [
+            TaskDeclaration(TestTask()),
+            TaskAliasDeclaration(':hello', [':test'])
+        ])
+
+        self.assertTrue(isinstance(imports[0], TaskDeclaration))
+        self.assertTrue(isinstance(aliases[0], TaskAliasDeclaration))
 
     def _common_test_loads_task_from_file(self, path: str, task: str, filename: str):
         os.environ['RKD_PATH'] = path

@@ -15,6 +15,7 @@ from .exception import TaskNotFoundException
 from .exception import ContextFileNotFoundException
 from .exception import PythonContextFileNotFoundException
 from .exception import NotImportedClassException
+from .exception import ContextException
 from .yaml_context import YamlSyntaxInterpreter
 from .yaml_parser import YamlFileLoader
 
@@ -259,7 +260,7 @@ def distinct_imports(file_path: str, imported: List[Union[TaskDeclaration, TaskA
         elif isinstance(declaration, TaskDeclaration):
             imports.append(declaration)
         else:
-            raise Exception('"imports()" from "%s" contains invalid type declaration "%s"' % (
+            raise ContextException('"imports()" from "%s" contains invalid type declaration "%s"' % (
                 file_path, str(declaration)
             ))
 
