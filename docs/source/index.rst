@@ -56,31 +56,40 @@ Let's at the beginning start from analyzing an example.
 .. code:: yaml
 
     version: org.riotkit.rkd/yaml/v1
+
+    # optional
     imports:
         - rkt_utils.db.WaitForDatabaseTask
 
+    # optional
     environment:
         PYTHONPATH: "/project/src"
 
-    env_files:
-        - .some-dotenv-file
+    # optional
+    #env_files:
+    #    - .some-dotenv-file
 
     tasks:
-        :migrate:
-            description: Migrate the application
+        :check-is-using-linux:
+            description: Are you using Linux?
             steps:
-                - ./manage.py makemigrations
-                - ./manage.py migrate
+                - "[[ $(uname -s) == \"Linux\" ]] && echo \"You are using Linux, cool\""
 
         :hello:
             description: Say hello
             arguments:
                 "--name":
                     help: "Your name"
+                    required: true
                     #default: "Peter"
                     #option: "store_true" # for booleans
             steps: |
                 echo "Hello ${ARG_NAME}"
+
+                if [[ $(uname -s) == "Linux" ]]; then
+                    echo "You are a Linux user"
+                fi
+
 
 **imports** - Imports external tasks installed via Python' PIP. That's the way to easily share code across projects
 
@@ -89,6 +98,15 @@ Let's at the beginning start from analyzing an example.
 **env_files** - Includes .env files, can be used also per task
 
 **tasks** - List of available tasks, each task has a name, descripton, list of steps (or a single step), arguments
+
+
+**Running the example:**
+
+1. Create a .rkd directory
+2. Create .rkd/makefile.yaml file
+3. Paste/rewrite the example into the .rkd/makefile.yaml
+4. Run :code:`rkd :tasks` from the directory where the .rkd directory is placed
+5. Run defined tasks :code:`rkd :hello :check-is-using-linux`
 
 Read more
 ~~~~~~~~~
