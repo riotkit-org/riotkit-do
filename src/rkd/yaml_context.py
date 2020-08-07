@@ -225,6 +225,10 @@ class YamlSyntaxInterpreter:
 
                 # compile code
                 tree = ast.parse(code)
+
+                if not isinstance(tree.body[-1], ast.Return):
+                    tree = ast.parse(code + "\nreturn False")
+
                 eval_expr = ast.Expression(tree.body[-1].value)
                 exec_expr = ast.Module(tree.body[:-1], type_ignores=[])
 
