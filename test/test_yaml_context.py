@@ -9,7 +9,6 @@ from rkd.yaml_parser import YamlFileLoader
 from rkd.inputoutput import IO, NullSystemIO, BufferedSystemIO
 from rkd.exception import DeclarationException, YamlParsingException
 from rkd.contract import ExecutionContext
-from rkd.test import get_test_declaration
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -128,70 +127,6 @@ print(syntax-error-here)
         self.assertEqual(False, result, msg='Expected that syntax error would result in a failure')
         self.assertIn("NameError: name 'syntax' is not defined", io.get_value(), msg='Error message should be attached')
         self.assertIn('File ":song@step 1", line 1', io.get_value(), msg='Stacktrace should be attached')
-
-    def _create_callable_tester(self, code: str, language: str, io: IO = None) -> bool:
-        if not io:
-            io = BufferedSystemIO()
-
-        factory = YamlSyntaxInterpreter(io, YamlFileLoader([]))
-
-        declaration = get_test_declaration()
-
-        if language == 'python':
-            execute_callable = factory.create_python_callable(code, 500, ':test', '/some/path', {})
-        else:
-            execute_callable = factory.create_bash_callable(code, 500, ':test', '/some/path', {})
-
-        result = execute_callable(ExecutionContext(declaration), declaration.get_task_to_execute())
-
-        return result
-
-    def test_create_bash_callable_successful_case(self):
-        """ Bash callable test: Successful case """
-
-        io = IO()
-        out = StringIO()
-
-        with io.capture_descriptors(stream=out, enable_standard_out=False):
-            self._create_callable_tester('python --version', language='bash')
-
-        self.assertIn("Python", out.getvalue())
-        self.assertTrue(out.getvalue(), msg='python --version should result with a True')
-
-    def test_create_bash_callable_failure_case_on_invalid_exit_code(self):
-        """ Bash callable test: Check if failures are correctly catched """
-
-        result = self._create_callable_tester('exit 161', language='bash')
-
-        self.assertFalse(result)
-
-    def test_create_python_callable_case_syntax_error(self):
-
-        result = self._create_callable_tester('''
-impppport os
-        ''', language='python')
-
-        self.assertFalse(result)
-
-    def test_create_python_callable_case_multiline_with_imports_and_call_to_this(self):
-        result = self._create_callable_tester('''
-import os
-
-# do a very simple verification of class names, if not defined then it would fail
-return "ExecutionContext" in str(ctx) and "Task" in str(this)
-''', language='python')
-
-        self.assertTrue(result)
-
-    def test_create_bash_callable_case_verify_env_variables_are_present(self):
-
-        io = IO()
-        out = StringIO()
-
-        with io.capture_descriptors(stream=out, enable_standard_out=False):
-            self._create_callable_tester('echo "Boolean: ${ARG_TEST}, Text: ${ARG_MESSAGE}"', language='bash')
-
-        self.assertIn('ARG_TEST: unbound variable', out.getvalue())
 
     def test_parse_env_parses_environment_variables_added_manually(self):
         """Test "environment" block

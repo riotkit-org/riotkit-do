@@ -91,6 +91,27 @@ class TaskUtilities(AbstractClass):
 
         return check_output('bash', shell=True, stdin=read).decode('utf-8')
 
+    def py(self, code: str, become: str = None, capture: bool = False, script_path: str = None) -> Union[str, None]:
+        """Executes a Python code in a separate process"""
+
+        read, write = os.pipe()
+        os.write(write, code.encode('utf-8'))
+        os.close(write)
+
+        cmd = 'python'
+
+        if script_path:
+            cmd += ' ' + script_path + ' '
+
+        if become:
+            cmd = "sudo -E -u %s %s" % (become, cmd)
+
+        if not capture:
+            check_call(cmd, stdin=read, script=code)
+            return
+
+        return check_output(cmd, shell=True, stdin=read).decode('utf-8')
+
     def exec(self, cmd: str, capture: bool = False, background: bool = False) -> Union[str, None]:
         """ Starts a process in shell. Throws exception on error.
             To capture output set capture=True

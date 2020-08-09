@@ -246,6 +246,17 @@ class TaskInterface(TaskUtilities):
 
         pass
 
+    def get_become_as(self) -> str:
+        """User name in UNIX/Linux system, optional.
+        When defined, then current task will be executed as this user (WARNING: a forked process would be started)"""
+
+        return ''
+
+    def should_fork(self) -> bool:
+        """Decides if task should be ran in a separate Python process (be careful with it)"""
+
+        return self.get_become_as() != ''
+
     def get_description(self) -> str:
         return ''
 
@@ -374,3 +385,20 @@ class TaskInterface(TaskUtilities):
         return tabulate(body, headers=header, floatfmt=floatfmt, numalign=numalign, tablefmt=tablefmt,
                         stralign=stralign, missingval=missingval, showindex=showindex,
                         disable_numparse=disable_numparse, colalign=colalign)
+
+
+class ArgparseArgument(object):
+    """Represents a add_argument(*args, **kwargs)"""
+
+    args: list
+    kwargs: dict
+
+    def __init__(self, args: list = None, kwargs: dict = None):
+        if args is None:
+            args = []
+
+        if kwargs is None:
+            kwargs = {}
+
+        self.args = args
+        self.kwargs = kwargs
