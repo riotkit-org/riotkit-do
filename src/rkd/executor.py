@@ -49,6 +49,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
         log_to_file: str = parsed_args['log_to_file']
         is_silent: bool = parsed_args['silent']
         keep_going: bool = parsed_args['keep_going']
+        cmdline_become: str = parsed_args['become']
 
         # 3. execute
         temp = TempManager()
@@ -69,7 +70,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
                 task = declaration.get_task_to_execute()
                 task.internal_inject_dependencies(io, self._ctx, self, temp)
 
-                result = self._execute_directly_or_forked(task, temp, ExecutionContext(
+                result = self._execute_directly_or_forked(cmdline_become, task, temp, ExecutionContext(
                         declaration=declaration,
                         parent=parent,
                         args=parsed_args,
@@ -100,18 +101,18 @@ class OneByOneTaskExecutor(ExecutorInterface):
                 if not keep_going:
                     raise InterruptExecution()
 
-    def _execute_directly_or_forked(self, task: TaskInterface, temp: TempManager, ctx: ExecutionContext):
+    def _execute_directly_or_forked(self, cmdline_become: str, task: TaskInterface, temp: TempManager, ctx: ExecutionContext):
         """Execute directly or pass to a forked process
         """
 
-        if task.should_fork():
+        if task.should_fork() or cmdline_become:
             task.io().debug('Executing task as separate process')
-            return self._execute_as_forked_process(task, temp, ctx)
+            return self._execute_as_forked_process(cmdline_become, task, temp, ctx)
 
         return task.execute(ctx)
 
     @staticmethod
-    def _execute_as_forked_process(task: TaskInterface, temp: TempManager, ctx: ExecutionContext):
+    def _execute_as_forked_process(become: str, task: TaskInterface, temp: TempManager, ctx: ExecutionContext):
         """Execute task code as a separate Python process
 
         The communication between processes is with serialized data and text files.
@@ -121,6 +122,9 @@ class OneByOneTaskExecutor(ExecutorInterface):
         When an exception is returned by a task, then it is reraised there - so the original exception is shown
         without any proxies.
         """
+
+        if not become:
+            become = task.get_become_as()
 
         # prepare file with source code and context
         communication_file = temp.assign_temporary_file()
@@ -151,14 +155,18 @@ class OneByOneTaskExecutor(ExecutorInterface):
             f.write(FORKED_EXECUTOR_TEMPLATE)
 
         # set permissions to temporary file
-        if task.get_become_as():
-            task.io().debug('Setting temporary file permissions for BECOME user')
-            os.chown(communication_file,
-                     pwd.getpwnam(task.get_become_as()).pw_uid,
-                     pwd.getpwnam(task.get_become_as()).pw_gid)
+        if become:
+            task.io().debug('Setting temporary file permissions')
+            os.chmod(communication_file, 0o777)
+
+            try:
+                pwd.getpwnam(become)
+            except KeyError:
+                task.io().error('Unknown user "%s"' % become)
+                return False
 
         task.io().debug('Executing python code')
-        task.py(communication_file, become=task.get_become_as(), capture=False, script_path=code_file)
+        task.py(communication_file, become=become, capture=False, script_path=code_file)
 
         # collect, process and pass result
         task.io().debug('Parsing subprocess results from a serialized data')

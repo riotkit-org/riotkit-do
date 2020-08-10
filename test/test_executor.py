@@ -37,14 +37,14 @@ class TestOneByOneExecutor(unittest.TestCase):
         with self.subTest('Will fork'):
             expectations = []
             task.should_fork = lambda: True
-            executor._execute_directly_or_forked(task, temp, ctx)
+            executor._execute_directly_or_forked('', task, temp, ctx)
 
             self.assertEqual(['executor::_execute_as_forked_process'], expectations)
 
         with self.subTest('Will not fork'):
             expectations = []
             task.should_fork = lambda: False
-            executor._execute_directly_or_forked(task, temp, ctx)
+            executor._execute_directly_or_forked('', task, temp, ctx)
 
             self.assertEqual(['task::execute'], expectations)
 
@@ -69,11 +69,45 @@ class TestOneByOneExecutor(unittest.TestCase):
         task.should_fork = ret_true
 
         with io.capture_descriptors(stream=string_io, enable_standard_out=False):
-            executor._execute_as_forked_process(task, temp, ctx)
+            executor._execute_as_forked_process('', task, temp, ctx)
 
         self.assertIn('Hello world from :test task', string_io.getvalue())
+
+    def test_execute_as_forked_process_will_inform_about_invalid_user(self):
+        # @todo
+        pass
+
+    def test_execute_as_forked_process_will_inform_about_unserializable_context(self):
+        """Verify that tasks not serializable by pickle will be enough described with a clue,
+        so the developer can know what is to correct (eg. a lambda returned as a method return)
+        """
+
+        io = IO()
+        string_io = StringIO()
+
+        temp = TempManager(chdir='/tmp/')
+        container = ApplicationContext([], [], '')
+        container.io = BufferedSystemIO()
+        executor = OneByOneTaskExecutor(container)
+
+        declaration = get_test_declaration()
+        task = declaration.get_task_to_execute()
+        task._io = io
+        task._io.set_log_level('debug')
+        ctx = ExecutionContext(declaration)
+
+        # mock: PUT NOT-SERIALIZABLE CALLABLE (LAMBDA)
+        task.should_fork = lambda: True
+
+        with io.capture_descriptors(stream=string_io, enable_standard_out=False):
+            executor._execute_as_forked_process('', task, temp, ctx)
+
+        self.assertIn('Pickle trace: ["[val type=TestTask].should_fork', string_io.getvalue())
+        self.assertIn('Cannot fork, serialization failed. Hint: Tasks that are using internally' +
+                      ' inner-methods and lambdas cannot be used with become/fork', string_io.getvalue())
 
     def _mock_should_fork_true(self):
         """Method used instead of lambda"""
 
         return True
+
