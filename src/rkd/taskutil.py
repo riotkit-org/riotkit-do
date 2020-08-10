@@ -37,6 +37,9 @@ class TaskUtilities(AbstractClass):
     def get_rkd_binary():
         """Gets the command how RKD was launched"""
 
+        if os.getenv('RKD_BIN'):
+            return os.getenv('RKD_BIN')
+
         binary = sys.argv[0]
         sys_executable_basename = os.path.basename(sys.executable)
 
@@ -105,6 +108,8 @@ class TaskUtilities(AbstractClass):
 
         if become:
             cmd = "sudo -E -u %s %s" % (become, cmd)
+
+        os.putenv('RKD_BIN', self.get_rkd_binary())
 
         if not capture:
             check_call(cmd, stdin=read, script=code)

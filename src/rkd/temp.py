@@ -1,8 +1,10 @@
+import os
 from typing import Tuple
 from typing import List
 from uuid import uuid4
 from os import unlink as delete_file
 from os import chmod
+from os import mkdir
 from os.path import realpath
 
 
@@ -45,6 +47,9 @@ class TempManager(object):
                 RKDTemp.finally_clean_up()
 
         """
+
+        if not os.path.isdir(self.chdir):
+            mkdir(self.chdir)
 
         path = self.create_tmp_file_path()[0]
 

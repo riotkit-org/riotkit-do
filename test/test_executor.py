@@ -12,13 +12,19 @@ from rkd.test import ret_invalid_user
 from rkd.temp import TempManager
 from rkd.inputoutput import BufferedSystemIO
 from rkd.inputoutput import IO
+from rkd.contract import TaskInterface
+from rkd.test import TestTask
+from rkd.test import TestTaskWithRKDCallInside
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestOneByOneExecutor(unittest.TestCase):
     @staticmethod
-    def _prepare_test_for_forking_process():
+    def _prepare_test_for_forking_process(task: TaskInterface = None):
+        if not task:
+            task = TestTask()
+
         io = IO()
         string_io = StringIO()
 
@@ -27,8 +33,7 @@ class TestOneByOneExecutor(unittest.TestCase):
         container.io = BufferedSystemIO()
         executor = OneByOneTaskExecutor(container)
 
-        declaration = get_test_declaration()
-        task = declaration.get_task_to_execute()
+        declaration = get_test_declaration(task)
         task._io = io
         task._io.set_log_level('debug')
         ctx = ExecutionContext(declaration)
@@ -101,3 +106,20 @@ class TestOneByOneExecutor(unittest.TestCase):
         self.assertIn('Cannot fork, serialization failed. Hint: Tasks that are using internally' +
                       ' inner-methods and lambdas cannot be used with become/fork', string_io.getvalue())
 
+    def test_execute_as_forked_process_will_not_break_rkd_method_inside_task_so_the_interpreter_path_will_be_properly_detected(self):
+        """The forked process needs to know how to detect Python binary when using rkd()"""
+
+        #
+        # TestTaskWithRKDCallInside() contains a rkd() call inside execute(), that's what we are testing
+        # it is invisible in our test. We cannot use lambda to define this in test, because lambdas are not serializable
+        #
+        string_io, task, executor, io, ctx, temp = self._prepare_test_for_forking_process(TestTaskWithRKDCallInside())
+        task.should_fork = ret_true
+
+        with io.capture_descriptors(stream=string_io, enable_standard_out=False):
+            executor._execute_as_forked_process('', task, temp, ctx)
+
+        self.assertIn('9 Aug 2014 Michael Brown, an unarmed Black teenager, ' +
+                      'was killed by a white police officer in Ferguson, Missouri, ' +
+                      'sparking mass protests across the US.',
+                      string_io.getvalue())

@@ -21,24 +21,24 @@ import pickle
 import base64
 import sys
 
-#
-# Load serialized context
-#
-communication_file = sys.stdin.read().strip()
-
-with open(communication_file, 'rb') as f:
-    unserialized = pickle.loads(f.read())
-
-task = unserialized['task']
-ctx = unserialized['ctx']
-
-
 def _communicate_return(val):
     with open(communication_file, 'wb') as f:
         f.write(pickle.dumps(val))
 
 
+communication_file = sys.stdin.read().strip()
+
 try:
+    #
+    # Load serialized context
+    #
+    
+    with open(communication_file, 'rb') as f:
+        unserialized = pickle.loads(f.read())
+    
+    task = unserialized['task']
+    ctx = unserialized['ctx']
+
     if not task.execute(ctx):
         _communicate_return(False)
         sys.exit(0)

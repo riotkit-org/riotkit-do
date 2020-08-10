@@ -12,6 +12,8 @@ we often want to work only inside of given directory, never outside.
 
 import os
 import unittest
+import subprocess
+from uuid import uuid4
 from rkd.temp import TempManager
 
 
@@ -58,3 +60,19 @@ class TestTempManager(unittest.TestCase):
             self.assertEqual('0755', str(oct(st.st_mode))[-4:])
         finally:
             manager.finally_clean_up()
+
+    def test_chdir_is_considered(self):
+        manager = TempManager('/tmp/')
+        self.assertTrue(manager.create_tmp_file_path()[0].startswith('/tmp/'))
+
+    def test_directory_is_created_when_it_does_not_exist(self):
+        temp_chdir = '/tmp/' + str(uuid4())
+        manager = TempManager(temp_chdir)
+
+        try:
+            manager.assign_temporary_file()
+
+            self.assertTrue(os.path.isdir(temp_chdir))
+        finally:
+            manager.finally_clean_up()
+            subprocess.call(['rmdir', temp_chdir])

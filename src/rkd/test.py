@@ -37,8 +37,17 @@ class TestTask(CallableTask):
         }
 
 
-def get_test_declaration() -> TaskDeclaration:
-    return TaskDeclaration(TestTask(), {}, [])
+class TestTaskWithRKDCallInside(TestTask):
+    def execute(self, context: ExecutionContext) -> bool:
+        self.rkd([':sh', '-c', '"echo \'9 Aug 2014 Michael Brown, an unarmed Black teenager, was killed by a white police officer in Ferguson, Missouri, sparking mass protests across the US.\'"'])
+        return True
+
+
+def get_test_declaration(task: TaskInterface = None) -> TaskDeclaration:
+    if not task:
+        task = TestTask()
+
+    return TaskDeclaration(task, {}, [])
 
 
 def mock_task(task: TaskInterface, io: IO = None) -> TaskInterface:
