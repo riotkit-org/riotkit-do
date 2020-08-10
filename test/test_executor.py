@@ -17,7 +17,8 @@ CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestOneByOneExecutor(unittest.TestCase):
-    def _prepare_test_for_forking_process(self):
+    @staticmethod
+    def _prepare_test_for_forking_process():
         io = IO()
         string_io = StringIO()
 
@@ -99,9 +100,4 @@ class TestOneByOneExecutor(unittest.TestCase):
         self.assertIn('Pickle trace: ["[val type=TestTask].should_fork', string_io.getvalue())
         self.assertIn('Cannot fork, serialization failed. Hint: Tasks that are using internally' +
                       ' inner-methods and lambdas cannot be used with become/fork', string_io.getvalue())
-
-    def _mock_should_fork_true(self):
-        """Method used instead of lambda"""
-
-        return True
 
