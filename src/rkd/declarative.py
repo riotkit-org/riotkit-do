@@ -58,8 +58,6 @@ class DeclarativeExecutor:
             this.io().debug('Executing step %i' % step.task_num)
             result = execute(ctx, this, step)
 
-            print('STEP RESULT', result)
-
             # if one of step failed, then interrupt and mark task as failure
             if not result:
                 this.io().debug('Step failed, interrupting task execution')

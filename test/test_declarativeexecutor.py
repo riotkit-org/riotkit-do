@@ -109,17 +109,22 @@ return "ExecutionContext" in str(ctx) and "Task" in str(this)
 
         io = IO()
         str_io = StringIO()
+        buffered = BufferedSystemIO()
 
         task_declaration = get_test_declaration()
-        mock_task(task_declaration.get_task_to_execute(), io=io)
+        mock_task(task_declaration.get_task_to_execute(), io=buffered)
 
         ctx = ExecutionContext(task_declaration)
         executor = DeclarativeExecutor()
-        executor.add_step('python', 'this.io().outln("Peter Kropotkin"); return False', task_name=':first', rkd_path='', envs={})
+        executor.add_step('python', 'this.io().outln("Peter Kropotkin"); return True', task_name=':first', rkd_path='', envs={})
         executor.add_step('bash', 'echo "Buenaventura Durruti"; exit 1', task_name=':second', rkd_path='', envs={})
         executor.add_step('python', 'this.io().outln("This one will not show"); return True', task_name=':third', rkd_path='', envs={})
 
         with io.capture_descriptors(target_files=[], stream=str_io, enable_standard_out=False):
             executor.execute_steps_one_by_one(ctx, task_declaration.get_task_to_execute())
 
-        self.assertEqual("Peter Kropotkin\nBuenaventura Durruti\n", str_io.getvalue())
+        output = str_io.getvalue() + buffered.get_value()
+
+        self.assertIn('Peter Kropotkin', output)
+        self.assertIn('Buenaventura Durruti', output)
+        self.assertNotIn('This one will not show', output)
