@@ -30,3 +30,13 @@ class TestTaskInterface(unittest.TestCase):
         self.assertIn('Activist', out)
         self.assertIn('Born date', out)
 
+    def test_should_fork(self):
+        task = TestTask()
+
+        with self.subTest('Will fork'):
+            task.get_become_as = lambda: 'root'
+            self.assertTrue(task.should_fork())
+
+        with self.subTest('Will not fork - no user specified'):
+            task.get_become_as = lambda: ''
+            self.assertFalse(task.should_fork())
