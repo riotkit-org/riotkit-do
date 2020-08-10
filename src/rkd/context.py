@@ -1,4 +1,7 @@
 
+"""Application container - manages a list of available tasks to execute (all imported)
+"""
+
 import os
 import sys
 from datetime import datetime
