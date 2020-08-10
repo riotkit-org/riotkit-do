@@ -121,10 +121,11 @@ return "ExecutionContext" in str(ctx) and "Task" in str(this)
         executor.add_step('python', 'this.io().outln("This one will not show"); return True', task_name=':third', rkd_path='', envs={})
 
         with io.capture_descriptors(target_files=[], stream=str_io, enable_standard_out=False):
-            executor.execute_steps_one_by_one(ctx, task_declaration.get_task_to_execute())
+            final_result = executor.execute_steps_one_by_one(ctx, task_declaration.get_task_to_execute())
 
         output = str_io.getvalue() + buffered.get_value()
 
         self.assertIn('Peter Kropotkin', output)
         self.assertIn('Buenaventura Durruti', output)
         self.assertNotIn('This one will not show', output)
+        self.assertEqual(False, final_result)
