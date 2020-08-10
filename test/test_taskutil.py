@@ -205,4 +205,4 @@ print(os)
             mocked_subprocess: unittest.mock.MagicMock
             task.py(code='print("test")', capture=True, become='root')
 
-        mocked_subprocess.assert_called_with('sudo -E -u root python', shell=True, stdin=3)
+        self.assertEqual('sudo -E -u root python', mocked_subprocess.call_args[0][0])
