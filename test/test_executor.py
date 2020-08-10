@@ -8,6 +8,7 @@ from rkd.executor import OneByOneTaskExecutor
 from rkd.context import ApplicationContext
 from rkd.test import get_test_declaration
 from rkd.test import ret_true
+from rkd.test import ret_invalid_user
 from rkd.temp import TempManager
 from rkd.inputoutput import BufferedSystemIO
 from rkd.inputoutput import IO
@@ -16,19 +17,27 @@ CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestOneByOneExecutor(unittest.TestCase):
-    def test_execute_directly_or_forked_asks_task_for_forking(self):
-        """Check that decision of forking or not forking belongs to the Task"""
+    def _prepare_test_for_forking_process(self):
+        io = IO()
+        string_io = StringIO()
 
-        temp = TempManager()
+        temp = TempManager(chdir='/tmp/')
         container = ApplicationContext([], [], '')
         container.io = BufferedSystemIO()
         executor = OneByOneTaskExecutor(container)
-        expectations = []
 
-        # dependencies
         declaration = get_test_declaration()
-        ctx = ExecutionContext(declaration)
         task = declaration.get_task_to_execute()
+        task._io = io
+        task._io.set_log_level('debug')
+        ctx = ExecutionContext(declaration)
+
+        return string_io, task, executor, io, ctx, temp
+
+    def test_execute_directly_or_forked_asks_task_for_forking(self):
+        """Check that decision of forking or not forking belongs to the Task"""
+
+        string_io, task, executor, io, ctx, temp = self._prepare_test_for_forking_process()
 
         # mock to get results instead of real action
         executor._execute_as_forked_process = lambda *args, **kwargs: expectations.append('executor::_execute_as_forked_process')
@@ -51,19 +60,7 @@ class TestOneByOneExecutor(unittest.TestCase):
     def test_execute_as_forked_process_executes_tasks_listing_task_in_a_separate_python_process(self):
         """Simply, successful case - execute a Hello World task code in a separate process and capture output"""
 
-        io = IO()
-        string_io = StringIO()
-
-        temp = TempManager(chdir='/tmp/')
-        container = ApplicationContext([], [], '')
-        container.io = BufferedSystemIO()
-        executor = OneByOneTaskExecutor(container)
-
-        declaration = get_test_declaration()
-        task = declaration.get_task_to_execute()
-        task._io = io
-        task._io.set_log_level('debug')
-        ctx = ExecutionContext(declaration)
+        string_io, task, executor, io, ctx, temp = self._prepare_test_for_forking_process()
 
         # mock
         task.should_fork = ret_true
@@ -74,27 +71,24 @@ class TestOneByOneExecutor(unittest.TestCase):
         self.assertIn('Hello world from :test task', string_io.getvalue())
 
     def test_execute_as_forked_process_will_inform_about_invalid_user(self):
-        # @todo
-        pass
+        """Test that executing as forked process will abort if user does not exist in system"""
+
+        string_io, task, executor, io, ctx, temp = self._prepare_test_for_forking_process()
+
+        # mock
+        task.get_become_as = ret_invalid_user
+
+        with io.capture_descriptors(stream=string_io, enable_standard_out=False):
+            executor._execute_as_forked_process('', task, temp, ctx)
+
+        self.assertIn('Unknown user "invalid-user-there"', string_io.getvalue())
 
     def test_execute_as_forked_process_will_inform_about_unserializable_context(self):
         """Verify that tasks not serializable by pickle will be enough described with a clue,
         so the developer can know what is to correct (eg. a lambda returned as a method return)
         """
 
-        io = IO()
-        string_io = StringIO()
-
-        temp = TempManager(chdir='/tmp/')
-        container = ApplicationContext([], [], '')
-        container.io = BufferedSystemIO()
-        executor = OneByOneTaskExecutor(container)
-
-        declaration = get_test_declaration()
-        task = declaration.get_task_to_execute()
-        task._io = io
-        task._io.set_log_level('debug')
-        ctx = ExecutionContext(declaration)
+        string_io, task, executor, io, ctx, temp = self._prepare_test_for_forking_process()
 
         # mock: PUT NOT-SERIALIZABLE CALLABLE (LAMBDA)
         task.should_fork = lambda: True

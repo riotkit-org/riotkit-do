@@ -69,3 +69,12 @@ def mock_execution_context(task: TaskInterface, args: Dict[str, str] = {}, env: 
 
 def ret_true() -> bool:
     return True
+
+
+def ret_root() -> str:
+    return 'root'
+
+
+def ret_invalid_user() -> str:
+    return 'invalid-user-there'
+
