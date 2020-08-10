@@ -17,6 +17,7 @@ from .exception import InterruptExecution
 from .audit import decide_about_target_log_files
 from .temp import TempManager
 from .serialization import FORKED_EXECUTOR_TEMPLATE
+from .serialization import get_unpicklable
 
 
 class OneByOneTaskExecutor(ExecutorInterface):
@@ -125,16 +126,22 @@ class OneByOneTaskExecutor(ExecutorInterface):
         communication_file = temp.assign_temporary_file()
         task.io().debug('Assigning communication temporary file at "%s"' % communication_file)
 
+        context_to_pickle = {'task': task, 'ctx': ctx, 'communication_file': communication_file}
+
         try:
             task.io().debug('Serializing context')
             with open(communication_file, 'wb') as f:
-                f.write(pickle_dumps({'task': task, 'ctx': ctx, 'communication_file': communication_file}))
+                f.write(pickle_dumps(context_to_pickle))
 
-        except AttributeError as e:
+        except (AttributeError, TypeError) as e:
             task.io().error('Cannot fork, serialization failed. ' +
                             'Hint: Tasks that are using internally inner-methods and ' +
                             'lambdas cannot be used with become/fork')
             task.io().error(str(e))
+
+            if task.io().is_log_level_at_least('debug'):
+                task.io().error('Pickle trace: ' + str(get_unpicklable(context_to_pickle)))
+
             return False
 
         code_file = temp.assign_temporary_file()

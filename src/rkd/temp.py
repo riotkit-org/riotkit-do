@@ -17,13 +17,15 @@ class TempManager(object):
     """
 
     assigned: List[str]
+    chdir: str
 
-    def __init__(self):
+    def __init__(self, chdir: str = './.rkd/'):
         self.assigned = []
+        self.chdir = chdir
 
     def create_tmp_file_path(self) -> Tuple[str, str]:
         tmp_vault_filename = '.tmp-' + str(uuid4())
-        tmp_vault_path = './.rkd/' + tmp_vault_filename
+        tmp_vault_path = self.chdir + tmp_vault_filename
 
         self.assigned.append(tmp_vault_path)
 
