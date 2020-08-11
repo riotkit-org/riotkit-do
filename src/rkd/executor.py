@@ -1,8 +1,12 @@
 
 import os
+import pwd
+from pickle import dumps as pickle_dumps
+from pickle import loads as pickle_loads
 from typing import Union
 from .argparsing import CommandlineParsingHelper
 from .syntax import TaskDeclaration, GroupDeclaration
+from .contract import TaskInterface
 from .context import ApplicationContext
 from .contract import ExecutorInterface, ExecutionContext
 from .inputoutput import IO
@@ -12,6 +16,8 @@ from .results import ProgressObserver
 from .exception import InterruptExecution
 from .audit import decide_about_target_log_files
 from .temp import TempManager
+from .serialization import FORKED_EXECUTOR_TEMPLATE
+from .serialization import get_unpicklable
 
 
 class OneByOneTaskExecutor(ExecutorInterface):
@@ -43,6 +49,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
         log_to_file: str = parsed_args['log_to_file']
         is_silent: bool = parsed_args['silent']
         keep_going: bool = parsed_args['keep_going']
+        cmdline_become: str = parsed_args['become']
 
         # 3. execute
         temp = TempManager()
@@ -63,15 +70,13 @@ class OneByOneTaskExecutor(ExecutorInterface):
                 task = declaration.get_task_to_execute()
                 task.internal_inject_dependencies(io, self._ctx, self, temp)
 
-                result = task.execute(
-                    ExecutionContext(
+                result = self._execute_directly_or_forked(cmdline_become, task, temp, ExecutionContext(
                         declaration=declaration,
                         parent=parent,
                         args=parsed_args,
                         env=declaration.get_env(),
                         defined_args=defined_args
-                    )
-                )
+                    ))
 
         # 4. capture result
         except Exception as e:
@@ -95,6 +100,84 @@ class OneByOneTaskExecutor(ExecutorInterface):
                 # break the whole pipeline only if not --keep-going
                 if not keep_going:
                     raise InterruptExecution()
+
+    def _execute_directly_or_forked(self, cmdline_become: str, task: TaskInterface, temp: TempManager, ctx: ExecutionContext):
+        """Execute directly or pass to a forked process
+        """
+
+        if task.should_fork() or cmdline_become:
+            task.io().debug('Executing task as separate process')
+            return self._execute_as_forked_process(cmdline_become, task, temp, ctx)
+
+        return task.execute(ctx)
+
+    @staticmethod
+    def _execute_as_forked_process(become: str, task: TaskInterface, temp: TempManager, ctx: ExecutionContext):
+        """Execute task code as a separate Python process
+
+        The communication between processes is with serialized data and text files.
+        One text file is a script, the task code is passed with stdin together with a whole context
+        Second text file is a return from executed task - it can be a boolean or exeception.
+
+        When an exception is returned by a task, then it is reraised there - so the original exception is shown
+        without any proxies.
+        """
+
+        if not become:
+            become = task.get_become_as()
+
+        # prepare file with source code and context
+        communication_file = temp.assign_temporary_file()
+        task.io().debug('Assigning communication temporary file at "%s"' % communication_file)
+
+        context_to_pickle = {'task': task, 'ctx': ctx, 'communication_file': communication_file}
+
+        try:
+            task.io().debug('Serializing context')
+            with open(communication_file, 'wb') as f:
+                f.write(pickle_dumps(context_to_pickle))
+
+        except (AttributeError, TypeError) as e:
+            task.io().error('Cannot fork, serialization failed. ' +
+                            'Hint: Tasks that are using internally inner-methods and ' +
+                            'lambdas cannot be used with become/fork')
+            task.io().error(str(e))
+
+            if task.io().is_log_level_at_least('debug'):
+                task.io().error('Pickle trace: ' + str(get_unpicklable(context_to_pickle)))
+
+            return False
+
+        code_file = temp.assign_temporary_file()
+        task.io().debug('Assigned source code temporary file at "%s"' % code_file)
+
+        with open(code_file, 'w') as f:
+            f.write(FORKED_EXECUTOR_TEMPLATE)
+
+        # set permissions to temporary file
+        if become:
+            task.io().debug('Setting temporary file permissions')
+            os.chmod(communication_file, 0o777)
+
+            try:
+                pwd.getpwnam(become)
+            except KeyError:
+                task.io().error('Unknown user "%s"' % become)
+                return False
+
+        task.io().debug('Executing python code')
+        task.py(communication_file, become=become, capture=False, script_path=code_file)
+
+        # collect, process and pass result
+        task.io().debug('Parsing subprocess results from a serialized data')
+        with open(communication_file, 'rb') as conn_file:
+            task_return = pickle_loads(conn_file.read())
+
+        if isinstance(task_return, Exception):
+            task.io().debug('Exception was raised in subprocess, re-raising')
+            raise task_return
+
+        return task_return
 
     def get_observer(self) -> ProgressObserver:
         return self._observer

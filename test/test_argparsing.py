@@ -35,7 +35,7 @@ class ArgParsingTest(unittest.TestCase):
         task = get_test_declaration()
 
         CommandlineParsingHelper.add_env_variables_to_argparse(parser, task)
-        self.assertIn('Union (default: International Workers Association)', parser.description)
+        self.assertIn('ORG_NAME (default: International Workers Association)', parser.description)
 
     def test_add_env_variables_to_argparse__no_envs(self):
         parser = ArgumentParser(':test')
@@ -45,7 +45,7 @@ class ArgParsingTest(unittest.TestCase):
         task.get_task_to_execute().get_declared_envs = lambda: {}
 
         CommandlineParsingHelper.add_env_variables_to_argparse(parser, task)
-        self.assertNotIn('Union (default: International Workers Association)', parser.description)
+        self.assertNotIn('ORG_NAME (default: International Workers Association)', parser.description)
         self.assertIn('-- No environment variables declared --', parser.description)
 
     def test_arguments_usage(self):

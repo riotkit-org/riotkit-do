@@ -37,6 +37,9 @@ class TaskUtilities(AbstractClass):
     def get_rkd_binary():
         """Gets the command how RKD was launched"""
 
+        if os.getenv('RKD_BIN'):
+            return os.getenv('RKD_BIN')
+
         binary = sys.argv[0]
         sys_executable_basename = os.path.basename(sys.executable)
 
@@ -90,6 +93,29 @@ class TaskUtilities(AbstractClass):
             return
 
         return check_output('bash', shell=True, stdin=read).decode('utf-8')
+
+    def py(self, code: str, become: str = None, capture: bool = False, script_path: str = None) -> Union[str, None]:
+        """Executes a Python code in a separate process"""
+
+        read, write = os.pipe()
+        os.write(write, code.encode('utf-8'))
+        os.close(write)
+
+        cmd = 'python'
+
+        if script_path:
+            cmd += ' ' + script_path + ' '
+
+        if become:
+            cmd = "sudo -E -u %s %s" % (become, cmd)
+
+        os.putenv('RKD_BIN', self.get_rkd_binary())
+
+        if not capture:
+            check_call(cmd, stdin=read, script=code)
+            return
+
+        return check_output(cmd, shell=True, stdin=read).decode('utf-8')
 
     def exec(self, cmd: str, capture: bool = False, background: bool = False) -> Union[str, None]:
         """ Starts a process in shell. Throws exception on error.

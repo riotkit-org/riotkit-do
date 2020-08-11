@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import unittest
+import unittest.mock
 import os
 import subprocess
+from tempfile import NamedTemporaryFile
 from collections import OrderedDict
 from io import StringIO
 from rkd.standardlib import InitTask
@@ -156,3 +158,51 @@ class TestTaskUtil(unittest.TestCase):
         ''', env=envs, capture=True)
 
         self.assertEqual('docker-compose -p riotkit up -d', out.strip())
+
+    def test_py_executes_python_scripts_without_specifying_script_path(self):
+        """Simply - check basic successful case - executing a Python code"""
+
+        task = InitTask()
+        out = task.py('''
+import os
+print(os)
+        ''', capture=True)
+
+        self.assertIn("<module 'os' from", out)
+
+    def test_py_executes_a_custom_python_script(self):
+        """Check that script from specified file in 'script_path' parameter will be executed
+        And the code will be passed to that script as stdin.
+        """
+
+        task = InitTask()
+
+        with NamedTemporaryFile() as temp_file:
+            temp_file.write(b'import sys; print("STDIN: " + str(sys.stdin.read()))')
+            temp_file.flush()
+
+            out = task.py('Hello!', capture=True, script_path=temp_file.name)
+
+        self.assertEqual('STDIN: Hello!\n', out)
+
+    def test_py_inherits_environment_variables(self):
+        os.putenv('PY_INHERITS_ENVIRONMENT_VARIABLES', 'should')
+
+        task = InitTask()
+        out = task.py(
+            code='import os; print("ENV VALUE IS: " + str(os.environ["PY_INHERITS_ENVIRONMENT_VARIABLES"]))',
+            capture=True
+        )
+
+        self.assertEqual('ENV VALUE IS: should\n', out)
+
+    def test_py_uses_sudo_when_become_specified(self):
+        """Expect that sudo with proper parameters is used"""
+
+        task = InitTask()
+
+        with unittest.mock.patch('rkd.taskutil.check_output') as mocked_subprocess:
+            mocked_subprocess: unittest.mock.MagicMock
+            task.py(code='print("test")', capture=True, become='root')
+
+        self.assertEqual('sudo -E -u root python', mocked_subprocess.call_args[0][0])

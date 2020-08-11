@@ -1,11 +1,8 @@
 import yaml
-import ast
 import os
 import importlib
 from types import FunctionType
-from argparse import ArgumentParser
 from typing import List, Tuple, Union, Callable
-from traceback import format_exc
 from dotenv import dotenv_values
 from copy import deepcopy
 from collections import OrderedDict
@@ -15,9 +12,11 @@ from .syntax import TaskDeclaration
 from .syntax import TaskAliasDeclaration
 from .contract import ExecutionContext
 from .contract import TaskInterface
+from .contract import ArgparseArgument
 from .standardlib import CallableTask
 from .inputoutput import IO
 from .yaml_parser import YamlFileLoader
+from .declarative import DeclarativeExecutor
 
 
 class YamlSyntaxInterpreter:
@@ -136,6 +135,7 @@ class YamlSyntaxInterpreter:
 
         description = yaml_declaration['description'] if 'description' in yaml_declaration else ''
         arguments = yaml_declaration['arguments'] if 'arguments' in yaml_declaration else {}
+        become = yaml_declaration['become'] if 'become' in yaml_declaration else ''
 
         # important: order of environment variables loading
         envs = deepcopy(global_env)
@@ -159,21 +159,24 @@ class YamlSyntaxInterpreter:
                 name=task_name,
                 description=description,
                 group=group_name,
-                args_callback=self.create_arguments_callback(arguments),
-                callback=self.create_execution_callback_from_steps(steps, name, rkd_path, envs)
+                argparse_options=self.parse_argparse_arguments(arguments),
+                callback=self.create_execution_callback_from_steps(steps, name, rkd_path, envs),
+                become=become
             )
         )
 
-    def create_execution_callback_from_steps(self, steps: List[str], task_name: str, rkd_path: str, envs: dict) \
+    @staticmethod
+    def create_execution_callback_from_steps(steps: List[str], task_name: str, rkd_path: str, envs: dict) \
             -> Callable[[ExecutionContext, TaskInterface], bool]:
 
         """Creates implementation of TaskInterface.execute() - a callback that will execute all steps (callbacks)"""
 
-        steps_as_callbacks = []
-        step_num = 0
+        declarative = DeclarativeExecutor()
 
+        #
+        # Collect all steps and create micro-callbacks per step, that will be executed one-by-one in execute()
+        #
         for step in steps:
-            step_num += 1
             language = 'bash'
             as_lines = step.strip().split("\n")
             first_line = as_lines[0]
@@ -186,109 +189,23 @@ class YamlSyntaxInterpreter:
                 language = first_line[2:]
                 code = "\n".join(as_lines[1:])
 
-            if language == 'python':
-                steps_as_callbacks.append(self.create_python_callable(code, step_num, task_name, rkd_path, envs))
-            elif language == 'bash':
-                steps_as_callbacks.append(self.create_bash_callable(code, step_num, task_name, rkd_path, envs))
-            else:
+            declarative.add_step(language, code, task_name, rkd_path, envs)
+
+            if language not in ['python', 'bash']:
                 raise YamlParsingException('Unsupported step language "%s"' % language)
 
-        #
-        # Here is code that will be executed as a TASK execute() -> list of step.execute()
-        #
-        def execute(ctx: ExecutionContext, this: TaskInterface) -> bool:
-            """ Proxy that executes all steps one-by-one in TaskInterface.execute() """
-
-            for step_execute in steps_as_callbacks:
-                # if one of step failed, then interrupt and mark task as failure
-                if not step_execute(ctx, this):
-                    return False
-
-            return True
-
-        return execute
+        return declarative.execute_steps_one_by_one
 
     @staticmethod
-    def create_python_callable(code: str, step_num: int, task_name: str, rkd_path: str, envs: dict) \
-            -> Callable[[ExecutionContext, CallableTask], bool]:
-
-        def execute(ctx: ExecutionContext, this: CallableTask) -> bool:
-            env_backup = deepcopy(os.environ)
-
-            # "ctx" and "this" will be available as a local context
-            try:
-                # prepare environment
-                os.environ.update(envs)
-                os.environ['RKD_PATH'] = rkd_path
-                this.push_env_variables(os.environ)
-                filename = task_name + '@step ' + str(step_num)
-
-                # compile code
-                tree = ast.parse(code)
-
-                if not isinstance(tree.body[-1], ast.Return):
-                    tree = ast.parse(code + "\nreturn False")
-
-                eval_expr = ast.Expression(tree.body[-1].value)
-                exec_expr = ast.Module(tree.body[:-1], type_ignores=[])
-
-                # run compiled code
-                exec(compile(exec_expr, filename, 'exec'))
-
-                to_return = eval(compile(eval_expr, filename, 'eval'))
-
-            except Exception as e:
-                this.io().error_msg('Error while executing step %i in task "%s". Exception: %s' % (
-                    step_num, task_name, str(e)
-                ))
-                this.io().error_msg(format_exc())
-
-                to_return = False
-
-            finally:
-                os.environ = env_backup
-
-            return to_return
-
-        return execute
-
-    @staticmethod
-    def create_bash_callable(code: str, step_num: int, task_name: str, rkd_path: str, envs: dict) \
-            -> Callable[[ExecutionContext, TaskInterface], bool]:
-
-        def execute(ctx: ExecutionContext, this: TaskInterface) -> bool:
-            try:
-                # assign arguments from ArgumentParser (argparse) to env variables
-                args = OrderedDict()
-                for name, value in ctx.args.items():
-                    args['ARG_' + name.upper()] = value
-
-                # glue all environment variables
-                process_env = OrderedDict()
-                process_env.update(envs)
-                process_env.update(args)
-                process_env.update({'RKD_PATH': rkd_path, 'RKD_DEPTH': int(os.getenv('RKD_DEPTH'))})
-
-                this.sh(code, strict=True, env=process_env)
-                return True
-
-            except Exception as e:
-                this.io().error_msg('Error while executing step %i in task "%s". Exception: %s' % (
-                    step_num, task_name, str(e)
-                ))
-                return False
-
-        return execute
-
-    @staticmethod
-    def create_arguments_callback(arguments: dict) -> Callable[[ArgumentParser], None]:
+    def parse_argparse_arguments(arguments: dict) -> List[ArgparseArgument]:
         """ Creates implementation of TaskInterface.configure_argparse() """
 
-        def arguments_callback(parser: ArgumentParser):
-            for name, params in arguments.items():
-                parser.add_argument(name, **params)
+        converted = []
 
-        return arguments_callback
+        for name, params in arguments.items():
+            converted.append(ArgparseArgument([name], params))
+
+        return converted
 
     @staticmethod
     def parse_imports(classes: List[str]) -> List[TaskDeclaration]:

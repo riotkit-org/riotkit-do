@@ -153,6 +153,7 @@ class CommandlineParsingHelper(object):
         argparse.add_argument('--keep-going', '-rk', help='Allow going to next task, even if this one fails',
                               action='store_true')
         argparse.add_argument('--silent', '-rs', help='Do not print logs, just task output', action='store_true')
+        argparse.add_argument('--become', '-rb', help='Execute task as given user (requires sudo)', default='')
 
         task.get_task_to_execute().configure_argparse(argparse)
         cls.add_env_variables_to_argparse(argparse, task)

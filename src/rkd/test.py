@@ -13,6 +13,7 @@ from .temp import TempManager
 
 class TestTask(CallableTask):
     _description = 'Test task for automated tests'
+    _become: str = False
 
     def __init__(self):
         self._io = NullSystemIO()
@@ -24,6 +25,7 @@ class TestTask(CallableTask):
         return ':rkd'
 
     def execute(self, context: ExecutionContext) -> bool:
+        print('Hello world from :test task')
         return True
 
     def configure_argparse(self, parser: ArgumentParser):
@@ -31,12 +33,21 @@ class TestTask(CallableTask):
 
     def get_declared_envs(self) -> Dict[str, str]:
         return {
-            'Union': 'International Workers Association'
+            'ORG_NAME': 'International Workers Association'
         }
 
 
-def get_test_declaration() -> TaskDeclaration:
-    return TaskDeclaration(TestTask(), {}, [])
+class TestTaskWithRKDCallInside(TestTask):
+    def execute(self, context: ExecutionContext) -> bool:
+        self.rkd([':sh', '-c', '"echo \'9 Aug 2014 Michael Brown, an unarmed Black teenager, was killed by a white police officer in Ferguson, Missouri, sparking mass protests across the US.\'"'])
+        return True
+
+
+def get_test_declaration(task: TaskInterface = None) -> TaskDeclaration:
+    if not task:
+        task = TestTask()
+
+    return TaskDeclaration(task, {}, [])
 
 
 def mock_task(task: TaskInterface, io: IO = None) -> TaskInterface:
@@ -63,3 +74,16 @@ def mock_execution_context(task: TaskInterface, args: Dict[str, str] = {}, env: 
         args=args,
         env=env
     )
+
+
+def ret_true() -> bool:
+    return True
+
+
+def ret_root() -> str:
+    return 'root'
+
+
+def ret_invalid_user() -> str:
+    return 'invalid-user-there'
+
