@@ -24,11 +24,8 @@ class TaskDeclaration(TaskDeclarationInterface):
         if not isinstance(task, TaskInterface):
             raise DeclarationException('Invalid class: TaskDeclaration needs to take TaskInterface as task argument')
 
-        merged_env = dict(os.environ)
-        merged_env.update(env)
-
         self._task = task
-        self._env = merged_env
+        self._env = merge_env(env)
         self._args = args
         self._user_defined_env = list(env.keys())
 
@@ -175,12 +172,9 @@ class TaskAliasDeclaration:
     _description: str
 
     def __init__(self, name: str, to_execute: List[str], env: Dict[str, str] = {}, description: str = ''):
-        merged_env = dict(os.environ)
-        merged_env.update(env)
-
         self._name = name
         self._arguments = to_execute
-        self._env = merged_env
+        self._env = merge_env(env)
         self._user_defined_env = list(env.keys())
         self._description = description
 
@@ -200,3 +194,13 @@ class TaskAliasDeclaration:
 
     def get_description(self) -> str:
         return self._description
+
+
+def merge_env(env: Dict[str, str]):
+    """Merge custom environment variables set per-task with system environment
+    """
+
+    merged_dict = deepcopy(env)
+    merged_dict.update(dict(os.environ))
+
+    return merged_dict
