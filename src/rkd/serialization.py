@@ -59,6 +59,8 @@ def get_unpicklable(instance, exception=None, string='', first_only=True):
 
     Set first_only to only print the first problematic element in a list, tuple or
     dict (otherwise there could be lots of duplication).
+
+    See: https://stackoverflow.com/a/55224405/6782994 (author)
     """
     problems = []
     if isinstance(instance, tuple) or isinstance(instance, list):
