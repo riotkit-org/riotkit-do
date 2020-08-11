@@ -81,6 +81,7 @@ class TestFunctional(unittest.TestCase):
         self.assertIn('--log-level', full_output)
         self.assertIn('--keep-going', full_output)
         self.assertIn('--silent', full_output)
+        self.assertIn('--become', full_output)
         self.assertEqual(0, exit_code)
 
     def test_silent_switch_makes_tasks_task_to_not_show_headers(self):
