@@ -123,7 +123,7 @@ class DeclarativeExecutor:
             process_env = OrderedDict()
             process_env.update(step.envs)
             process_env.update(args)
-            process_env.update({'RKD_PATH': step.rkd_path, 'RKD_DEPTH': int(os.getenv('RKD_DEPTH'))})
+            process_env.update({'RKD_PATH': step.rkd_path, 'RKD_DEPTH': int(os.getenv('RKD_DEPTH', 0))})
 
             this.sh(step.code, strict=True, env=process_env)
             return True

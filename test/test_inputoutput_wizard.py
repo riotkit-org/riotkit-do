@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
-from mock import mock_open, patch
+from unittest.mock import mock_open, patch
 from rkd.inputoutput import Wizard
 from rkd.inputoutput import BufferedSystemIO
 from rkd.test import TestTask
