@@ -129,3 +129,22 @@ return "ExecutionContext" in str(ctx) and "Task" in str(this)
         self.assertIn('Buenaventura Durruti', output)
         self.assertNotIn('This one will not show', output)
         self.assertEqual(False, final_result)
+
+    def test_return_false_is_added_to_the_code(self):
+        """Assert that code in Python without a "return" will have "return false" by default
+
+        Previously, when return was not added automatically there was an error raised (not always - depending on the code), example:
+            AttributeError: 'Try' object has no attribute 'value'
+
+        https://github.com/riotkit-org/riotkit-do/issues/37
+        :return:
+        """
+
+        io = IO()
+        out = StringIO()
+
+        with io.capture_descriptors(stream=out, enable_standard_out=False):
+            returned_value = self._create_callable_tester('''print('Hello world');''', language='python')
+
+        self.assertIn("Hello world", out.getvalue())
+        self.assertFalse(returned_value)
