@@ -4,6 +4,7 @@ RiotKit-Do (RKD)
 
 *Stop writing hacks in Makefile, use Python snippets for advanced usage, for the rest use simple few lines of Bash, share code between your projects using Python Packages.*
 
+.. image:: ../tasks.png
 
 **What I can do with RKD?**
 
@@ -99,6 +100,8 @@ Let's at the beginning start from analyzing an example.
 
 **tasks** - List of available tasks, each task has a name, descripton, list of steps (or a single step), arguments
 
+:ref:`READ MORE ABOUT YAML SYNTAX IN THE BEGINNERS GUIDE`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Running the example:**
 
@@ -108,17 +111,14 @@ Let's at the beginning start from analyzing an example.
 4. Run :code:`rkd :tasks` from the directory where the .rkd directory is placed
 5. Run defined tasks :code:`rkd :hello :check-is-using-linux`
 
-Read more
-~~~~~~~~~
+Keep learning
+~~~~~~~~~~~~~
 
-- YAML syntax is described in :ref:`Tasks development` section
+- YAML syntax is described also in :ref:`Tasks development` section
 - Writing Python code in makefile.yaml requires to lookup :ref:`Tasks API`
 - Learn how to import installed tasks via pip - :ref:`Importing tasks`
-
-
-.. image:: ../tasks.png
-
-.. image:: ../python.png
+- You can also write tasks code in pure Python and redistribute those tasks via Python's PIP - see :ref:`Tasks development`
+- With RKD you can create interactive installers - check the :ref:`Wizard` section
 
 
 .. toctree::

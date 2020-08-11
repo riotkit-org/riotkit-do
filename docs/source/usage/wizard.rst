@@ -1,3 +1,5 @@
+.. _Wizard:
+
 Creating installer wizards with RKD
 ===================================
 
