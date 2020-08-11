@@ -1,4 +1,12 @@
 
+"""
+SYNTAX (part of API)
+====================
+
+Classes used in a declaration syntax in makefile.py
+
+"""
+
 import os
 from typing import List, Dict
 from copy import deepcopy

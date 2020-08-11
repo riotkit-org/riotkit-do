@@ -100,9 +100,6 @@ Let's at the beginning start from analyzing an example.
 
 **tasks** - List of available tasks, each task has a name, descripton, list of steps (or a single step), arguments
 
-:ref:`READ MORE ABOUT YAML SYNTAX IN THE BEGINNERS GUIDE`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 **Running the example:**
 
 1. Create a .rkd directory
@@ -110,6 +107,9 @@ Let's at the beginning start from analyzing an example.
 3. Paste/rewrite the example into the .rkd/makefile.yaml
 4. Run :code:`rkd :tasks` from the directory where the .rkd directory is placed
 5. Run defined tasks :code:`rkd :hello :check-is-using-linux`
+
+Read more in the :ref:`READ MORE ABOUT YAML SYNTAX IN THE BEGINNERS GUIDE`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Keep learning
 ~~~~~~~~~~~~~
