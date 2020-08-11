@@ -144,7 +144,8 @@ return "ExecutionContext" in str(ctx) and "Task" in str(this)
         out = StringIO()
 
         with io.capture_descriptors(stream=out, enable_standard_out=False):
-            returned_value = self._create_callable_tester('''print('Hello world');''', language='python')
+            returned_value = self._create_callable_tester(
+                '''print('History isn't made by kings and politicians, it is made by us.');''', language='python')
 
-        self.assertIn("Hello world", out.getvalue())
+        self.assertIn("History isn't made by kings and politicians, it is made by us.", out.getvalue())
         self.assertFalse(returned_value)
