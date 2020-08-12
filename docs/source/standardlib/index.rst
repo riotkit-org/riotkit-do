@@ -1,6 +1,8 @@
 
-Tasks
------
+.. _Built-in tasks:
+
+Built-in tasks
+--------------
 
 .. toctree::
    :maxdepth: 5

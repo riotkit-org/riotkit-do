@@ -1,21 +1,26 @@
 
-RiotKit-Do (RKD)
-================
+RiotKit-Do (RKD) usage and development manual
+=============================================
 
-*Stop writing hacks in Makefile, use Python snippets for advanced usage, for the rest use simple few lines of Bash, share code between your projects using Python Packages.*
+RKD is a stable open-source automation tool which balance flexibility with simplicity. The primary language is Python
+and YAML syntax.
 
-.. image:: ../tasks.png
+RiotKit-Do can be compared to **Gradle** and to **GNU Make**, by allowing both Python and Makefile-like YAML syntax.
 
 **What I can do with RKD?**
 
 - Simplify the scripts
+- Put your Python and Bash scripts inside a YAML file (like in GNU Makefile)
 - Do not reinvent the wheel (argument parsing, logs, error handling for example)
-- Share the code across projects and organizations, use native Python Packaging
+- Share the code across projects and organizations, use native Python Packaging to share tasks (like in Gradle)
 - Natively integrate scripts with .env files
-
+- Automatically generate documentation for your scripts
+- Maintain your scripts in a good standard
 
 **RKD can be used on PRODUCTION, for development, for testing, to replace some of Bash scripts inside docker containers,
 and for many more, where Makefile was used.**
+
+.. image:: ../syntax.png
 
 Example use cases
 ~~~~~~~~~~~~~~~~~
@@ -26,10 +31,13 @@ Example use cases
 - On CI (prepare project to run on eg. Jenkins or Gitlab CI) - RKD is reproducible on local computer which makes inspection easier
 - Kubernetes/OKD deployment workspace (create shared YAML parts with JINJA2 between multiple environments and deploy from RKD)
 - Automate things like certificate regeneration on production server, RKD can generate any application configs using JINJA2
-- Installers (RKD has built-in commands for replacing lines in files, modifying .env files)
+- Installers (RKD has built-in commands for replacing lines in files, modifying .env files, asking user questions and validating answers)
 
-Quick start
+Install RKD
 ~~~~~~~~~~~
+
+RiotKit-Do is delivered as a Python package that can be installed system-wide or in a virtual environment.
+The virtual environment installation is similar in concept to the Gradle wrapper (gradlew)
 
 .. code:: bash
 
@@ -40,8 +48,8 @@ Quick start
     rkd :rkd:create-structure --commit
 
 
-Getting started with RKD
-~~~~~~~~~~~~~~~~~~~~~~~~
+Getting started in freshly created structure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The "Quick start" section ends up with a **.rkd** directory, a requirements.txt and setup-venv.sh
 
@@ -49,67 +57,14 @@ The "Quick start" section ends up with a **.rkd** directory, a requirements.txt 
 2. Each time you install anything from **pip** in your project - add it to requirements.txt, you can install additional RKD tasks from pip
 3. In **.rkd/makefile.yaml** you can start adding your first tasks and imports
 
-Tutorial - makefile.yaml (YAML syntax)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Create your first task with :ref:`READ MORE ABOUT YAML SYNTAX IN THE BEGINNERS GUIDE`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Let's at the beginning start from analyzing an example.
+Check how to use commandline to run tasks in RKD with :ref:`Commandline basics`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code:: yaml
-
-    version: org.riotkit.rkd/yaml/v1
-
-    # optional
-    imports:
-        - rkt_utils.db.WaitForDatabaseTask
-
-    # optional
-    environment:
-        PYTHONPATH: "/project/src"
-
-    # optional
-    #env_files:
-    #    - .some-dotenv-file
-
-    tasks:
-        :check-is-using-linux:
-            description: Are you using Linux?
-            steps:
-                - "[[ $(uname -s) == \"Linux\" ]] && echo \"You are using Linux, cool\""
-
-        :hello:
-            description: Say hello
-            arguments:
-                "--name":
-                    help: "Your name"
-                    required: true
-                    #default: "Peter"
-                    #option: "store_true" # for booleans
-            steps: |
-                echo "Hello ${ARG_NAME}"
-
-                if [[ $(uname -s) == "Linux" ]]; then
-                    echo "You are a Linux user"
-                fi
-
-
-**imports** - Imports external tasks installed via Python' PIP. That's the way to easily share code across projects
-
-**environment** - Can define default values for environment variables. Environment section can be defined for all tasks, or per task
-
-**env_files** - Includes .env files, can be used also per task
-
-**tasks** - List of available tasks, each task has a name, descripton, list of steps (or a single step), arguments
-
-**Running the example:**
-
-1. Create a .rkd directory
-2. Create .rkd/makefile.yaml file
-3. Paste/rewrite the example into the .rkd/makefile.yaml
-4. Run :code:`rkd :tasks` from the directory where the .rkd directory is placed
-5. Run defined tasks :code:`rkd :hello :check-is-using-linux`
-
-Read more in the :ref:`READ MORE ABOUT YAML SYNTAX IN THE BEGINNERS GUIDE`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+See how to import existing tasks to your Makefile with :ref:`Importing tasks` page
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Keep learning
 ~~~~~~~~~~~~~
@@ -125,7 +80,8 @@ Keep learning
    :maxdepth: 5
    :caption: Contents:
 
+   makefile-yaml-guide
    quickstart
-   standardlib/index
+   usage/importing-tasks
    usage/index
-
+   standardlib/index

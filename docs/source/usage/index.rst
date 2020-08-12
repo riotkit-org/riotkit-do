@@ -1,11 +1,12 @@
 
-Usage
------
+.. _Detailed usage manual:
+
+Detailed usage
+--------------
 
 .. toctree::
    :maxdepth: 5
 
-   makefile-yaml-guide
    importing-tasks
    troubleshooting
    loading-priority

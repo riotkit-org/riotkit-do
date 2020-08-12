@@ -1,6 +1,8 @@
 
-Basics
-======
+.. _Commandline basics:
+
+Commandline basics
+==================
 
 RKD command-line usage is highly inspired by GNU Make and Gradle, but it has its own extended possibilities to
 make your scripts smaller and more readable.
@@ -23,7 +25,10 @@ Tasks arguments usage in shell and in scripts
 
 .. code:: bash
 
-    rkd :task1 --hello  :task2 --world
+    rkd :task1 --hello  :task2 --world --become=root
+
+
+Second task will run as root user, additionally with :code:`--world` parameter.
 
 
 **Tasks sharing the same switches**
@@ -69,19 +74,3 @@ It's exactly the same example as above, but written multiline. It's recommended 
         :task4 \
         :task5
 
-
-YAML syntax - makefile.yaml
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-YAML syntax has an advantage of simplicity and clean syntax, custom bash tasks can be defined there easier than in Python.
-To use YAML you need to define **makefile.yaml** file in .rkd directory.
-
-:ref:`READ MORE ABOUT YAML SYNTAX IN THE BEGINNERS GUIDE`
-
-**NOTICE: makefile.py and makefile.yaml can exist together. Python version will be loaded first, the YAML version will append changes in priority.**
-
-.. literalinclude:: ../examples/yaml/.rkd/makefile.yaml
-
-
-What's loaded first? See :ref:`Path and inheritance`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

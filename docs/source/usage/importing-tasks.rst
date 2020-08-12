@@ -55,3 +55,7 @@ Example: Given we want to import task "InjectQEMUBinaryIntoContainerTask", or we
 
     # ... (use "+" operator to append, remove "+" if you didn't define any import yet)
     IMPORTS += [TaskDeclaration(InjectQEMUBinaryIntoContainerTask)]
+
+
+Ready to go? Check :ref:`Built-in tasks` that you can import in your Makefile
+-----------------------------------------------------------------------------
