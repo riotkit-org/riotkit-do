@@ -4,7 +4,7 @@ import unittest
 import os
 from rkd.standardlib.jinja import FileRendererTask
 from rkd.test import mock_task, mock_execution_context
-from rkd.inputoutput import BufferedSystemIO
+from rkd.api.inputoutput import BufferedSystemIO
 
 SAMPLES_PATH = os.path.dirname(os.path.realpath(__file__)) + '/internal-samples'
 

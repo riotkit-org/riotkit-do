@@ -12,7 +12,7 @@ from typing import List
 from getpass import getpass
 from contextlib import contextmanager
 from datetime import datetime
-from .exception import InterruptExecution
+from ..exception import InterruptExecution
 
 
 this = sys.modules[__name__]

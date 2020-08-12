@@ -11,7 +11,7 @@ from .aliasgroups import AliasGroup
 CALLBACK_DEF = Callable[[TaskDeclaration, int, Union[GroupDeclaration, None], list], None]
 
 
-class TaskResolver:
+class TaskResolver(object):
     """
     Responsible for finding all tasks and:
         - expanding groups (flatten tasks)

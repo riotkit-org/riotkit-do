@@ -4,8 +4,8 @@ from .api.syntax import TaskDeclaration
 from .api.contract import TaskInterface
 from .api.contract import ExecutionContext
 from .standardlib import CallableTask
-from .inputoutput import NullSystemIO
-from .inputoutput import IO
+from .api.inputoutput import NullSystemIO
+from .api.inputoutput import IO
 from .context import ApplicationContext
 from .execution.executor import OneByOneTaskExecutor
 from .api.temp import TempManager

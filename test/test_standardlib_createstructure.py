@@ -6,7 +6,7 @@ import unittest
 from tempfile import TemporaryDirectory
 from rkd.standardlib import CreateStructureTask
 from rkd.test import mock_task, mock_execution_context
-from rkd.inputoutput import BufferedSystemIO
+from rkd.api.inputoutput import BufferedSystemIO
 
 
 class CreateStructureTaskTest(unittest.TestCase):

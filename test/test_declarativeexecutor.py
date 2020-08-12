@@ -4,8 +4,8 @@ import unittest
 import os
 from io import StringIO
 from rkd.contract import ExecutionContext
-from rkd.inputoutput import BufferedSystemIO
-from rkd.inputoutput import IO
+from rkd.api.inputoutput import BufferedSystemIO
+from rkd.api.inputoutput import IO
 from rkd.test import get_test_declaration
 from rkd.test import mock_task
 from rkd.execution.declarative import DeclarativeExecutor

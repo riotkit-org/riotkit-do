@@ -7,7 +7,7 @@ from tempfile import NamedTemporaryFile
 from rkd.context import ContextFactory
 from rkd.context import ApplicationContext
 from rkd.context import distinct_imports
-from rkd.inputoutput import NullSystemIO
+from rkd.api.inputoutput import NullSystemIO
 from rkd.exception import ContextException
 from rkd.syntax import TaskDeclaration
 from rkd.syntax import TaskAliasDeclaration

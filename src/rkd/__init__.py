@@ -9,7 +9,7 @@ from .resolver import TaskResolver
 from .validator import TaskDeclarationValidator
 from .execution.executor import OneByOneTaskExecutor
 from .exception import TaskNotFoundException
-from .inputoutput import SystemIO, LEVEL_INFO as LOG_LEVEL_INFO
+from .api.inputoutput import SystemIO, LEVEL_INFO as LOG_LEVEL_INFO
 from .aliasgroups import parse_alias_groups_from_env
 
 

@@ -3,7 +3,7 @@
 import unittest
 from io import StringIO
 from io import BytesIO
-from rkd.inputoutput import StandardOutputReplication
+from rkd.api.inputoutput import StandardOutputReplication
 
 
 class TestStandardOutputReplication(unittest.TestCase):

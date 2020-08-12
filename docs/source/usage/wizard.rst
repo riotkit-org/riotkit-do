@@ -19,7 +19,7 @@ Example Wizard
 
 .. code:: python
 
-    from rkd.inputoutput import Wizard
+    from rkd.api.inputoutput import Wizard
 
     # self is the TaskInterface instance, in Makefile.yaml it would be "this", in Python code it is "self"
     Wizard(self)\
@@ -52,7 +52,7 @@ This allows you to separate Wizard questions into one RKD task, and the rest of 
 
 .. code:: python
 
-    from rkd.inputoutput import Wizard
+    from rkd.api.inputoutput import Wizard
 
     # ... assuming that previously the Wizard was completed by user and the finish() method was called ...
 
@@ -65,5 +65,5 @@ This allows you to separate Wizard questions into one RKD task, and the rest of 
 API
 ---
 
-.. autoclass:: rkd.inputoutput.Wizard
+.. autoclass:: rkd.api.inputoutput.Wizard
    :members:

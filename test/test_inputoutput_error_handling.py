@@ -2,9 +2,9 @@
 
 import sys
 import unittest
-from rkd.inputoutput import BufferedSystemIO
-from rkd.inputoutput import output_formatted_exception
-from rkd.inputoutput import indent_new_lines
+from rkd.api.inputoutput import BufferedSystemIO
+from rkd.api.inputoutput import output_formatted_exception
+from rkd.api.inputoutput import indent_new_lines
 
 
 class TestIOErrorHandling(unittest.TestCase):

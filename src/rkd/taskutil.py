@@ -4,7 +4,7 @@ import sys
 from typing import Union
 from subprocess import check_output, Popen, DEVNULL, CalledProcessError
 from abc import ABC as AbstractClass, abstractmethod
-from .inputoutput import IO
+from .api.inputoutput import IO
 from .process import check_call
 
 

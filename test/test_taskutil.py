@@ -8,7 +8,7 @@ from tempfile import NamedTemporaryFile
 from collections import OrderedDict
 from io import StringIO
 from rkd.standardlib import InitTask
-from rkd.inputoutput import IO
+from rkd.api.inputoutput import IO
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 

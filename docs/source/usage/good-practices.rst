@@ -30,7 +30,7 @@ The methods provided by RKD are buffering the output and making it possible to s
 Do not print if you do not must, use io()
 -----------------------------------------
 
-:code:`rkd.inputoutput.IO` provides a standardized way of printing messages. The class itself distinct importance of messages, writing them
+:code:`rkd.api.inputoutput.IO` provides a standardized way of printing messages. The class itself distinct importance of messages, writing them
 to proper stdout/stderr and to log files.
 
 :code:`print` is also captured by IO, but should be used only eventually.

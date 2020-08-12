@@ -6,7 +6,7 @@ from rkd.contract import ExecutionContext
 from rkd.contract import ArgumentEnv
 from rkd.syntax import TaskDeclaration
 from rkd.exception import MissingInputException
-from rkd.inputoutput import IO
+from rkd.api.inputoutput import IO
 
 
 class TestExecutionContext(unittest.TestCase):

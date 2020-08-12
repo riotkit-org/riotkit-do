@@ -27,7 +27,7 @@ Execution context provides parsed shell arguments and environment variables
 
 Interaction with input and output
 ---------------------------------
-.. autoclass:: rkd.inputoutput.IO
+.. autoclass:: rkd.api.inputoutput.IO
    :members:
 
 Storing temporary files

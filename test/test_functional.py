@@ -10,7 +10,7 @@ from tempfile import NamedTemporaryFile
 from typing import Tuple
 from contextlib import contextmanager
 from io import StringIO
-from rkd.inputoutput import IO
+from rkd.api.inputoutput import IO
 from rkd import RiotKitDoApplication
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))

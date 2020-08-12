@@ -5,7 +5,7 @@ from .argparsing import CommandlineParsingHelper
 from .exception import NotSupportedEnvVariableError
 
 
-class TaskDeclarationValidator:
+class TaskDeclarationValidator(object):
 
     @staticmethod
     def assert_declaration_is_valid(task: TaskDeclaration, task_num: int,

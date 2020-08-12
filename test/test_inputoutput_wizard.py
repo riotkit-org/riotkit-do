@@ -2,8 +2,8 @@
 
 import unittest
 from unittest.mock import mock_open, patch
-from rkd.inputoutput import Wizard
-from rkd.inputoutput import BufferedSystemIO
+from rkd.api.inputoutput import Wizard
+from rkd.api.inputoutput import BufferedSystemIO
 from rkd.test import TestTask
 from rkd.exception import InterruptExecution
 
@@ -90,7 +90,7 @@ class TestWizard(unittest.TestCase):
         tmp_wizard_file = mock_open()
         rkd_shell_calls = []
 
-        with patch('rkd.inputoutput.open', tmp_wizard_file, create=True):
+        with patch('rkd.api.inputoutput.open', tmp_wizard_file, create=True):
             task = TestTask()
             task.rkd = lambda *args, **kwargs: rkd_shell_calls.append(args)
 
@@ -117,7 +117,7 @@ class TestWizard(unittest.TestCase):
         wizard = Wizard(TestTask())
         wizard.io = BufferedSystemIO()
 
-        with patch('rkd.inputoutput.getpass') as getpass:
+        with patch('rkd.api.inputoutput.getpass') as getpass:
             getpass.return_value = 'organize!'
 
             self.assertEqual('organize!', wizard.input(secret=True))

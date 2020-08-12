@@ -14,7 +14,7 @@ from .api.contract import ExecutionContext
 from .api.contract import TaskInterface
 from .api.contract import ArgparseArgument
 from .standardlib import CallableTask
-from .inputoutput import IO
+from .api.inputoutput import IO
 from .yaml_parser import YamlFileLoader
 from .execution.declarative import DeclarativeExecutor
 

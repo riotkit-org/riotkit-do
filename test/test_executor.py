@@ -10,8 +10,8 @@ from rkd.test import get_test_declaration
 from rkd.test import ret_true
 from rkd.test import ret_invalid_user
 from rkd.api.temp import TempManager
-from rkd.inputoutput import BufferedSystemIO
-from rkd.inputoutput import IO
+from rkd.api.inputoutput import BufferedSystemIO
+from rkd.api.inputoutput import IO
 from rkd.contract import TaskInterface
 from rkd.test import TestTask
 from rkd.test import TestTaskWithRKDCallInside

@@ -4,7 +4,7 @@ import unittest
 from tempfile import NamedTemporaryFile
 from rkd.standardlib import LineInFileTask
 from rkd.test import mock_task, mock_execution_context
-from rkd.inputoutput import BufferedSystemIO
+from rkd.api.inputoutput import BufferedSystemIO
 
 
 class TestLineInFileTask(unittest.TestCase):

@@ -6,7 +6,7 @@ import yaml
 from io import StringIO
 from rkd.yaml_context import YamlSyntaxInterpreter
 from rkd.yaml_parser import YamlFileLoader
-from rkd.inputoutput import IO, NullSystemIO, BufferedSystemIO
+from rkd.api.inputoutput import IO, NullSystemIO, BufferedSystemIO
 from rkd.exception import DeclarationException, YamlParsingException
 from rkd.contract import ExecutionContext
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import unittest
-from rkd.inputoutput import IO
-from rkd.inputoutput import SystemIO
-from rkd.inputoutput import BufferedSystemIO
-from rkd.inputoutput import clear_formatting
+from rkd.api.inputoutput import IO
+from rkd.api.inputoutput import SystemIO
+from rkd.api.inputoutput import BufferedSystemIO
+from rkd.api.inputoutput import clear_formatting
 
 
 class TestIO(unittest.TestCase):

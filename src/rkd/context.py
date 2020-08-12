@@ -13,7 +13,7 @@ from .api.syntax import TaskAliasDeclaration
 from .api.syntax import GroupDeclaration
 from .api.contract import ContextInterface
 from .argparsing import CommandlineParsingHelper
-from .inputoutput import SystemIO
+from .api.inputoutput import SystemIO
 from .exception import TaskNotFoundException
 from .exception import ContextFileNotFoundException
 from .exception import PythonContextFileNotFoundException
