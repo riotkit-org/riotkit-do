@@ -3,8 +3,8 @@ from abc import ABC
 from subprocess import CalledProcessError
 from argparse import ArgumentParser
 from typing import Dict
-from rkd.contract import TaskInterface, ExecutionContext
-from rkd.syntax import TaskDeclaration
+from rkd.api.contract import TaskInterface, ExecutionContext
+from rkd.api.syntax import TaskDeclaration
 
 
 class BasePythonTask(TaskInterface, ABC):
@@ -118,19 +118,19 @@ class UnitTestTask(BasePythonTask):
     def execute(self, context: ExecutionContext) -> bool:
         cmd = 'export PYTHONUNBUFFERED=1; '
 
-        if context.args['src_dir']:
-            cmd += 'cd %s && ' % context.args['src_dir']
+        if context.get_arg('--src-dir'):
+            cmd += 'cd %s && ' % context.get_arg('--src-dir')
 
         cmd += '%s -m unittest discover -s %s ' % (
-            context.args['python_bin'],
-            context.args['tests_dir']
+            context.get_arg('--python-bin'),
+            context.get_arg('--tests-dir')
         )
 
-        if context.args['pattern']:
-            cmd += ' -p %s ' % context.args['pattern']
+        if context.get_arg('--pattern'):
+            cmd += ' -p %s ' % context.get_arg('--pattern')
 
         if context.args['filter']:
-            cmd += ' -k %s ' % context.args['filter']
+            cmd += ' -k %s ' % context.get_arg('--filter')
 
         try:
             self.sh(cmd, verbose=True, strict=True)
