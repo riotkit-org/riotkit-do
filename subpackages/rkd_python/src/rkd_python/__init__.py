@@ -69,7 +69,7 @@ class BuildTask(BasePythonTask):
 
     def execute(self, context: ExecutionContext) -> bool:
         self.sh('chmod +x setup.py')
-        self.sh('./setup.py sdist bdist_wheel %s' % context.args['args'])
+        self.sh('./setup.py sdist bdist_wheel %s' % context.get_arg('--args'))
 
         return True
 
@@ -85,7 +85,7 @@ class InstallTask(BasePythonTask):
 
     def execute(self, context: ExecutionContext) -> bool:
         self.sh('chmod +x setup.py')
-        self.sh('./setup.py install %s' % context.args['args'])
+        self.sh('./setup.py install %s' % context.get_arg('--args'))
 
         return True
 
