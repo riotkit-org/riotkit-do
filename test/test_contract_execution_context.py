@@ -3,8 +3,10 @@
 import unittest
 from rkd.standardlib import InitTask
 from rkd.contract import ExecutionContext
+from rkd.contract import ArgumentEnv
 from rkd.syntax import TaskDeclaration
 from rkd.exception import MissingInputException
+from rkd.inputoutput import IO
 
 
 class TestExecutionContext(unittest.TestCase):
@@ -81,6 +83,20 @@ class TestExecutionContext(unittest.TestCase):
                 'expects': 'Gaetano Bresci',
                 'raises': False,
                 'test_switch': '--person'
+            },
+
+            'Custom ENV present, should map a switch to custom ENV name': {
+                'switches': {'person': 'Nobody'},
+                'defined_args': {
+                    '--person': {'default': 'Nobody'}
+                },
+                'envs': {'PERSON_NAME': 'Luigi Lucheni'},
+                'declared_envs': {
+                    'PERSON_NAME': ArgumentEnv(name='PERSON_NAME', switch='--person', default='Nobody')
+                },
+                'expects': 'Luigi Lucheni',
+                'raises': False,
+                'test_switch': '--person'
             }
         }
 
@@ -89,6 +105,7 @@ class TestExecutionContext(unittest.TestCase):
         #
         def test(dataset_name, dataset):
             task = InitTask()
+            task._io = IO()
             task.get_declared_envs = lambda: dataset['declared_envs']
 
             context = ExecutionContext(TaskDeclaration(task), args=dataset['switches'], env=dataset['envs'],
