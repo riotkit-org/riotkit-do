@@ -20,7 +20,7 @@ from rkd.contract import ExecutionContext
 Step = namedtuple('Step', ['language', 'code', 'task_name', 'rkd_path', 'envs', 'task_num'])
 
 
-class DeclarativeExecutor:
+class DeclarativeExecutor(object):
     """Executes declared Bash and/or Python code in form of steps
 
     Avoids using lambdas and inner-methods, so the code is simple, 100% statically typed and serializable
