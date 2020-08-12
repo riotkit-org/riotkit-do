@@ -3,7 +3,6 @@ import re
 from typing import Pattern
 from argparse import ArgumentParser
 from subprocess import CalledProcessError
-from jinja2 import Template
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 from jinja2 import StrictUndefined

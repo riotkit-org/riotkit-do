@@ -5,6 +5,7 @@ from typing import Tuple
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
 from .contract import TaskDeclarationInterface
+from .contract import ArgumentEnv
 
 
 class TraceableArgumentParser(ArgumentParser):
@@ -170,8 +171,12 @@ class CommandlineParsingHelper(object):
         # print all environment variables possible to use
         argparse.description += "\nEnvironment variables for task \"%s\":\n" % task.to_full_name()
 
-        for env_name, default_value in task.get_task_to_execute().get_declared_envs().items():
-            argparse.description += " - %s (default: %s)\n" % (str(env_name), str(default_value))
+        for env in task.get_task_to_execute().internal_normalized_get_declared_envs().values():
+            env: ArgumentEnv
+
+            argparse.description += " - %s (default: %s)\n" % (
+                str(env.name), str(env.default)
+            )
 
         if not task.get_task_to_execute().get_declared_envs():
             argparse.description += ' -- No environment variables declared -- '

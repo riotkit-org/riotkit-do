@@ -2,7 +2,8 @@
 from argparse import ArgumentParser
 from subprocess import CalledProcessError
 from typing import Callable
-from ..contract import TaskInterface, ExecutionContext
+from ..contract import TaskInterface
+from ..contract import ExecutionContext
 
 
 # <sphinx=shell-command>
@@ -22,7 +23,7 @@ class ShellCommandTask(TaskInterface):
         # self.sh() and self.io() are part of TaskUtilities via TaskInterface
 
         try:
-            self.sh(context.args['cmd'], capture=False)
+            self.sh(context.get_arg('cmd'), capture=False)
         except CalledProcessError as e:
             self.io().error_msg(str(e))
             return False

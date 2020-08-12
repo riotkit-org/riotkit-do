@@ -16,8 +16,36 @@ from .inputoutput import IO
 from .exception import UndefinedEnvironmentVariableUsageError
 from .exception import EnvironmentVariableNotUsed
 from .exception import MissingInputException
+from .exception import EnvironmentVariableNameNotAllowed
 from .taskutil import TaskUtilities
 from .temp import TempManager
+
+
+def env_to_switch(env_name: str) -> str:
+    return '--' + env_name.replace('_', '-').lower()
+
+
+class ArgumentEnv(object):
+    """Represents an environment variable that should provide a value to an argparse switch
+
+    Note: There is a list of reserved environment variables, that cannot be used. See ArgumentEnv.RESERVED_VARS
+    """
+
+    RESERVED_VARS = ['PATH', 'PWD', 'LANG', 'DISPLAY', 'SHELL', 'SHLVL', 'HOME', 'EDITOR']
+    name: str
+    default: str
+    switch: str
+
+    def __init__(self, name: str, switch: str = '', default: str = ''):
+        self.name = name
+        self.default = default
+        self.switch = switch if switch else env_to_switch(name)
+
+        self._validate()
+
+    def _validate(self):
+        if self.name in self.RESERVED_VARS:
+            raise EnvironmentVariableNameNotAllowed(self.name)
 
 
 class TaskDeclarationInterface(AbstractClass):
@@ -136,9 +164,9 @@ class ExecutionContext:
         self.env = env
         self.defined_args = defined_args
 
-    def get_env(self, name: str, error_on_not_used: bool = False):
+    def get_env(self, name: str, switch: str = '', error_on_not_used: bool = False):
         """Get environment variable value"""
-        return self.declaration.get_task_to_execute().internal_getenv(name, self.env,
+        return self.declaration.get_task_to_execute().internal_getenv(name, self.env, switch=switch,
                                                                       error_on_not_used=error_on_not_used)
 
     def get_arg_or_env(self, name: str) -> Union[str, None]:
@@ -162,6 +190,19 @@ class ExecutionContext:
             When the --switch has default value (user does not use it, or user sets it explicitly to default value),
             and environment variable SWITCH is defined, then environment variable would be taken.
 
+            Explicit environment variables definitions
+            ------------------------------------------
+
+            From RKD 2.1 the environment variable names can be mapped to any ArgParse switch.
+
+            Below example maps "COMMAND" environment variable to "--cmd" switch.
+
+            .. code:: python
+                def get_declared_envs(self) -> Dict[str, Union[str, ArgumentEnv]]:
+                    return {
+                        'COMMAND': ArgumentEnv(name='COMMAND', switch='--cmd', default='')
+                    }
+
         Raises:
             MissingInputException: When no switch and no environment variable was provided, then an exception is thrown.
         """
@@ -169,7 +210,7 @@ class ExecutionContext:
         env_value = None
 
         try:
-            env_value = self.get_env(env_name, error_on_not_used=True)
+            env_value = self.get_env(env_name, switch=name, error_on_not_used=True)
             is_env_variable_defined = True
 
         except EnvironmentVariableNotUsed:
@@ -284,13 +325,41 @@ class TaskInterface(TaskUtilities):
 
         return self.get_group_name() + self.get_name()
 
-    def get_declared_envs(self) -> Dict[str, str]:
+    def get_declared_envs(self) -> Dict[str, Union[str, ArgumentEnv]]:
         """ Dictionary of allowed envs to override: KEY -> DEFAULT VALUE """
         return {}
 
-    def internal_getenv(self, env_name: str, envs: Dict[str, str], error_on_not_used: bool = False) -> str:
-        """"""
-        declared_envs = self.get_declared_envs()
+    def internal_normalized_get_declared_envs(self) -> Dict[str, ArgumentEnv]:
+        """"""  # sphinx: ignore
+
+        # Method used internally, supports conversion of values from primitives to ArgumentEnv
+        # as developers can specify env variables in get_declared_envs() as primitives or as ArgumentEnv
+        # so, there we normalize everything
+        #
+        # WRAPPER OVER INTERFACE METHOD: get_declared_envs() should be defined by developer
+
+        envs = {}
+
+        for name, value in self.get_declared_envs().items():
+            if not isinstance(value, ArgumentEnv):
+                value = ArgumentEnv(name=name, default=value)
+
+            envs[name] = value
+
+        return envs
+
+    def internal_getenv(self, env_name: str, envs: Dict[str, str], switch: str = '',
+                        error_on_not_used: bool = False) -> str:
+        """"""  # sphinx: ignore
+
+        declared_envs = self.internal_normalized_get_declared_envs()
+
+        # find env by switch, when env was defined to be non-standard name
+        if switch:
+            for env in declared_envs.values():
+                if env.switch == switch:
+                    self.io().debug('Resolved environment "%s" from switch "%s"' % (env_name, env.switch))
+                    env_name = env.name
 
         if env_name not in declared_envs:
             raise UndefinedEnvironmentVariableUsageError(
@@ -303,7 +372,7 @@ class TaskInterface(TaskUtilities):
             if error_on_not_used:
                 raise EnvironmentVariableNotUsed(env_name)
 
-            return declared_envs[env_name]
+            return declared_envs[env_name].default
 
         return envs[env_name]
 
@@ -337,8 +406,8 @@ class TaskInterface(TaskUtilities):
         """Executes a shell script in bash. Throws exception on error.
         To capture output set capture=True
 
-            NOTICE: Use instead of subprocess. Raw subprocess is less supported and output from raw subprocess
-                    may be not catch properly into the logs
+        NOTICE: Use instead of subprocess. Raw subprocess is less supported and output from raw subprocess
+                may be not catch properly into the logs
         """
         return super().sh(
             cmd=cmd, capture=capture, verbose=verbose, strict=strict, env=env

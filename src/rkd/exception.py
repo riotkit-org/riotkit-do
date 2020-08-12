@@ -25,6 +25,12 @@ class EnvironmentVariableNotUsed(TaskException):
     pass
 
 
+class EnvironmentVariableNameNotAllowed(TaskException):
+    def __init__(self, var_name: str):
+        super().__init__('Environment variable with this name "' + var_name + '" cannot be declared, it probably a' +
+                         ' commonly reserved name by operating systems')
+
+
 class UserInputException(Exception):
     pass
 

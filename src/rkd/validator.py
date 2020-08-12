@@ -16,7 +16,7 @@ class TaskDeclarationValidator:
         CommandlineParsingHelper.parse(task, args)
 
         # validate environment variables
-        allowed_envs = task.get_task_to_execute().get_declared_envs()
+        allowed_envs = task.get_task_to_execute().internal_normalized_get_declared_envs()
 
         for env_name in task.get_user_overridden_envs():
             if env_name not in allowed_envs:
