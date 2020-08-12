@@ -1,8 +1,9 @@
 
 from typing import Union
 from collections import OrderedDict
-from .syntax import TaskDeclaration, GroupDeclaration
-from .inputoutput import SystemIO
+from ..syntax import TaskDeclaration
+from ..syntax import GroupDeclaration
+from ..inputoutput import SystemIO
 
 
 STATUS_STARTED = 'started'
@@ -11,7 +12,7 @@ STATUS_FAILURE = 'failure'
 STATUS_SUCCEED = 'succeed'
 
 
-class QueueItem:
+class QueueItem(object):
     task: TaskDeclaration
     status: str
 
@@ -20,7 +21,7 @@ class QueueItem:
         self.status = status
 
 
-class ProgressObserver:
+class ProgressObserver(object):
     _io: SystemIO
     _tasks: OrderedDict  # OrderedDict[str, QueueItem]
     _failed_count: int

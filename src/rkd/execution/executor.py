@@ -12,12 +12,12 @@ from ..contract import ExecutorInterface, ExecutionContext
 from ..inputoutput import IO
 from ..inputoutput import SystemIO
 from ..inputoutput import output_formatted_exception
-from ..results import ProgressObserver
+from .results import ProgressObserver
 from ..exception import InterruptExecution
 from ..audit import decide_about_target_log_files
 from ..temp import TempManager
-from ..serialization import FORKED_EXECUTOR_TEMPLATE
-from ..serialization import get_unpicklable
+from .serialization import FORKED_EXECUTOR_TEMPLATE
+from .serialization import get_unpicklable
 
 
 class OneByOneTaskExecutor(ExecutorInterface):
