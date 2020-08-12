@@ -2,8 +2,8 @@
 from argparse import ArgumentParser
 from subprocess import CalledProcessError
 from typing import Callable
-from ..contract import TaskInterface
-from ..contract import ExecutionContext
+from ..api.contract import TaskInterface
+from ..api.contract import ExecutionContext
 
 
 # <sphinx=shell-command>

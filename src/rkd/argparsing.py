@@ -4,8 +4,8 @@ from typing import List
 from typing import Tuple
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
-from .contract import TaskDeclarationInterface
-from .contract import ArgumentEnv
+from .api.contract import TaskDeclarationInterface
+from .api.contract import ArgumentEnv
 
 
 class TraceableArgumentParser(ArgumentParser):

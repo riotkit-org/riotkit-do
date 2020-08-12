@@ -1,7 +1,7 @@
 
 import os
 import re
-from .syntax import TaskDeclaration
+from .api.syntax import TaskDeclaration
 from .context import ApplicationContext
 
 

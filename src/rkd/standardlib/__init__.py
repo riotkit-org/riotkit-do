@@ -9,10 +9,10 @@ from argparse import ArgumentParser
 from typing import Callable
 from typing import Optional
 from copy import deepcopy
-from ..contract import TaskInterface
-from ..contract import ExecutionContext
-from ..contract import TaskDeclarationInterface
-from ..contract import ArgparseArgument
+from ..api.contract import TaskInterface
+from ..api.contract import ExecutionContext
+from ..api.contract import TaskDeclarationInterface
+from ..api.contract import ArgparseArgument
 from ..inputoutput import SystemIO
 from ..inputoutput import clear_formatting
 from ..aliasgroups import parse_alias_groups_from_env, AliasGroup

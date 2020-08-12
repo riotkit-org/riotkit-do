@@ -12,13 +12,13 @@ from tabulate import tabulate
 from abc import abstractmethod, ABC as AbstractClass
 from typing import Dict, List, Union, Optional
 from argparse import ArgumentParser
-from .inputoutput import IO
-from .exception import UndefinedEnvironmentVariableUsageError
-from .exception import EnvironmentVariableNotUsed
-from .exception import MissingInputException
-from .exception import EnvironmentVariableNameNotAllowed
-from .taskutil import TaskUtilities
-from .temp import TempManager
+from ..inputoutput import IO
+from ..exception import UndefinedEnvironmentVariableUsageError
+from ..exception import EnvironmentVariableNotUsed
+from ..exception import MissingInputException
+from ..exception import EnvironmentVariableNameNotAllowed
+from ..taskutil import TaskUtilities
+from ..temp import TempManager
 
 
 def env_to_switch(env_name: str) -> str:

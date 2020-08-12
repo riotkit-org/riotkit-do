@@ -50,7 +50,7 @@ Example: Given we want to import task "InjectQEMUBinaryIntoContainerTask", or we
 
 .. code:: python
 
-    from rkd.syntax import TaskDeclaration
+    from rkd.api.syntax import TaskDeclaration
     from rkt_armutils.docker import InjectQEMUBinaryIntoContainerTask
 
     # ... (use "+" operator to append, remove "+" if you didn't define any import yet)

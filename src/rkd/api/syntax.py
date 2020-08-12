@@ -10,8 +10,10 @@ Classes used in a declaration syntax in makefile.py
 import os
 from typing import List, Dict
 from copy import deepcopy
-from .contract import TaskDeclarationInterface, GroupDeclarationInterface, TaskInterface
-from .exception import DeclarationException
+from .contract import TaskDeclarationInterface
+from .contract import GroupDeclarationInterface
+from .contract import TaskInterface
+from ..exception import DeclarationException
 
 
 class TaskDeclaration(TaskDeclarationInterface):

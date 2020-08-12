@@ -1,8 +1,8 @@
 
 from typing import Union
 from collections import OrderedDict
-from ..syntax import TaskDeclaration
-from ..syntax import GroupDeclaration
+from ..api.syntax import TaskDeclaration
+from ..api.syntax import GroupDeclaration
 from ..inputoutput import SystemIO
 
 

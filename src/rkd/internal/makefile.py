@@ -2,7 +2,7 @@
 # Base RKD Makefile, contains basic commands such as :tasks, :clean or :version
 #
 
-from rkd.syntax import TaskDeclaration
+from rkd.api.syntax import TaskDeclaration
 from rkd.standardlib.shell import ShellCommandTask, ExecProcessCommand
 from rkd.standardlib import InitTask, TasksListingTask, VersionTask, CreateStructureTask, LineInFileTask
 

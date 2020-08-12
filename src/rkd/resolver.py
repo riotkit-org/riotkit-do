@@ -1,7 +1,7 @@
 
 from typing import List, Callable, Union, Optional
 from .argparsing import TaskArguments
-from .syntax import TaskDeclaration, GroupDeclaration
+from .api.syntax import TaskDeclaration, GroupDeclaration
 from .context import ApplicationContext
 from .exception import InterruptExecution
 from .exception import TaskNotFoundException

@@ -8,11 +8,11 @@ from copy import deepcopy
 from collections import OrderedDict
 from .exception import YamlParsingException
 from .exception import EnvironmentVariablesFileNotFound
-from .syntax import TaskDeclaration
-from .syntax import TaskAliasDeclaration
-from .contract import ExecutionContext
-from .contract import TaskInterface
-from .contract import ArgparseArgument
+from .api.syntax import TaskDeclaration
+from .api.syntax import TaskAliasDeclaration
+from .api.contract import ExecutionContext
+from .api.contract import TaskInterface
+from .api.contract import ArgparseArgument
 from .standardlib import CallableTask
 from .inputoutput import IO
 from .yaml_parser import YamlFileLoader

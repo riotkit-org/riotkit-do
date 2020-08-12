@@ -31,7 +31,7 @@ Creating simple tasks in YAML syntax
 Developing a Python package
 ---------------------------
 
-Each task should implement methods of **rkd.contract.TaskInterface** interface, that's the basic rule.
+Each task should implement methods of **rkd.api.contract.TaskInterface** interface, that's the basic rule.
 
 Following example task could be imported with path **rkd.standardlib.ShellCommandTask**, in your own task you would have a different package name instead of **rkd.standardlib**.
 

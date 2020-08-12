@@ -1,8 +1,9 @@
 
 import os
-from rkd.syntax import TaskAliasDeclaration as Task, TaskDeclaration
+from rkd.api.syntax import TaskAliasDeclaration as Task
+from rkd.api.syntax import TaskDeclaration
+from rkd.api.contract import ExecutionContext
 from rkd.standardlib import CallableTask
-from rkd.contract import ExecutionContext
 
 
 # def create_union_task_as_method(context: ExecutionContext) -> bool:

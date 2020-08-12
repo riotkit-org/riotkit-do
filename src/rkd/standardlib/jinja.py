@@ -7,9 +7,9 @@ from jinja2 import Environment
 from jinja2 import FileSystemLoader
 from jinja2 import StrictUndefined
 from jinja2.exceptions import UndefinedError
-from ..contract import TaskInterface
-from ..contract import ExecutionContext
-from ..syntax import TaskDeclaration
+from ..api.contract import TaskInterface
+from ..api.contract import ExecutionContext
+from ..api.syntax import TaskDeclaration
 
 
 class FileRendererTask(TaskInterface):

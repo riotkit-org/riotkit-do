@@ -8,10 +8,10 @@ from datetime import datetime
 from typing import Dict, List, Union, Tuple
 from importlib.machinery import SourceFileLoader
 from traceback import print_exc
-from .syntax import TaskDeclaration
-from .syntax import TaskAliasDeclaration
-from .syntax import GroupDeclaration
-from .contract import ContextInterface
+from .api.syntax import TaskDeclaration
+from .api.syntax import TaskAliasDeclaration
+from .api.syntax import GroupDeclaration
+from .api.contract import ContextInterface
 from .argparsing import CommandlineParsingHelper
 from .inputoutput import SystemIO
 from .exception import TaskNotFoundException

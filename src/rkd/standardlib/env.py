@@ -2,8 +2,8 @@
 import os
 from typing import Optional
 from argparse import ArgumentParser
-from rkd.contract import TaskInterface
-from rkd.contract import ExecutionContext
+from rkd.api.contract import TaskInterface
+from rkd.api.contract import ExecutionContext
 
 
 class GetEnvTask(TaskInterface):

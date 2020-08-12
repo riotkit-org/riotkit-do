@@ -1,8 +1,8 @@
 
 import os
-from rkd.syntax import TaskDeclaration
+from rkd.api.syntax import TaskDeclaration
+from rkd.api.contract import ExecutionContext
 from rkd.standardlib import CallableTask
-from rkd.contract import ExecutionContext
 
 
 def union_method(context: ExecutionContext) -> bool:

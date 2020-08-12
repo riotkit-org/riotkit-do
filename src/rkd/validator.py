@@ -1,6 +1,6 @@
 
 from typing import Union
-from .syntax import TaskDeclaration, GroupDeclaration
+from .api.syntax import TaskDeclaration, GroupDeclaration
 from .argparsing import CommandlineParsingHelper
 from .exception import NotSupportedEnvVariableError
 

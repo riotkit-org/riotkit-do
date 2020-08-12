@@ -7,7 +7,7 @@ Do not use os.getenv()
 *Note: Only in Python code*
 
 The ExecutionContext is providing processed environment variables. Variables could be overridden on some levels
-eg. in makefile.py - :code:`rkd.syntax.TaskAliasDeclaration` can take a dict of environment variables to force override.
+eg. in makefile.py - :code:`rkd.api.syntax.TaskAliasDeclaration` can take a dict of environment variables to force override.
 
 Use :code:`context.get_env()` instead.
 
