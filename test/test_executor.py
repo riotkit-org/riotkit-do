@@ -4,7 +4,7 @@ import unittest
 import os
 from io import StringIO
 from rkd.contract import ExecutionContext
-from rkd.executor import OneByOneTaskExecutor
+from rkd.execution.executor import OneByOneTaskExecutor
 from rkd.context import ApplicationContext
 from rkd.test import get_test_declaration
 from rkd.test import ret_true

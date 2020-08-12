@@ -16,7 +16,7 @@ from .contract import ArgparseArgument
 from .standardlib import CallableTask
 from .inputoutput import IO
 from .yaml_parser import YamlFileLoader
-from .declarative import DeclarativeExecutor
+from .execution.declarative import DeclarativeExecutor
 
 
 class YamlSyntaxInterpreter:

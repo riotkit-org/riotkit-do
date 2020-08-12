@@ -13,8 +13,8 @@ from collections import namedtuple
 from copy import deepcopy
 from traceback import format_exc
 from typing import List
-from rkd.contract import TaskInterface
-from rkd.contract import ExecutionContext
+from ..contract import TaskInterface
+from ..contract import ExecutionContext
 
 
 Step = namedtuple('Step', ['language', 'code', 'task_name', 'rkd_path', 'envs', 'task_num'])

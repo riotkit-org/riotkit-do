@@ -7,7 +7,7 @@ from .argparsing import CommandlineParsingHelper
 from .context import ContextFactory, ApplicationContext
 from .resolver import TaskResolver
 from .validator import TaskDeclarationValidator
-from .executor import OneByOneTaskExecutor
+from .execution.executor import OneByOneTaskExecutor
 from .exception import TaskNotFoundException
 from .inputoutput import SystemIO, LEVEL_INFO as LOG_LEVEL_INFO
 from .aliasgroups import parse_alias_groups_from_env

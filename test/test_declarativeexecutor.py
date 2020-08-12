@@ -8,8 +8,8 @@ from rkd.inputoutput import BufferedSystemIO
 from rkd.inputoutput import IO
 from rkd.test import get_test_declaration
 from rkd.test import mock_task
-from rkd.declarative import DeclarativeExecutor
-from rkd.declarative import Step
+from rkd.execution.declarative import DeclarativeExecutor
+from rkd.execution.declarative import Step
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 

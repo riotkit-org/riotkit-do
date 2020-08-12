@@ -7,7 +7,7 @@ from .standardlib import CallableTask
 from .inputoutput import NullSystemIO
 from .inputoutput import IO
 from .context import ApplicationContext
-from .executor import OneByOneTaskExecutor
+from .execution.executor import OneByOneTaskExecutor
 from .temp import TempManager
 
 
