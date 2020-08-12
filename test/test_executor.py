@@ -9,7 +9,7 @@ from rkd.context import ApplicationContext
 from rkd.test import get_test_declaration
 from rkd.test import ret_true
 from rkd.test import ret_invalid_user
-from rkd.temp import TempManager
+from rkd.api.temp import TempManager
 from rkd.inputoutput import BufferedSystemIO
 from rkd.inputoutput import IO
 from rkd.contract import TaskInterface

@@ -32,5 +32,5 @@ Interaction with input and output
 
 Storing temporary files
 -----------------------
-.. autoclass:: rkd.temp.TempManager
+.. autoclass:: rkd.api.temp.TempManager
    :members:

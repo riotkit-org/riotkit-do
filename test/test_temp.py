@@ -14,7 +14,7 @@ import os
 import unittest
 import subprocess
 from uuid import uuid4
-from rkd.temp import TempManager
+from rkd.api.temp import TempManager
 
 
 class TestTempManager(unittest.TestCase):

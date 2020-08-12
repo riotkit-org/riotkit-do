@@ -8,7 +8,7 @@ from .inputoutput import NullSystemIO
 from .inputoutput import IO
 from .context import ApplicationContext
 from .execution.executor import OneByOneTaskExecutor
-from .temp import TempManager
+from .api.temp import TempManager
 
 
 class TestTask(CallableTask):

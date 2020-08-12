@@ -18,7 +18,7 @@ from ..exception import EnvironmentVariableNotUsed
 from ..exception import MissingInputException
 from ..exception import EnvironmentVariableNameNotAllowed
 from ..taskutil import TaskUtilities
-from ..temp import TempManager
+from .temp import TempManager
 
 
 def env_to_switch(env_name: str) -> str:

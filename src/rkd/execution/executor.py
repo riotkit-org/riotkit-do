@@ -16,7 +16,7 @@ from ..inputoutput import output_formatted_exception
 from .results import ProgressObserver
 from ..exception import InterruptExecution
 from ..audit import decide_about_target_log_files
-from ..temp import TempManager
+from ..api.temp import TempManager
 from .serialization import FORKED_EXECUTOR_TEMPLATE
 from .serialization import get_unpicklable
 
