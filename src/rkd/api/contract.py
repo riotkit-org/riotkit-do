@@ -152,6 +152,9 @@ class ExecutionContext:
     env: Dict[str, str]
     ctx: ContextInterface
     executor: ExecutorInterface
+
+    # List of arguments definitions populated by Argparse (with limited parameters supported)
+    # Read about "traced arguments"
     defined_args: Dict[str, dict]
 
     def __init__(self, declaration: TaskDeclarationInterface,

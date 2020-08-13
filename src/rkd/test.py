@@ -67,12 +67,22 @@ def mock_task(task: TaskInterface, io: IO = None) -> TaskInterface:
     return task
 
 
-def mock_execution_context(task: TaskInterface, args: Dict[str, str] = {}, env: Dict[str, str] = {}) -> ExecutionContext:
+def mock_execution_context(task: TaskInterface, args: Dict[str, str] = None, env: Dict[str, str] = None,
+                           defined_args: Dict[str, dict] = None) -> ExecutionContext:
+    if args is None: args = {}
+    if env is None: env = {}
+    if defined_args is None: defined_args = {}
+
+    if args and not defined_args:
+        for name, passed_value in args.items():
+            defined_args[name] = {'default': ''}
+
     return ExecutionContext(
         TaskDeclaration(task),
         parent=None,
         args=args,
-        env=env
+        env=env,
+        defined_args=defined_args
     )
 
 
