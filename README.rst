@@ -105,6 +105,8 @@ Rules
 RKD in action
 -------------
 
+.. image:: ./docs/syntax.png
+
 YAML syntax example
 ~~~~~~~~~~~~~~~~~~~
 
