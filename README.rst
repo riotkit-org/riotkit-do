@@ -52,6 +52,9 @@ RiotKit-Do can be compared to **Gradle** and to **GNU Make**, by allowing both P
 **Can be used on PRODUCTION, for development, for testing, to replace some of Bash scripts inside docker containers,
 and for many more, where Makefile was used.**
 
+It is not a build tool for Java, but more a DevOps multi-purpose tool. At this time it will not replace Gradle,
+but maybe in the future this can be achieved by building community packages with support for building eg. Java applications.
+
 Example use cases
 ~~~~~~~~~~~~~~~~~
 
