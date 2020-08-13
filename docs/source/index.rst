@@ -80,7 +80,7 @@ Keep learning
    :maxdepth: 5
    :caption: Contents:
 
-   makefile-yaml-guide
+   makefile-guide
    quickstart
    usage/importing-tasks
    usage/index

@@ -183,5 +183,21 @@ Let's at the beginning start from analyzing an example.
 4. Run :code:`rkd :tasks` from the directory where the .rkd directory is placed
 5. Run defined tasks :code:`rkd :hello :check-is-using-linux`
 
+Extended usage - Makefile in Python syntax
+==========================================
+
+Not only tasks can be written in Python code, but Makefile too - such makefile is called :code:`makefile.py`, and placed in :code:`.rkd` directory.
+
+**Example:**
+
+.. literalinclude:: ../../.rkd/makefile.py
+
+
+- The Python syntax is very flexible
+- You can create your own local packages and import them here, create own advanced structure
+- Possibility to declare aliases and adjust TaskDeclarations for advanced usage (YAML syntax does not offer this)
+-
+
+
 Check :ref:`Detailed usage manual` page for description of all environment variables, mechanisms, good practices and more
 -------------------------------------------------------------------------------------------------------------------------
