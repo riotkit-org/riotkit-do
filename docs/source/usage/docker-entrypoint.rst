@@ -13,7 +13,7 @@ Defined commandline :code:`--my-switch` can have optionally overridden value wit
 
 .. code:: python
 
-    def get_declared_envs(self) -> Dict[str, str]:
+    def get_declared_envs(self) -> Dict[str, ArgumentEnv]:
         return {
             'MY_SWITCH': ArgumentEnv(name='MY_SWITCH', switch='--switch-name', default=''),
         }
