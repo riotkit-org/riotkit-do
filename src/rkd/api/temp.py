@@ -61,7 +61,10 @@ class TempManager(object):
         return realpath(path)
 
     def finally_clean_up(self):
-        """Use this method to clean up all temporary files at the end of the code execution"""
+        """Used to clean up all temporary files at the end of the code execution
+
+        TaskExecutor is running this method after each finished task
+        """
 
         for path in self.assigned:
             try:
