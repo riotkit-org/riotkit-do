@@ -37,6 +37,7 @@ This gives you a possibility to create new :code:`makefile.yaml/py` in any place
 The RKD_PATH has always higher priority than current :code:`.rkd` directory.
 
 **Possible options:**
+
 - Create a bind-mount volume with additional :code:`.rkd/makefile.yaml`, add :code:`.rkd/makefile.yaml` into container and set RKD_PATH to point to :code:`.rkd` directory
 - Create new docker image having original in :code:`FROM`, add :code:`.rkd/makefile.yaml` into container and set RKD_PATH to point to :code:`.rkd` directory
 
@@ -52,6 +53,7 @@ Privileges dropping
 Often in entrypoint there are cache/uploads permissions corrected, so the :code:`root` user is used. To migrate the application, to run the webserver the privileges could be dropped.
 
 **Solutions:**
+
 - In YAML syntax each task have a possible field to use: :code:`become: user-name-here`
 - In Python class TaskInterface has method :code:`get_become_as()` that should return empty string or a username to use sudo with
 - In commandline there is a switch :code:`--become=user-name-here` that can be used with most of the tasks
