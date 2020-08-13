@@ -42,10 +42,14 @@ RKD - RiotKit DO
 Task executor - balance between Makefile and Gradle [see documentation_], designed with :heart:   by RiotKit for DevOps.
 ------------------------------------------------------------------------------------------------------------------------
 
-*Stop writing hacks in Makefile, use Python snippets for advanced usage, for the rest use simple few lines of Bash, share code between your projects using Python Packages.*
+*Easiest and cleanest way to write management scripts and share them between projects, teams and even organizations*
 
+RKD is a stable, open-source, multi-purpose automation tool which balance flexibility with simplicity. The primary language is Python
+and YAML syntax.
 
-**RKD can be used on PRODUCTION, for development, for testing, to replace some of Bash scripts inside docker containers,
+RiotKit-Do can be compared to **Gradle** and to **GNU Make**, by allowing both Python and Makefile-like YAML syntax.
+
+**Can be used on PRODUCTION, for development, for testing, to replace some of Bash scripts inside docker containers,
 and for many more, where Makefile was used.**
 
 Example use cases

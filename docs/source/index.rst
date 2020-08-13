@@ -2,7 +2,7 @@
 RiotKit-Do (RKD) usage and development manual
 =============================================
 
-RKD is a stable open-source automation tool which balance flexibility with simplicity. The primary language is Python
+RKD is a stable, open-source, multi-purpose automation tool which balance flexibility with simplicity. The primary language is Python
 and YAML syntax.
 
 RiotKit-Do can be compared to **Gradle** and to **GNU Make**, by allowing both Python and Makefile-like YAML syntax.
