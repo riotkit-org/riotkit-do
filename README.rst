@@ -1,4 +1,4 @@
-RKD - RiotKit DO
+RKD - RiotKit-Do
 ================
 
 .. image:: ./docs/background.png
@@ -149,9 +149,8 @@ Alternative ways of installation
 Releasing
 ---------
 
-1. git tag -s v1.0.0
-2. Create a release in Github releases
-3. Wait for pipeline to build and publish to PyPI
+1. Create a release in Github releases
+2. Wait for pipeline to build and publish to PyPI
 
 From authors
 ------------

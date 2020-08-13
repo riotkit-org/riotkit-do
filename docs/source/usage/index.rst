@@ -18,4 +18,4 @@ Detailed usage
    wizard
    good-practices
    process-isolation
-
+   docker-entrypoint

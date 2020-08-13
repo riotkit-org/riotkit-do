@@ -3,6 +3,7 @@
 /dist/
 /src/rkd.egg-info/
 *.pyc
+/.eggs
 /AUTHORS
 /ChangeLog
 /docs/build/
