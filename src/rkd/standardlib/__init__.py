@@ -279,7 +279,8 @@ class VersionTask(TaskInterface):
 
 
 class LineInFileTask(TaskInterface):
-    """Adds or removes a line in file (works similar to the lineinfile from Ansible)"""
+    """Adds or removes a line in file (works similar to the lineinfile from Ansible)
+    """
 
     def get_name(self) -> str:
         return ':line-in-file'
@@ -288,23 +289,30 @@ class LineInFileTask(TaskInterface):
         return ':file'
 
     def configure_argparse(self, parser: ArgumentParser):
+        parser.add_argument('file', help='File name')
+        parser.add_argument('--output', help='Output filename (optional, when not specified, ' +
+                                             'then source would be overwritten)', default='', required=False)
         parser.add_argument('--regexp', '-r', help='Regexp to find existing occurrence of line', required=True)
-        parser.add_argument('--insert', '-i', help='Line to insert', required=True)
+        parser.add_argument('--insert', '-i', help='Line to insert or replace', required=True)
+        parser.add_argument('--new-after-line', '-ir', help='Regexp to match a line ' +
+                                                            'after which a new entry should be added (often called ' +
+                                                            'a header or marker line below which we want to add a text)')
         parser.add_argument('--only-first-occurrence', help='Stop at first occurrence', action='store_true')
         parser.add_argument('--fail-on-no-occurrence', '-f', help='Return 1 exit code, when no any occurrence found',
                             action='store_true')
-        parser.add_argument('file', help='File name')
 
     def execute(self, context: ExecutionContext) -> bool:
         file = context.get_arg('file')
-        line = context.get_arg('--insert')
+        output_file = context.get_arg('--output') if context.get_arg('--output') else file
+        line = context.get_arg('--insert').split("\n")
         regexp = context.get_arg('--regexp')
+        after_line_regexp = context.get_arg('--new-after-line')
         fail_on_no_occurrence = context.get_arg('--fail-on-no-occurrence')
         only_first_occurrence = bool(context.get_arg('--only-first-occurrence'))
 
-        if not os.path.isfile(file):
-            self.io().info('Creating empty file "%s"' % file)
-            self.sh('touch "%s"' % file)
+        if not os.path.isfile(output_file):
+            self.io().info('Creating empty file "%s"' % output_file)
+            self.sh('touch "%s"' % output_file)
 
         with open(file, 'r') as f:
             content = f.readlines()
@@ -320,7 +328,7 @@ class LineInFileTask(TaskInterface):
                     new_contents += file_line
                     continue
 
-                file_line = line + "\n"
+                file_line = ("\n".join(line)) + "\n"
 
                 found += 1
                 group_num = 0
@@ -338,15 +346,51 @@ class LineInFileTask(TaskInterface):
                 self.io().error_msg('No matching line for selected regexp found')
                 return False
 
-            self.io().info('No existing line found, creating new one at the end of the file')
-            new_contents += line + "\n"
+        new_contents = self._insert_new_lines(new_contents, line, after_line_regexp, only_first_occurrence, regexp)
 
-        with open(file, 'w') as f:
+        with open(output_file, 'w') as f:
             f.write(new_contents)
 
-        self.io().success_msg('Replaced %i lines with "%s" in "%s"' % (found, line, file))
+        self.io().success_msg('Replaced %i lines with "%s" in "%s"' % (found, "\n".join(line), output_file))
 
         return True
+
+    @staticmethod
+    def _insert_new_lines(contents: str, lines_to_insert: list, after_line_regexp: str,
+                          only_first_occurrence: bool, regexp: str) -> str:
+        """Inserts new lines (if necessary)
+
+        For each MARKER (line after which we want to insert new lines)
+        check if there are lines already, if not then insert them.
+        """
+
+        if not after_line_regexp:
+            return contents + ("\n".join(lines_to_insert)) + "\n"
+
+        as_lines = contents.split("\n")
+        new_lines = []
+        current_line_num = -1
+
+        for line in as_lines:
+            current_line_num += 1
+            new_lines.append(line)
+
+            if re.match(after_line_regexp, line):
+
+                # try to skip insertion, if the line already exists (do not duplicate lines)
+                # WARNING: Matches only two lines after marker, that's a limitation
+                next_lines = "\n".join(as_lines[current_line_num + 1:current_line_num + 2])
+
+                if next_lines and re.match(regexp, next_lines):
+                    continue
+
+                new_lines += lines_to_insert
+
+                if only_first_occurrence:
+                    new_lines += as_lines[current_line_num + 1:]
+                    break
+
+        return "\n".join(new_lines)
 
 
 class CreateStructureTask(TaskInterface):

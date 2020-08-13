@@ -22,13 +22,15 @@ class TestLineInFileTask(unittest.TestCase):
         with NamedTemporaryFile() as tmp_file:
             self._execute_mocked_task({
                 'file': tmp_file.name,
+                '--output': '',
                 '--regexp': 'Linux ([0-9.]+)',
                 '--insert': 'Linux 4.16.1',
                 '--fail-on-no-occurrence': False,
-                '--only-first-occurrence': False
+                '--only-first-occurrence': False,
+                '--new-after-line': ''
             })
 
-            self.assertIn("Linux 4.16.1\n", tmp_file.read().decode('utf-8'))
+            self.assertEqual("Linux 4.16.1\n", tmp_file.read().decode('utf-8'))
 
     def test_simply_replaces_found_one_matched_line(self):
         with NamedTemporaryFile() as tmp_file:
@@ -39,12 +41,14 @@ class TestLineInFileTask(unittest.TestCase):
             # then modify it
             self._execute_mocked_task({
                 'file': tmp_file.name,
+                '--output': '',
                 '--regexp': 'Text: (.*)',
                 '--insert': 'Text: 14 June 1872 unions were legalised in Canada through the Trade Unions Act after a' +
                             ' wave of illegal strikes and protests. Still the law didn\'t compel employers to' +
                             ' recognise or bargain with unions, and picketing remained illegal.',
                 '--fail-on-no-occurrence': False,
-                '--only-first-occurrence': False
+                '--only-first-occurrence': False,
+                '--new-after-line': ''
             })
 
             self.assertIn("14 June 1872 unions were legalised in Canada", tmp_file.read().decode('utf-8'))
@@ -60,10 +64,12 @@ class TestLineInFileTask(unittest.TestCase):
             # then modify it
             self._execute_mocked_task({
                 'file': tmp_file.name,
+                '--output': '',
                 '--regexp': 'Symbol: ([0-9]+)',
                 '--insert': 'Symbol: $match[0] + 161',
                 '--fail-on-no-occurrence': False,
-                '--only-first-occurrence': False
+                '--only-first-occurrence': False,
+                '--new-after-line': ''
             })
 
             self.assertIn("Symbol: 1 + 161", tmp_file.read().decode('utf-8'))
@@ -74,10 +80,12 @@ class TestLineInFileTask(unittest.TestCase):
         with NamedTemporaryFile() as tmp_file:
             io = self._execute_mocked_task({
                 'file': tmp_file.name,
+                '--output': '',
                 '--regexp': 'Knock knock',
                 '--insert': 'Who\'s there?',
                 '--fail-on-no-occurrence': True,
-                '--only-first-occurrence': False
+                '--only-first-occurrence': False,
+                '--new-after-line': ''
             })
 
             self.assertIn('No matching line for selected regexp found', io.get_value())
@@ -97,10 +105,12 @@ class TestLineInFileTask(unittest.TestCase):
             # then modify it
             self._execute_mocked_task({
                 'file': tmp_file.name,
+                '--output': '',
                 '--regexp': 'Symbol: ([0-9]+)',
                 '--insert': 'Symbol: 161',
                 '--fail-on-no-occurrence': True,
-                '--only-first-occurrence': True
+                '--only-first-occurrence': True,
+                '--new-after-line': ''
             })
 
             processed_file_content = tmp_file.read().decode('utf-8')
@@ -108,3 +118,91 @@ class TestLineInFileTask(unittest.TestCase):
             self.assertIn("Symbol: 161", processed_file_content)
             self.assertNotIn("Symbol: 1\n", processed_file_content)
             self.assertIn("Symbol: 2", processed_file_content)
+
+    def test_adds_multiple_lines_after_selected_marker(self):
+        result = LineInFileTask()._insert_new_lines(
+            '''
+            Hijo del pueblo, te oprimen cadenas,
+            y esa injusticia no puede seguir;
+            si tu existencia es un mundo de penas
+            antes que esclavo prefiere morir.
+            En la batalla, la hiena fascista.
+            por nuestro esfuerzo sucumbirá;
+            y el pueblo entero, con los anarquistas,
+            hará que triunfe la libertad.
+            
+            --- Read more --
+            
+            --- EOF
+            ''',
+            lines_to_insert='''            Trabajador, no más sufrir,
+            el opresor ha de sucumbir.
+            Levántate, pueblo leal,
+            al grito de revolución social.
+            Fuerte unidad de fe y de acción
+            producirá la revolución.
+            Nuestro pendón uno ha de ser:
+            sólo en la unión está el vencer.'''.split("\n"),
+            after_line_regexp='(.*)Read\ more(.*)',
+            only_first_occurrence=True,
+            regexp='.*Trabajador.*'
+        )
+
+        self.assertEqual(
+            '''
+            Hijo del pueblo, te oprimen cadenas,
+            y esa injusticia no puede seguir;
+            si tu existencia es un mundo de penas
+            antes que esclavo prefiere morir.
+            En la batalla, la hiena fascista.
+            por nuestro esfuerzo sucumbirá;
+            y el pueblo entero, con los anarquistas,
+            hará que triunfe la libertad.
+            
+            --- Read more --
+            Trabajador, no más sufrir,
+            el opresor ha de sucumbir.
+            Levántate, pueblo leal,
+            al grito de revolución social.
+            Fuerte unidad de fe y de acción
+            producirá la revolución.
+            Nuestro pendón uno ha de ser:
+            sólo en la unión está el vencer.
+            
+            --- EOF
+            ''',
+            result,
+        )
+
+    def test_adds_missing_lines_after_specified_markers(self):
+        result = LineInFileTask()._insert_new_lines(
+            '''
+            Press list
+            
+            [@CNT]
+            Other press
+            Solidaridad Obrera
+            
+            [@FAI]
+            Tierra y Libertad
+            ''',
+            lines_to_insert=['            Other press'],
+            after_line_regexp='.*(CNT|FAI).*',
+            only_first_occurrence=False,
+            regexp='.*Other press'
+        )
+
+        self.assertEqual(
+            '''
+            Press list
+            
+            [@CNT]
+            Other press
+            Solidaridad Obrera
+            
+            [@FAI]
+            Other press
+            Tierra y Libertad
+            ''',
+            result
+        )
