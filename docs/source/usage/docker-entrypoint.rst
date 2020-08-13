@@ -47,6 +47,8 @@ Massive files rendering with JINJA2
 :code:`:j2:directory-to-directory` is a specially designed task to render JINJA2 templates recursively preserving a directory structure.
 You can create for example :code:`templates/etc/nginx/nginx.conf.j2` and render :code:`./templates/etc` into :code:`/etc` with all files being copied on the fly.
 
+**All jinja2 templates will have access to environment variables - with templating syntax you can define very advanced configuration files**
+
 Privileges dropping
 -------------------
 
