@@ -25,7 +25,13 @@ Example: Given we want to import tasks from package "rkt_armutils".
 
 **Good practices:**
 
-- Use fixed versions eg. 3.0 or even 3.0.0 and upgrade only intentionally to reduce your work on fixing bugs
+- Use fixed versions eg. 3.0 or even 3.0.0 and upgrade only intentionally to reduce your work. Automatic updates, especially of major versions
+could be unpredictable and possibly can break something time-to-time
+
+**How do I check latest version?:**
+
+- Simply install a package eg. :code:`pip install rkt_armutils`, then do a :code:`pip show rkt_armutils` and write the version
+to the requirements.txt, or lookup a package first at https://pypi.org/project/rkt_armutils/ (where rkt_armutils is an example package)
 
 
 2) In YAML syntax
