@@ -3,6 +3,7 @@
 import unittest
 import unittest.mock
 import os
+import psutil
 import subprocess
 from tempfile import NamedTemporaryFile
 from collections import OrderedDict
@@ -38,7 +39,7 @@ class TestTaskUtil(unittest.TestCase):
 
         Notice: Test is interacting with shell, to reduce possibility of weird behavior it is retried multiple times
         """
-        for i in range(1, 50):
+        for i in range(1, 100):
             self.maxDiff = None  # unittest setting
             task = InitTask()
 
@@ -54,9 +55,42 @@ class TestTaskUtil(unittest.TestCase):
                     echo "THIRD";
                     echo "FOURTH" >&2;
                     echo "FIFTH" >&2;
+                    echo "SIXTH";
+                    echo "SEVENTH" >&2;
+                    echo "NINETH";
+                    echo "TENTH";
                 ''')
 
-            self.assertEqual("FIRST\nSECOND\nTHIRD\nFOURTH\nFIFTH\n", out.getvalue())
+            self.assertEqual("FIRST\nSECOND\nTHIRD\nFOURTH\nFIFTH\nSIXTH\nSEVENTH\nNINETH\nTENTH\n", out.getvalue())
+
+    def test_sh_producing_large_outputs(self):
+        """Process a few megabytes of output and assert that:
+
+        - It will consume not more than 10 megabytes (assuming also output capturing in tests by io.capture_descriptors())
+        - The whole output would be printed correctly
+        """
+
+        self.maxDiff = None  # unittest setting
+        task = InitTask()
+
+        io = IO()
+        out = StringIO()
+        text = "History isn't made by kings and politicians, it is made by us."
+
+        memory_before = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
+
+        with io.capture_descriptors(stream=out, enable_standard_out=False):
+            task.py('''
+for i in range(0, 1024 * 128):
+    print("''' + text + '''")
+            ''')
+
+        iterations = 1024 * 128
+        text_with_newlines_length = len(text) + 1
+        memory_after = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
+
+        self.assertEqual(iterations * text_with_newlines_length, len(out.getvalue()))
+        self.assertLessEqual(10, memory_after - memory_before, msg='Expected less than 10 megabytes of memory usage')
 
     def test_sh_captures_output_in_correct_order_with_fixed_timing(self):
         """Test if output contains stdout and stderr lines printed out in proper order,
@@ -84,7 +118,6 @@ class TestTaskUtil(unittest.TestCase):
 
             self.assertEqual("FIRST\nSECOND\nTHIRD\n", out.getvalue())
 
-    @unittest.skip("To be fixed in github issue #30")
     def test_sh_rkd_in_rkd_shows_first_lines_on_error(self):
         """Bugfix: sh() was loosing first line(s) of output, when exception was raised
 

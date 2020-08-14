@@ -3,9 +3,36 @@
 import os
 import sys
 import subprocess
+from io import FileIO
 from typing import Optional
 from threading import Thread
-from io import StringIO
+
+ON_POSIX = 'posix' in sys.builtin_module_names
+
+
+class TextBuffer(object):
+    text: str
+    size: int
+
+    def __init__(self, buffer_size: int):
+        self.text = ''
+        self.size = buffer_size
+
+    def write(self, text: str):
+        buf_len = len(self.text)
+        txt_len = len(text)
+
+        if buf_len + txt_len > self.size:
+            missing_len = (buf_len + txt_len) - self.size
+            self.trim_left_by(missing_len)
+
+        self.text += text
+
+    def trim_left_by(self, bytes: int):
+        self.text = self.text[bytes:]
+
+    def get_value(self) -> str:
+        return self.text
 
 
 def check_call(command: str, stdin=None, script: Optional[str] = ''):
@@ -15,45 +42,31 @@ def check_call(command: str, stdin=None, script: Optional[str] = ''):
 
     os.environ['PYTHONUNBUFFERED'] = "1"
 
-    stdout_pipe_r, stdout_pipe_w = os.pipe()
-    # stderr_pipe_r, stderr_pipe_w = os.pipe()
+    process = subprocess.Popen(command, shell=True, stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                               bufsize=1, close_fds=ON_POSIX, text=True)
 
-    # keep the last 1024 characters of stderr
-    err_buffer = StringIO()
-    out_buffer = StringIO()
-
-    process = subprocess.Popen(command, shell=True, stdin=stdin, stdout=stdout_pipe_w, stderr=subprocess.STDOUT,
-                               bufsize=1)
-
-    stdout_thread = Thread(target=_copy_stream, args=(stdout_pipe_r, sys.stdout, process, out_buffer))
+    out_buffer = TextBuffer(buffer_size=1024 * 10)
+    stdout_thread = Thread(target=push_output, args=(process.stdout, sys.stdout, out_buffer))
     stdout_thread.daemon = True
     stdout_thread.start()
-
-    # stderr_thread = Thread(target=_copy_stream, args=(stderr_pipe_r, sys.stderr, process, err_buffer))
-    # stderr_thread.daemon = True
-    # stderr_thread.start()
 
     exit_code = process.wait()
 
     if exit_code > 0:
         raise subprocess.CalledProcessError(
-            exit_code, script if script else command, stderr=err_buffer.getvalue(), output=out_buffer.getvalue()
+            exit_code, script if script else command, stderr=out_buffer.get_value(), output=out_buffer.get_value()
         )
 
 
-def _copy_stream(in_stream_fd: int, out_stream, process: subprocess.Popen, copy: StringIO = None):
-    buffer_wrote_size = 0
+def push_output(input_stream: FileIO, output_stream, out_buffer: TextBuffer):
+    for line in iter(input_stream.readline, ''):
+        output_stream.write(line)
+        output_stream.flush()
+        out_buffer.write(line)
 
-    while process.poll() is None:
-        read = os.read(in_stream_fd, 1024).decode('utf-8')
-        out_stream.write(read)
+    input_stream.close()
 
-        if copy:
-            if buffer_wrote_size >= 1024:
-                copy.truncate()
 
-            buffer_wrote_size += len(read)
-            copy.write(read)
-
-    read = os.read(in_stream_fd, 1024 * 1024 * 10).decode('utf-8')
-    out_stream.write(read)
+# def _debug(msg):
+#     with open('/dev/stdout', 'w') as f:
+#         f.write(str(msg))
