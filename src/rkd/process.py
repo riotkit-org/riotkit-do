@@ -43,7 +43,7 @@ def check_call(command: str, stdin=None, script: Optional[str] = ''):
     os.environ['PYTHONUNBUFFERED'] = "1"
 
     process = subprocess.Popen(command, shell=True, stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                               bufsize=1, close_fds=ON_POSIX, text=True)
+                               bufsize=1, close_fds=ON_POSIX, universal_newlines=True)
 
     out_buffer = TextBuffer(buffer_size=1024 * 10)
     stdout_thread = Thread(target=push_output, args=(process.stdout, sys.stdout, out_buffer))
