@@ -6,7 +6,7 @@
 \_| \_|_|\___/ \__\_| \_/_|\__| |___/ \___/\x1B[0m
 
 
-\x1B[92mRKD\x1B[0m - simple task executor, perfect tool for DevOps - replaces Makefile and Gradle.
+\x1B[92mRKD\x1B[0m - simple task executor, perfect tool for DevOps - replaces Makefile and Gradle for DevOps specific usage.
 \x1B[93mCreated by RiotKit, your anarchist tech collective.\x1B[0m
 
 Type \x1B[37m:tasks\x1B[0m to see list of available tasks.
