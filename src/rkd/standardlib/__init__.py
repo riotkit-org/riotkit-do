@@ -463,7 +463,7 @@ This task is designed to be extended, see methods marked as "interface methods".
 
             self.commit_to_git()
 
-        self.print_success_msg(ctx)
+        self.print_success_msg(use_pipenv, ctx)
 
         return True
 
@@ -538,7 +538,7 @@ This task is designed to be extended, see methods marked as "interface methods".
 
         pass
 
-    def print_success_msg(self, ctx: ExecutionContext) -> None:
+    def print_success_msg(self, use_pipenv: bool, ctx: ExecutionContext) -> None:
         """Emits a success message
 
         Interface method: to be overridden
