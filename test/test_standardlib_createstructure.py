@@ -44,6 +44,9 @@ class CreateStructureTaskTest(unittest.TestCase):
                                 msg='Expected requirements.txt file to be present')
                 self.assertTrue(os.path.isfile(tempdir + '/.venv/bin/activate'),
                                 msg='Expected that virtual environment will contain a bin/activate file')
+                self.assertFalse(os.path.isfile(tempdir + '/Pipfile'),
+                                 msg='Expected that pipenv structure would not be created ' +
+                                     'if --pipenv switch not used explicitly')
 
             finally:
                 os.chdir(cwd)
@@ -149,6 +152,39 @@ class CreateStructureTaskTest(unittest.TestCase):
                         ['on_startup', 'on_requirements_txt_write', 'on_creating_venv', 'on_git_add'],
                         call_history
                     )
+
+            finally:
+                os.chdir(cwd)
+
+    def test_pipenv_is_supported(self):
+        """Check that pipenv structure is created"""
+
+        with TemporaryDirectory() as tempdir:
+            cwd = os.getcwd()
+
+            try:
+                os.chdir(tempdir)
+                task = CreateStructureTask()
+                task.get_rkd_version_selector = lambda: ''
+
+                io = self._execute_mocked_task({
+                    '--commit': False,
+                    '--no-venv': False,
+                    '--pipenv': True
+                }, {}, task=task)
+
+                self.assertTrue(os.path.isdir(tempdir + '/.rkd'),
+                                msg='Expected that .rkd directory would be created')
+                self.assertTrue(os.path.isfile(tempdir + '/requirements.txt'),
+                                msg='Expected requirements.txt file to be present')
+                self.assertFalse(os.path.isfile(tempdir + '/.venv/bin/activate'),
+                                msg='Expected that a normal virtual env will not be created')
+                self.assertTrue(os.path.isfile(tempdir + '/Pipfile'), msg='Expected a Pipfile created by pipenv')
+
+                self.assertTrue(os.path.isfile(tempdir + '/Pipfile.lock'), msg='Expected a Pipfile.lock created by pipenv')
+
+                self.assertIn('Structure created, use "pipenv shell" to enter project environment', io.get_value(),
+                              msg='Expected a welcome message / instruction')
 
             finally:
                 os.chdir(cwd)
