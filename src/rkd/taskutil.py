@@ -62,6 +62,8 @@ class TaskUtilities(AbstractClass):
             To capture output set capture=True
         """
 
+        self.io().debug('sh(%s)' % cmd)
+
         cmd = 'export PYTHONUNBUFFERED=1; ' + cmd
 
         # set strict mode, it can be disabled manually

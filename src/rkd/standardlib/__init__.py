@@ -410,10 +410,12 @@ This task is designed to be extended, see methods marked as "interface methods".
                             help='Prepare RKD structure as a git commit (needs workspace to be clean)',
                             action='store_true')
         parser.add_argument('--no-venv', help='Do not create virtual env automatically', action='store_true')
+        parser.add_argument('--pipenv', help='Generate files for Pipenv', action='store_true')
 
     def execute(self, ctx: ExecutionContext) -> bool:
         commit_to_git = ctx.get_arg('--commit')
         without_venv = ctx.get_arg('--no-venv')
+        use_pipenv = bool(ctx.get_arg('--pipenv'))
 
         if commit_to_git and not self.check_git_is_clean():
             self.io().error_msg('Current working directory is dirty, you have working changes, ' +
@@ -444,21 +446,13 @@ This task is designed to be extended, see methods marked as "interface methods".
 
         # 3) Add RKD to requirements
         self.io().info('Adding RKD to requirements.txt')
-        self.sh('touch requirements.txt')
-        self.rkd([':file:line-in-file',
-                  'requirements.txt',
-                  '--regexp="rkd(.*)"',
-                  '--insert="rkd%s"' % self.get_rkd_version_selector()
-                  ])
-        self.on_requirements_txt_write(ctx)
+        self._write_requirements(ctx)
 
         # 4) Create virtual env
         if not without_venv:
             self.io().info('Setting up virtual environment')
             self.on_creating_venv(ctx)
-            self.sh('cp %s/setup-venv.sh ./' % template_structure_path)
-            self.sh('chmod +x setup-venv.sh')
-            self.sh('./setup-venv.sh')
+            self._setup_venv(use_pipenv, template_structure_path)
 
         if commit_to_git:
             self.on_git_add(ctx)
@@ -472,6 +466,24 @@ This task is designed to be extended, see methods marked as "interface methods".
         self.print_success_msg(ctx)
 
         return True
+
+    def _write_requirements(self, ctx: ExecutionContext):
+        self.sh('touch requirements.txt')
+        self.rkd([':file:line-in-file',
+                  'requirements.txt',
+                  '--regexp="rkd(.*)"',
+                  '--insert="rkd%s"' % self.get_rkd_version_selector()
+                  ])
+        self.on_requirements_txt_write(ctx)
+
+    def _setup_venv(self, use_pipenv: bool, template_structure_path: str):
+        if use_pipenv:
+            self.sh('pipenv install rkd%s' % self.get_rkd_version_selector())
+            return
+
+        self.sh('cp %s/setup-venv.sh ./' % template_structure_path)
+        self.sh('chmod +x setup-venv.sh')
+        self.sh('./setup-venv.sh')
 
     @staticmethod
     def get_rkd_version_selector():
@@ -531,6 +543,11 @@ This task is designed to be extended, see methods marked as "interface methods".
 
         Interface method: to be overridden
         """
+
+        if use_pipenv:
+            self.io().success_msg("Structure created, use \"pipenv shell\" to enter project environment\n" +
+                                  "Add libraries, task providers, tools to the environment using \"pipenv install\"")
+            return
 
         self.io().success_msg("Structure created, use eval $(./setup-venv.sh) to enter Python\'s " +
                               "virtual environment with installed desired RKD version from requirements.txt\n" +
