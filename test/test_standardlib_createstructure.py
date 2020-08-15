@@ -35,7 +35,8 @@ class CreateStructureTaskTest(unittest.TestCase):
 
                 self._execute_mocked_task({
                     '--commit': False,
-                    '--no-venv': False
+                    '--no-venv': False,
+                    '--pipenv': False
                 }, {}, task=task)
 
                 self.assertTrue(os.path.isdir(tempdir + '/.rkd'),
@@ -73,7 +74,8 @@ class CreateStructureTaskTest(unittest.TestCase):
                 task.get_rkd_version_selector = lambda: ''
                 io = self._execute_mocked_task({
                     '--commit': True,
-                    '--no-venv': False
+                    '--no-venv': False,
+                    '--pipenv': False
                 }, {}, task=task)
 
                 self.assertIn('Current working directory is dirty', io.get_value())
@@ -90,7 +92,7 @@ class CreateStructureTaskTest(unittest.TestCase):
                 os.chdir(tempdir)
 
                 # action
-                self._execute_mocked_task({'--commit': False, '--no-venv': True}, {})
+                self._execute_mocked_task({'--commit': False, '--no-venv': True, '--pipenv': False}, {})
 
                 # assertions
                 self.assertTrue(os.path.isfile(tempdir + '/requirements.txt'),
@@ -129,7 +131,7 @@ class CreateStructureTaskTest(unittest.TestCase):
                 ]
 
                 # action
-                self._execute_mocked_task({'--commit': True, '--no-venv': False}, {}, task=task)
+                self._execute_mocked_task({'--commit': True, '--no-venv': False, '--pipenv': False}, {}, task=task)
 
                 # assert that actions will be called in order
 
@@ -145,7 +147,7 @@ class CreateStructureTaskTest(unittest.TestCase):
                 call_history = []
                 subprocess.check_call('echo "new" > new-file.txt; git add new-file.txt', shell=True)
 
-                self._execute_mocked_task({'--commit': True, '--no-venv': False}, {}, task=task)
+                self._execute_mocked_task({'--commit': True, '--no-venv': False, '--pipenv': False}, {}, task=task)
 
                 with self.subTest('Any next time should not copy files over and over again'):
                     self.assertEqual(

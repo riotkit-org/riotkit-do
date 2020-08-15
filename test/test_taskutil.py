@@ -17,19 +17,23 @@ CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 class TestTaskUtil(unittest.TestCase):
     def test_sh_accepts_script_syntax(self):
         task = InitTask()
+        task._io = IO()
         self.assertIn('__init__.py', task.sh("ls -la\npwd", capture=True))
 
     def test_exec_spawns_process(self):
         task = InitTask()
+        task._io = IO()
         self.assertIn('__init__.py', task.exec('ls', capture=True))
 
     def test_sh_executes_in_background(self):
         task = InitTask()
+        task._io = IO()
         task.exec('ls', background=True)
 
     def test_exec_background_capture_validation_raises_error(self):
         def test():
             task = InitTask()
+            task._io = IO()
             task.exec('ls', background=True, capture=True)
 
         self.assertRaises(Exception, test)
@@ -42,6 +46,7 @@ class TestTaskUtil(unittest.TestCase):
         for i in range(1, 100):
             self.maxDiff = None  # unittest setting
             task = InitTask()
+            task._io = IO()
 
             io = IO()
             out = StringIO()
@@ -72,6 +77,7 @@ class TestTaskUtil(unittest.TestCase):
 
         self.maxDiff = None  # unittest setting
         task = InitTask()
+        task._io = IO()
 
         io = IO()
         out = StringIO()
@@ -102,6 +108,7 @@ for i in range(0, 1024 * 128):
         for i in range(1, 30):
             self.maxDiff = None  # unittest setting
             task = InitTask()
+            task._io = IO()
 
             io = IO()
             out = StringIO()
@@ -127,6 +134,7 @@ for i in range(0, 1024 * 128):
         for i in range(1, 5):
             for std_redirect in ['', '>&2']:
                 task = InitTask()
+                task._io = IO()
                 io = IO()
                 out = StringIO()
 
@@ -147,6 +155,7 @@ for i in range(0, 1024 * 128):
 
         for std_redirect in ['', '>&2']:
             task = InitTask()
+            task._io = IO()
             io = IO()
             out = StringIO()
 
@@ -164,6 +173,7 @@ for i in range(0, 1024 * 128):
     @unittest.skip("Github issue #1")
     def test_sh_provides_stdout_and_stderr_in_exception(self):
         task = InitTask()
+        task._io = IO()
 
         try:
             task.sh('''
@@ -181,6 +191,7 @@ for i in range(0, 1024 * 128):
         """
 
         task = InitTask()
+        task._io = IO()
 
         envs = OrderedDict()
         envs['ENV_NAME'] = 'riotkit'
@@ -196,6 +207,7 @@ for i in range(0, 1024 * 128):
         """Simply - check basic successful case - executing a Python code"""
 
         task = InitTask()
+        task._io = IO()
         out = task.py('''
 import os
 print(os)
@@ -209,6 +221,7 @@ print(os)
         """
 
         task = InitTask()
+        task._io = IO()
 
         with NamedTemporaryFile() as temp_file:
             temp_file.write(b'import sys; print("STDIN: " + str(sys.stdin.read()))')
@@ -222,6 +235,7 @@ print(os)
         os.putenv('PY_INHERITS_ENVIRONMENT_VARIABLES', 'should')
 
         task = InitTask()
+        task._io = IO()
         out = task.py(
             code='import os; print("ENV VALUE IS: " + str(os.environ["PY_INHERITS_ENVIRONMENT_VARIABLES"]))',
             capture=True
@@ -233,6 +247,7 @@ print(os)
         """Expect that sudo with proper parameters is used"""
 
         task = InitTask()
+        task._io = IO()
 
         with unittest.mock.patch('rkd.taskutil.check_output') as mocked_subprocess:
             mocked_subprocess: unittest.mock.MagicMock

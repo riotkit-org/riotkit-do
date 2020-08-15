@@ -324,6 +324,8 @@ class LineInFileTask(TaskInterface):
             match = re.match(regexp, file_line)
 
             if match:
+                self.io().debug('Found occurrence of "%s"' % regexp)
+
                 if found and only_first_occurrence:
                     new_contents += file_line
                     continue
@@ -346,7 +348,8 @@ class LineInFileTask(TaskInterface):
                 self.io().error_msg('No matching line for selected regexp found')
                 return False
 
-        new_contents = self._insert_new_lines(new_contents, line, after_line_regexp, only_first_occurrence, regexp)
+        new_contents = self._insert_new_lines_if_necessary(found, new_contents, line, after_line_regexp,
+                                                           only_first_occurrence, regexp)
 
         with open(output_file, 'w') as f:
             f.write(new_contents)
@@ -355,9 +358,8 @@ class LineInFileTask(TaskInterface):
 
         return True
 
-    @staticmethod
-    def _insert_new_lines(contents: str, lines_to_insert: list, after_line_regexp: str,
-                          only_first_occurrence: bool, regexp: str) -> str:
+    def _insert_new_lines_if_necessary(self, found_at_least_one_occurrence: bool, contents: str, lines_to_insert: list,
+                                       after_line_regexp: str, only_first_occurrence: bool, regexp: str) -> str:
         """Inserts new lines (if necessary)
 
         For each MARKER (line after which we want to insert new lines)
@@ -365,17 +367,29 @@ class LineInFileTask(TaskInterface):
         """
 
         if not after_line_regexp:
+            self.io().debug('No header (marker) regexp defined')
+
+            if found_at_least_one_occurrence:
+                return contents
+
+            # if not found_at_least_one_occurrence
             return contents + ("\n".join(lines_to_insert)) + "\n"
 
         as_lines = contents.split("\n")
+
         new_lines = []
         current_line_num = -1
+        inserted_already_only_first_occurrence_allowed = False
 
         for line in as_lines:
             current_line_num += 1
             new_lines.append(line)
 
+            if inserted_already_only_first_occurrence_allowed:
+                continue
+
             if re.match(after_line_regexp, line):
+                self.io().debug('Matched header line: "%s"' % line)
 
                 # try to skip insertion, if the line already exists (do not duplicate lines)
                 # WARNING: Matches only two lines after marker, that's a limitation
@@ -384,11 +398,12 @@ class LineInFileTask(TaskInterface):
                 if next_lines and re.match(regexp, next_lines):
                     continue
 
+                self.io().debug('Inserting')
                 new_lines += lines_to_insert
 
                 if only_first_occurrence:
-                    new_lines += as_lines[current_line_num + 1:]
-                    break
+                    self.io().debug('Only first occurrence - stopping there with insertions')
+                    inserted_already_only_first_occurrence_allowed = True
 
         return "\n".join(new_lines)
 

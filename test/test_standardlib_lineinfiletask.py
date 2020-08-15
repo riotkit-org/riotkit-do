@@ -7,7 +7,7 @@ from rkd.test import mock_task, mock_execution_context
 from rkd.api.inputoutput import BufferedSystemIO
 
 
-class TestLineInFileTask(unittest.TestCase):
+class LineInFileTaskTest(unittest.TestCase):
     @staticmethod
     def _execute_mocked_task(params: dict, envs: dict = {}) -> BufferedSystemIO:
         io = BufferedSystemIO()
@@ -120,7 +120,13 @@ class TestLineInFileTask(unittest.TestCase):
             self.assertIn("Symbol: 2", processed_file_content)
 
     def test_adds_multiple_lines_after_selected_marker(self):
-        result = LineInFileTask()._insert_new_lines(
+        self.maxDiff = None
+
+        task = LineInFileTask()
+        task._io = BufferedSystemIO()
+
+        result = task._insert_new_lines_if_necessary(
+            False,
             '''
             Hijo del pueblo, te oprimen cadenas,
             y esa injusticia no puede seguir;
@@ -175,7 +181,11 @@ class TestLineInFileTask(unittest.TestCase):
         )
 
     def test_adds_missing_lines_after_specified_markers(self):
-        result = LineInFileTask()._insert_new_lines(
+        task = LineInFileTask()
+        task._io = BufferedSystemIO()
+
+        result = task._insert_new_lines_if_necessary(
+            False,
             '''
             Press list
             
@@ -206,3 +216,21 @@ class TestLineInFileTask(unittest.TestCase):
             ''',
             result
         )
+
+    def test_lines_are_added_only_once_even_when_command_called_multiple_times(self):
+        """Check that multiple invocations wont duplicate the line"""
+
+        with NamedTemporaryFile() as tmp_file:
+            for i in range(0, 10):
+                self._execute_mocked_task({
+                    'file': tmp_file.name,
+                    '--output': '',
+                    '--regexp': 'Bakunin ([0-9.]+)',
+                    '--insert': 'Bakunin 5.16.%i' % i,
+                    '--fail-on-no-occurrence': False,
+                    '--only-first-occurrence': False,
+                    '--new-after-line': ''
+                })
+
+            # "9" is because we have 9 iterations in range
+            self.assertEqual("Bakunin 5.16.9\n", tmp_file.read().decode('utf-8'))
