@@ -10,6 +10,7 @@ git:
 
 before_script:
     - pip install -r ./subpackages/rkd_python/requirements.txt
+    - pip install -r ./requirements-dev.txt
 
 test_script: &test_script
     - whereis python3
