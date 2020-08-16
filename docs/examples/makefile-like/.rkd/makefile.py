@@ -19,5 +19,9 @@ TASKS = [
         ./setup.py build
         
         ls -la
-    '''])
+    ''']),
+
+    # https://github.com/riotkit-org/riotkit-do/issues/43
+    Task(':hello', [':sh', '-c', 'echo "Hello world"']),
+    Task(':alias-in-alias-test', [':hello'])
 ]

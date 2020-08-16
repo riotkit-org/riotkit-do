@@ -115,22 +115,45 @@ class ApplicationContext(ContextInterface):
         resolved_tasks = []
 
         for argument_group in args:
-            resolved_task = self.find_task_by_name(argument_group.name())
+            resolved_declarations = [self.find_task_by_name(argument_group.name())]
 
-            # preserve original task env, and append alias env in priority
-            merged_env = resolved_task.get_env()
-            merged_env.update(alias.get_env())
+            if isinstance(resolved_declarations[0], GroupDeclaration):
+                resolved_declarations = self._resolve_recursively(resolved_declarations[0])
 
-            new_task = resolved_task \
-                .with_env(merged_env) \
-                .with_args(argument_group.args()) \
-                .with_user_overridden_env(
-                    alias.get_user_overridden_envs() + resolved_task.get_user_overridden_envs()
-                )
+            for resolved_declaration in resolved_declarations:
+                resolved_declaration: TaskDeclaration
 
-            resolved_tasks.append(new_task)
+                # preserve original task env, and append alias env in priority
+                merged_env = resolved_declaration.get_env()
+                merged_env.update(alias.get_env())
+
+                new_task = resolved_declaration \
+                    .with_env(merged_env) \
+                    .with_args(argument_group.args() + resolved_declaration.get_args()) \
+                    .with_user_overridden_env(
+                        alias.get_user_overridden_envs() + resolved_declaration.get_user_overridden_envs()
+                    )
+
+                resolved_tasks.append(new_task)
 
         return GroupDeclaration(name, resolved_tasks, alias.get_description())
+
+    def _resolve_recursively(self, group: GroupDeclaration) -> List[TaskDeclaration]:
+        """
+        Returns:
+            List[Tuple[bool, TaskDeclaration]] - the "bool" means if task was resolved from a group
+        """
+
+        tasks = []
+
+        for declaration in group.get_declarations():
+            if isinstance(declaration, GroupDeclaration):
+                tasks += self._resolve_recursively(declaration)
+                continue
+
+            tasks.append(declaration)
+
+        return tasks
 
 
 class ContextFactory:
@@ -229,6 +252,7 @@ class ContextFactory:
         os.environ['RKD_PATH'] = ":".join(paths)
 
         ctx = ApplicationContext([], [], '')
+        ctx.io = self._io
 
         for path in paths:
             # not all paths could exist, we consider this, we look where it is possible
@@ -237,11 +261,11 @@ class ContextFactory:
 
             try:
                 ctx = ApplicationContext.merge(ctx, self._load_context_from_directory(path))
+                ctx.io = self._io
             except ContextFileNotFoundException:
                 pass
 
         ctx.compile()
-        ctx.io = self._io
 
         return ctx
 

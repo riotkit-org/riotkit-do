@@ -50,6 +50,7 @@ class TestFunctional(unittest.TestCase):
         exit_code = 0
 
         try:
+            # debug: enable_standard_out=True when debugging tests
             with io.capture_descriptors(stream=out, enable_standard_out=False):
                 app = RiotKitDoApplication()
                 app.main(['test_functional.py'] + argv)
@@ -262,3 +263,18 @@ class TestFunctional(unittest.TestCase):
                 self.assertIn('Durruti was born at 14.07.1896', full_output.decode('utf-8'))
         finally:
             os.chdir(cwd_backup)
+
+    def test_aliases_are_resolved_recursively(self):
+        """TaskAliasDeclaration can run other TaskAliasDeclaration task
+
+        Example:
+        ```bash
+        TaskAliasDeclaration(':hello', ['sh', '-c', "Hello world"]),
+        TaskAliasDeclaration(':alias-in-alias-test', [':hello'])
+        ```
+        """
+
+        with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/makefile-like/.rkd'}):
+            full_output, exit_code = self._run_and_capture_output([':alias-in-alias-test'])
+
+            self.assertIn('Hello world', full_output)
