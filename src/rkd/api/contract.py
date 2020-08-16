@@ -48,11 +48,45 @@ class ArgumentEnv(object):
             raise EnvironmentVariableNameNotAllowed(self.name)
 
 
-class TaskDeclarationInterface(AbstractClass):
+class CommonDeclarationInterface(AbstractClass):
+    @abstractmethod
+    def get_group_name(self) -> str:
+        pass
+
+    @abstractmethod
+    def get_task_name(self) -> str:
+        pass
+
     @abstractmethod
     def to_full_name(self):
         pass
 
+    @abstractmethod
+    def get_description(self) -> str:
+        pass
+
+    @abstractmethod
+    def format_task_name(self, name: str) -> str:
+        pass
+
+    def with_env(self, envs: Dict[str, str]):
+        pass
+
+    def with_args(self, args: List[str]):
+        pass
+
+    def with_user_overridden_env(self, env_list: list):
+        pass
+
+    def get_user_overridden_envs(self) -> list:
+        pass
+
+    @abstractmethod
+    def get_env(self):
+        pass
+
+
+class TaskDeclarationInterface(CommonDeclarationInterface):
     @abstractmethod
     def get_args(self) -> List[str]:
         pass
@@ -65,54 +99,10 @@ class TaskDeclarationInterface(AbstractClass):
     def to_list(self) -> list:
         pass
 
-    @abstractmethod
-    def get_env(self):
-        pass
 
-    @abstractmethod
-    def get_group_name(self) -> str:
-        pass
-
-    @abstractmethod
-    def get_task_name(self) -> str:
-        pass
-
-    @abstractmethod
-    def get_description(self) -> str:
-        pass
-
-    @abstractmethod
-    def get_full_description(self) -> str:
-        pass
-
-    @abstractmethod
-    def format_task_name(self, name: str) -> str:
-        pass
-
-
-class GroupDeclarationInterface(AbstractClass):
+class GroupDeclarationInterface(CommonDeclarationInterface):
     @abstractmethod
     def get_declarations(self) -> Dict[str, TaskDeclarationInterface]:
-        pass
-
-    @abstractmethod
-    def get_group_name(self) -> str:
-        pass
-
-    @abstractmethod
-    def get_task_name(self) -> str:
-        pass
-
-    @abstractmethod
-    def to_full_name(self):
-        pass
-
-    @abstractmethod
-    def get_description(self) -> str:
-        pass
-
-    @abstractmethod
-    def format_task_name(self, name: str) -> str:
         pass
 
 
