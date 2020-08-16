@@ -154,6 +154,21 @@ class GroupDeclaration(GroupDeclarationInterface):
         except KeyError:
             return self._name
 
+    def get_env(self):
+        return {}
+
+    def with_env(self, envs: Dict[str, str]):
+        return deepcopy(self)
+
+    def with_args(self, args: List[str]):
+        return deepcopy(self)
+
+    def with_user_overridden_env(self, env_list: list):
+        return deepcopy(self)
+
+    def get_user_overridden_envs(self) -> list:
+        return []
+
     def to_full_name(self):
         return self.get_name()
 
