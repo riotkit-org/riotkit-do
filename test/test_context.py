@@ -9,9 +9,11 @@ from rkd.context import ApplicationContext
 from rkd.context import distinct_imports
 from rkd.api.inputoutput import NullSystemIO
 from rkd.exception import ContextException
-from rkd.syntax import TaskDeclaration
-from rkd.syntax import TaskAliasDeclaration
+from rkd.api.syntax import TaskDeclaration
+from rkd.api.syntax import TaskAliasDeclaration
+from rkd.api.syntax import GroupDeclaration
 from rkd.test import TestTask
+from rkd.standardlib import InitTask
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -166,3 +168,21 @@ class ContextTest(unittest.TestCase):
                           msg='Expected that %s task would be loaded from %s' % (task, filename))
 
             os.environ['RKD_PATH'] = ''
+
+    def test_context_resolves_recursively_task_aliases(self):
+        ctx = ApplicationContext([
+            TaskDeclaration(InitTask())
+        ], [
+            TaskAliasDeclaration(':deeper', [':init', ':init']),
+            TaskAliasDeclaration(':deep', [':init', ':deeper'])
+        ], directory='')
+
+        ctx.compile()
+        task = ctx.find_task_by_name(':deep')
+        task: GroupDeclaration
+
+        # :deeper = :init
+        # :deep = :init :deeper = :init :init :init
+        self.assertEqual(':init', task.get_declarations()[0].to_full_name())
+        self.assertEqual(':init', task.get_declarations()[1].to_full_name())
+        self.assertEqual(':init', task.get_declarations()[2].to_full_name())
