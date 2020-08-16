@@ -78,7 +78,21 @@ class TaskResolver(object):
         else:
             raise Exception('Cannot resolve task - unknown type "%s"' % str(ctx_declaration))
 
+        self._iterate_over_declarations(callback, declarations, task_num, parent, task_request)
+
+    def _iterate_over_declarations(self, callback: CALLBACK_DEF, declarations: list, task_num: int,
+                                   parent: Optional[GroupDeclaration], task_request: TaskArguments):
+
+        """Recursively go through all tasks in correct order, executing a callable on each"""
+
         for declaration in declarations:
+            if isinstance(declaration, GroupDeclaration):
+                self._iterate_over_declarations(
+                    callback, declaration.get_declarations(),
+                    task_num, declaration, task_request
+                )
+                continue
+
             callback(
                 declaration,
                 task_num,
