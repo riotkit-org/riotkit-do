@@ -121,7 +121,7 @@ class IO:
 
         # 6. Revert standard out/err
         sys.stdout = sys_stdout
-        sys.stderr = sys.stderr
+        sys.stderr = sys_stderr
 
         # 7. Clean up: close all log files
         for log_file in log_files:

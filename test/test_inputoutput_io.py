@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import unittest
 from rkd.api.inputoutput import IO
 from rkd.api.inputoutput import SystemIO
@@ -105,3 +106,18 @@ He was killed by shelling in 1943 before the end of the war\x1B[0m"""
 
         self.assertFalse(without_coloring.startswith("\x1B[93m"))
         self.assertFalse(without_coloring.endswith("\x1B[0m"))
+
+    def test_io_capturing_is_restoring_both_stdout_and_stderr_to_previous_state(self):
+        """Assert that capture_descriptors() restores sys.stdout and sys.stderr to original state after
+        mocking them for output capturing"""
+
+        io = IO()
+
+        stdout_backup = sys.stdout
+        stderr_backup = sys.stderr
+
+        with io.capture_descriptors(target_files=None):
+            pass
+
+        self.assertEqual(stdout_backup, sys.stdout)
+        self.assertEqual(stderr_backup, sys.stderr)
