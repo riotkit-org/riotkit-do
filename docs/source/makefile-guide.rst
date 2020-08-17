@@ -183,6 +183,12 @@ Let's at the beginning start from analyzing an example.
 4. Run :code:`rkd :tasks` from the directory where the .rkd directory is placed
 5. Run defined tasks :code:`rkd :hello :check-is-using-linux`
 
+**Example projects using Makefile YAML syntax:**
+
+- `Taiga docker image <https://github.com/riotkit-org/docker-taiga/blob/master/.rkd/makefile.yaml>`_
+- `Taiga Events docker image <https://github.com/riotkit-org/docker-taiga-events/blob/master/.rkd/makefile.yaml>`_
+- `K8S Workspace <https://github.com/riotkit-org/riotkit-do-example-kubernetes-workspace/blob/master/.rkd/makefile.yaml>`_
+
 Extended usage - Makefile in Python syntax
 ==========================================
 
@@ -196,7 +202,12 @@ Not only tasks can be written in Python code, but Makefile too - such makefile i
 - The Python syntax is very flexible
 - You can create your own local packages and import them here, create own advanced structure
 - Possibility to declare aliases and adjust TaskDeclarations for advanced usage (YAML syntax does not offer this)
--
+
+**Example projects using Makefile.py syntax:**
+
+- `TunMan <https://github.com/riotkit-org/tunman/blob/master/.rkd/makefile.py>`_
+- `RiotKit Harbor building scripts <https://github.com/riotkit-org/riotkit-harbor/blob/master/.rkd/makefile.py>`_
+- `RiotKit CI Utils <https://github.com/riotkit-org/ci-utils/blob/master/.rkd/makefile.yaml>`_
 
 
 Check :ref:`Detailed usage manual` page for description of all environment variables, mechanisms, good practices and more
