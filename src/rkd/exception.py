@@ -48,7 +48,8 @@ class YAMLFileValidationError(YamlParsingException):
 
     def __init__(self, err: ValidationError):
         super().__init__('YAML schema validation failed at path "%s" with error: %s' % (
-            str(list(err.path)), str(err.message)
+            '.'.join(list(map(str, list(err.path)))),
+            str(err.message)
         ))
 
 
