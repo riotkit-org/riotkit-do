@@ -149,6 +149,34 @@ for i in range(0, 1024 * 128):
                 self.assertIn('Bartolomeo Vanzetti', out.getvalue(),
                               msg='Expected that output will be shown for std_redirect=%s' % std_redirect)
 
+    def test_dollar_symbols_are_escaped_in_shell_commands(self):
+        """Check that in envrionment variable there can be defined a value that contains dollar symbols"""
+
+        task = InitTask()
+        task._io = IO()
+        io = IO()
+        out = StringIO()
+
+        with io.capture_descriptors(stream=out, enable_standard_out=False):
+            task.sh('env | grep TEST_ENV', env={
+                'TEST_ENV': 'Mikhail$1Bakunin$PATHtest'
+            })
+
+        self.assertIn('TEST_ENV=Mikhail$1Bakunin$PATHtest', out.getvalue())
+
+    def test_quotes_are_escaped_in_shell_commands(self):
+        task = InitTask()
+        task._io = IO()
+        io = IO()
+        out = StringIO()
+
+        with io.capture_descriptors(stream=out, enable_standard_out=False):
+            task.sh('echo ${NAME}', env={
+                'NAME': 'Ferdinando "Nicola" Sacco'
+            })
+
+        self.assertIn('Ferdinando "Nicola" Sacco', out.getvalue())
+
     def test_sh_3rd_depth_rkd_calls(self):
         """Bugfix: sh() of 3-depth calls -> test -> rkd -> rkd returns first line of output
         """
