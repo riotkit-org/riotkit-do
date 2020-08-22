@@ -532,3 +532,19 @@ def indent_new_lines(text: str, num: int = 4):
     """Inserts spaces at the beginning of each new line"""
 
     return text.replace("\n", "\n" + (" " * num))
+
+
+class UnbufferedStdout(object):
+    def __init__(self, stream):
+        self.stream = stream
+
+    def write(self, data):
+        self.stream.write(data)
+        self.stream.flush()
+
+    def writelines(self, datas):
+        self.stream.writelines(datas)
+        self.stream.flush()
+
+    def __getattr__(self, attr):
+        return getattr(self.stream, attr)

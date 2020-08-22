@@ -10,6 +10,7 @@ from .validator import TaskDeclarationValidator
 from .execution.executor import OneByOneTaskExecutor
 from .exception import TaskNotFoundException
 from .api.inputoutput import SystemIO, LEVEL_INFO as LOG_LEVEL_INFO
+from .api.inputoutput import UnbufferedStdout
 from .aliasgroups import parse_alias_groups_from_env
 
 
@@ -26,6 +27,10 @@ class RiotKitDoApplication:
                 load_dotenv(path + '/.env')
 
         load_dotenv(dotenv_path=os.getcwd() + '/.env')
+
+    @staticmethod
+    def make_stdout_unbuffered():
+        sys.stdout = UnbufferedStdout(sys.stdout)
 
     @staticmethod
     def prepend_development_paths():
@@ -71,6 +76,7 @@ class RiotKitDoApplication:
 
 def main():
     app = RiotKitDoApplication()
+    app.make_stdout_unbuffered()
     app.prepend_development_paths()
     app.load_environment()
 
