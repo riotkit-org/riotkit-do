@@ -535,6 +535,8 @@ def indent_new_lines(text: str, num: int = 4):
 
 
 class UnbufferedStdout(object):
+    """Executes flush() after each write"""
+
     def __init__(self, stream):
         self.stream = stream
 
@@ -554,7 +556,7 @@ def get_environment_copy() -> dict:
     """Copy environment variables keeping the values escaped
 
     Dollar character escaping assumptions:
-        If the dollar char is present in varible, then it means that it was escaped before
+        If the dollar char is present in variable, then it means that it was escaped before
         if it would not be escaped before passing to RKD then it would be EVALUATED.
 
         So we keep it escaped.
@@ -562,7 +564,7 @@ def get_environment_copy() -> dict:
 
     return dict(
         map(
-            lambda kv: (kv[0], kv[1].replace('$', '\$')),
+            lambda kv: (kv[0], str(kv[1]).replace('$', '\$')),
             dict(deepcopy(os.environ)).items()
         )
     )
