@@ -7,12 +7,12 @@ Classes used in a declaration syntax in makefile.py
 
 """
 
-import os
 from typing import List, Dict
 from copy import deepcopy
 from .contract import TaskDeclarationInterface
 from .contract import GroupDeclarationInterface
 from .contract import TaskInterface
+from .inputoutput import get_environment_copy
 from ..exception import DeclarationException
 
 
@@ -204,6 +204,6 @@ def merge_env(env: Dict[str, str]):
 
     # todo: Unit test
     merged_dict = deepcopy(env)
-    merged_dict.update(dict(os.environ))
+    merged_dict.update(get_environment_copy())
 
     return merged_dict

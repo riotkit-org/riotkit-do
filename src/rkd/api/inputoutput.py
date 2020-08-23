@@ -548,3 +548,21 @@ class UnbufferedStdout(object):
 
     def __getattr__(self, attr):
         return getattr(self.stream, attr)
+
+
+def get_environment_copy() -> dict:
+    """Copy environment variables keeping the values escaped
+
+    Dollar character escaping assumptions:
+        If the dollar char is present in varible, then it means that it was escaped before
+        if it would not be escaped before passing to RKD then it would be EVALUATED.
+
+        So we keep it escaped.
+    """
+
+    return dict(
+        map(
+            lambda kv: (kv[0], kv[1].replace('$', '\$')),
+            dict(deepcopy(os.environ)).items()
+        )
+    )

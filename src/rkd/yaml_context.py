@@ -13,8 +13,9 @@ from .api.syntax import TaskAliasDeclaration
 from .api.contract import ExecutionContext
 from .api.contract import TaskInterface
 from .api.contract import ArgparseArgument
-from .standardlib import CallableTask
 from .api.inputoutput import IO
+from .api.inputoutput import get_environment_copy
+from .standardlib import CallableTask
 from .yaml_parser import YamlFileLoader
 from .execution.declarative import DeclarativeExecutor
 
@@ -140,7 +141,7 @@ class YamlSyntaxInterpreter:
         # important: order of environment variables loading
         envs = deepcopy(global_env)
         envs.update(self.parse_env(yaml_declaration, makefile_path))
-        envs.update(deepcopy(os.environ))
+        envs.update(get_environment_copy())
 
         try:
             steps = yaml_declaration['steps']

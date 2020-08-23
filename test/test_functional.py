@@ -288,10 +288,24 @@ class TestFunctional(unittest.TestCase):
                 THIRD: "Escaped one"
                 ALL: ${FIRST} ${SECOND} \${THIRD}
             steps: |
-                echo "${ALL}"
+                echo "!!! ${ALL}"
         """
 
         with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/recursive-env-in-yaml/.rkd'}):
             full_output, exit_code = self._run_and_capture_output([':hello'])
 
             self.assertIn('First Second ${THIRD}', full_output)
+
+    def test_env_variables_are_escaped_when_coming_from_external(self):
+        """
+        We assume that if "$" is in environment variable, then it is because it was previously escaped
+        else the shell would automatically inject a variable in its place - so we keep the escaping
+        :return:
+        """
+
+        with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/recursive-env-in-yaml/.rkd'}):
+            os.environ['HELLO_MSG'] = 'This is $PATH'
+
+            full_output, exit_code = self._run_and_capture_output(['--no-ui', ':external-env'])
+
+            self.assertIn('This is $PATH', full_output)

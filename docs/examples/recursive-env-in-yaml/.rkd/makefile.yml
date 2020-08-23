@@ -7,5 +7,8 @@ tasks:
             SECOND: "Second"
             THIRD: "Escaped one"
             ALL: ${FIRST} ${SECOND} \${THIRD}
-        steps: |
-            echo "${ALL}"
+        steps: echo "${ALL}"
+
+    :external-env:
+        description: Prints env set from outside of RKD (use export HELLO_MSG="..." first)
+        steps: "echo \" >> ${HELLO_MSG}\""
