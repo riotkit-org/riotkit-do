@@ -78,7 +78,7 @@ class TaskUtilities(AbstractClass):
             env_str = ""
 
             for name, value in env.items():
-                value = '' if value is None else str(value).replace('"', '\\"').replace('$', '\$')
+                value = '' if value is None else str(value).replace('"', '\\"')
                 env_str = env_str + (" export %s=\"%s\";\n" % (name, value))
 
             cmd = env_str + cmd

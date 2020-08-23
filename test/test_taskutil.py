@@ -159,10 +159,12 @@ for i in range(0, 1024 * 128):
 
         with io.capture_descriptors(stream=out, enable_standard_out=False):
             task.sh('env | grep TEST_ENV', env={
-                'TEST_ENV': 'Mikhail$1Bakunin$PATHtest'
+                'TEST_ENV': 'Mikhail\$1Bakunin\$PATHtest',
+                'TEST_ENV_NOT_ESCAPED': 'Hello $TEST_ENV'
             })
 
         self.assertIn('TEST_ENV=Mikhail$1Bakunin$PATHtest', out.getvalue())
+        self.assertIn('TEST_ENV_NOT_ESCAPED=Hello Mikhail$1Bakunin$PATHtest', out.getvalue())
 
     def test_quotes_are_escaped_in_shell_commands(self):
         task = InitTask()

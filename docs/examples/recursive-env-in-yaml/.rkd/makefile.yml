@@ -1,0 +1,11 @@
+version: org.riotkit.rkd/yaml/v1
+
+tasks:
+    :hello:
+        environment:
+            FIRST: "First"
+            SECOND: "Second"
+            THIRD: "Escaped one"
+            ALL: ${FIRST} ${SECOND} \${THIRD}
+        steps: |
+            echo "${ALL}"

@@ -278,3 +278,20 @@ class TestFunctional(unittest.TestCase):
             full_output, exit_code = self._run_and_capture_output([':alias-in-alias-test'])
 
             self.assertIn('Hello world', full_output)
+
+    def test_env_variables_are_recursively_resolved(self):
+        """
+        :hello:
+            environment:
+                FIRST: "First"
+                SECOND: "Second"
+                THIRD: "Escaped one"
+                ALL: ${FIRST} ${SECOND} \${THIRD}
+            steps: |
+                echo "${ALL}"
+        """
+
+        with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/recursive-env-in-yaml/.rkd'}):
+            full_output, exit_code = self._run_and_capture_output([':hello'])
+
+            self.assertIn('First Second ${THIRD}', full_output)
