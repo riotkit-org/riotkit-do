@@ -1,7 +1,7 @@
 
 .. _Detailed usage manual:
 
-Detailed usage
+ADVANCED usage
 --------------
 
 .. toctree::
