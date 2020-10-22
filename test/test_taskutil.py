@@ -66,7 +66,7 @@ class TestTaskUtil(unittest.TestCase):
                     echo "TENTH";
                 ''')
 
-            self.assertEqual("FIRST\nSECOND\nTHIRD\nFOURTH\nFIFTH\nSIXTH\nSEVENTH\nNINETH\nTENTH\n", out.getvalue())
+            self.assertEqual("FIRST\r\nSECOND\r\nTHIRD\r\nFOURTH\r\nFIFTH\r\nSIXTH\r\nSEVENTH\r\nNINETH\r\nTENTH\r\n", out.getvalue())
 
     def test_sh_producing_large_outputs(self):
         """Process a few megabytes of output and assert that:
@@ -92,7 +92,7 @@ for i in range(0, 1024 * 128):
             ''')
 
         iterations = 1024 * 128
-        text_with_newlines_length = len(text) + 1
+        text_with_newlines_length = len(text) + 2  # \r + \n
         memory_after = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
 
         self.assertEqual(iterations * text_with_newlines_length, len(out.getvalue()))
@@ -123,7 +123,7 @@ for i in range(0, 1024 * 128):
                     echo "THIRD";
                 ''')
 
-            self.assertEqual("FIRST\nSECOND\nTHIRD\n", out.getvalue())
+            self.assertEqual("FIRST\r\nSECOND\r\nTHIRD\r\n", out.getvalue())
 
     def test_sh_rkd_in_rkd_shows_first_lines_on_error(self):
         """Bugfix: sh() was loosing first line(s) of output, when exception was raised
@@ -254,12 +254,12 @@ print(os)
         task._io = IO()
 
         with NamedTemporaryFile() as temp_file:
-            temp_file.write(b'import sys; print("STDIN: " + str(sys.stdin.read()))')
+            temp_file.write(b'import sys; print(sys.argv[1])')
             temp_file.flush()
 
-            out = task.py('Hello!', capture=True, script_path=temp_file.name)
+            out = task.py('', capture=True, script_path=temp_file.name, arguments='Hello!')
 
-        self.assertEqual('STDIN: Hello!\n', out)
+        self.assertEqual('Hello!\n', out)
 
     def test_py_inherits_environment_variables(self):
         os.putenv('PY_INHERITS_ENVIRONMENT_VARIABLES', 'should')
@@ -283,4 +283,4 @@ print(os)
             mocked_subprocess: unittest.mock.MagicMock
             task.py(code='print("test")', capture=True, become='root')
 
-        self.assertEqual('sudo -E -u root python', mocked_subprocess.call_args[0][0])
+        self.assertIn('sudo -E -u root python', mocked_subprocess.call_args[0][0])

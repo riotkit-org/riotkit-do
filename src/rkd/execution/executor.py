@@ -149,12 +149,6 @@ class OneByOneTaskExecutor(ExecutorInterface):
 
             return False
 
-        code_file = temp.assign_temporary_file()
-        task.io().debug('Assigned source code temporary file at "%s"' % code_file)
-
-        with open(code_file, 'w') as f:
-            f.write(FORKED_EXECUTOR_TEMPLATE)
-
         # set permissions to temporary file
         if become:
             task.io().debug('Setting temporary file permissions')
@@ -167,7 +161,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
                 return False
 
         task.io().debug('Executing python code')
-        task.py(communication_file, become=become, capture=False, script_path=code_file)
+        task.py(FORKED_EXECUTOR_TEMPLATE, become=become, capture=False, arguments=communication_file)
 
         # collect, process and pass result
         task.io().debug('Parsing subprocess results from a serialized data')

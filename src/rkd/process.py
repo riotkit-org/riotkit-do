@@ -3,7 +3,10 @@
 import os
 import sys
 import subprocess
-from io import FileIO
+import termios
+import tty
+import pty
+import select
 from typing import Optional
 from threading import Thread
 
@@ -35,22 +38,31 @@ class TextBuffer(object):
         return self.text
 
 
-def check_call(command: str, stdin=None, script: Optional[str] = ''):
+def check_call(command: str, script: Optional[str] = ''):
     if os.getenv('RKD_COMPAT_SUBPROCESS') == 'true':
-        subprocess.check_call(command, stdin=stdin, shell=True)
+        subprocess.check_call(command, shell=True)
         return
 
     os.environ['PYTHONUNBUFFERED'] = "1"
 
-    process = subprocess.Popen(command, shell=True, stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                               bufsize=1, close_fds=ON_POSIX, universal_newlines=True)
+    old_tty = termios.tcgetattr(sys.stdin)
+    try:
+        tty.setraw(sys.stdin.fileno())
 
-    out_buffer = TextBuffer(buffer_size=1024 * 10)
-    stdout_thread = Thread(target=push_output, args=(process.stdout, sys.stdout, out_buffer))
-    stdout_thread.daemon = True
-    stdout_thread.start()
+        # open a virtual terminal
+        primary_fd, replica_fd = pty.openpty()
 
-    exit_code = process.wait()
+        process = subprocess.Popen(command, shell=True, stdin=replica_fd, stdout=replica_fd, stderr=replica_fd,
+                                   bufsize=1, close_fds=ON_POSIX, universal_newlines=False, preexec_fn=os.setsid)
+
+        out_buffer = TextBuffer(buffer_size=1024 * 10)
+        stdout_thread = Thread(target=push_output, args=(process, primary_fd, out_buffer))
+        stdout_thread.daemon = True
+        stdout_thread.start()
+
+        exit_code = process.wait()
+    finally:
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_tty)
 
     if exit_code > 0:
         raise subprocess.CalledProcessError(
@@ -58,15 +70,19 @@ def check_call(command: str, stdin=None, script: Optional[str] = ''):
         )
 
 
-def push_output(input_stream: FileIO, output_stream, out_buffer: TextBuffer):
-    for line in iter(input_stream.readline, ''):
-        output_stream.write(line)
-        output_stream.flush()
-        out_buffer.write(line)
+def push_output(process: subprocess.Popen, primary_fd, out_buffer: TextBuffer):
+    while process.poll() is None:
+        r, w, e = select.select([sys.stdin, primary_fd], [], [])
 
-    input_stream.close()
+        if sys.stdin in r:
+            d = os.read(sys.stdin.fileno(), 10240)
+            os.write(primary_fd, d)
 
+        elif primary_fd in r:
+            o = os.read(primary_fd, 10240)
 
-# def _debug(msg):
-#     with open('/dev/stdout', 'w') as f:
-#         f.write(str(msg))
+            # propagate to stdout
+            if o:
+                sys.stdout.write(o.decode('utf-8'))
+                sys.stdout.flush()
+                out_buffer.write(o.decode('utf-8'))

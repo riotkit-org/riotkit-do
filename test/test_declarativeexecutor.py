@@ -102,7 +102,7 @@ return "ExecutionContext" in str(ctx) and "Task" in str(this)
         with io.capture_descriptors(target_files=[], stream=str_io, enable_standard_out=False):
             executor.execute_steps_one_by_one(ctx, task_declaration.get_task_to_execute())
 
-        self.assertEqual("First\nSecond\nThird\n", str_io.getvalue())
+        self.assertEqual("First\nSecond\r\nThird\n", str_io.getvalue())
 
     def test_one_failed_step_is_preventing_next_steps_from_execution_and_result_is_marked_as_failure(self):
         """Check the correctness of error handling"""

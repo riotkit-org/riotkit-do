@@ -26,7 +26,7 @@ def _communicate_return(val):
         f.write(pickle.dumps(val))
 
 
-communication_file = sys.stdin.read().strip()
+communication_file = sys.argv[1]
 
 try:
     #

@@ -3,6 +3,7 @@ import os
 import sys
 from typing import Union
 from subprocess import check_output, Popen, DEVNULL, CalledProcessError
+from tempfile import NamedTemporaryFile
 from abc import ABC as AbstractClass, abstractmethod
 from .api.inputoutput import IO
 from .process import check_call
@@ -86,27 +87,45 @@ class TaskUtilities(AbstractClass):
         bash_script = "#!/bin/bash -eopipefail \n" + cmd
         bash_script = bash_script.replace('%RKD%', self.get_rkd_binary())
 
+        if not capture:
+            with NamedTemporaryFile() as bash_temp_file:
+                bash_temp_file.write(bash_script.encode('utf-8'))
+                bash_temp_file.flush()
+
+                check_call('bash ' + bash_temp_file.name, script=bash_script)
+
+            return
+
         read, write = os.pipe()
         os.write(write, bash_script.encode('utf-8'))
         os.close(write)
 
-        if not capture:
-            check_call('bash', stdin=read, script=bash_script)
-            return
-
         return check_output('bash', shell=True, stdin=read).decode('utf-8')
 
-    def py(self, code: str, become: str = None, capture: bool = False, script_path: str = None) -> Union[str, None]:
+    def py(self, code: str = '', become: str = None, capture: bool = False,
+           script_path: str = None, arguments: str = '') -> Union[str, None]:
+
         """Executes a Python code in a separate process"""
+
+        if (not code and not script_path) or (code and script_path):
+            raise Exception('You need to provide only one of "code" or "script_path"')
 
         read, write = os.pipe()
         os.write(write, code.encode('utf-8'))
         os.close(write)
 
         cmd = 'python'
+        py_temp_file = None
 
         if script_path:
             cmd += ' ' + script_path + ' '
+
+        if code:
+            with NamedTemporaryFile(delete=False) as py_temp_file:
+                py_temp_file.write(code.encode('utf-8'))
+                py_temp_file.flush()
+
+            cmd += ' ' + py_temp_file.name
 
         if become:
             cmd = "sudo -E -u %s %s" % (become, cmd)
@@ -114,10 +133,15 @@ class TaskUtilities(AbstractClass):
         os.putenv('RKD_BIN', self.get_rkd_binary())
 
         if not capture:
-            check_call(cmd, stdin=read, script=code)
+            check_call(cmd + ' ' + arguments, script=code)
+            os.unlink(py_temp_file.name) if py_temp_file else None
             return
 
-        return check_output(cmd, shell=True, stdin=read).decode('utf-8')
+        if capture:
+            out = check_output(cmd + ' ' + arguments, shell=True, stdin=read).decode('utf-8')
+            os.unlink(py_temp_file.name) if py_temp_file else None
+
+            return out
 
     def exec(self, cmd: str, capture: bool = False, background: bool = False) -> Union[str, None]:
         """ Starts a process in shell. Throws exception on error.

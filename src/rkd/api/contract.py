@@ -393,7 +393,7 @@ class TaskInterface(TaskUtilities):
 
         return name
 
-    def py(self, code: str, become: str = None, capture: bool = False, script_path: str = None) -> Union[str, None]:
+    def py(self, code: str = '', become: str = None, capture: bool = False, script_path: str = None, arguments: str = '') -> Union[str, None]:
         """Executes a Python code in a separate process
 
         NOTICE: Use instead of subprocess. Raw subprocess is less supported and output from raw subprocess
@@ -401,7 +401,7 @@ class TaskInterface(TaskUtilities):
         """
 
         return super().py(
-            code=code, become=become, capture=capture, script_path=script_path
+            code=code, become=become, capture=capture, script_path=script_path, arguments=arguments
         )
 
     def sh(self, cmd: str, capture: bool = False, verbose: bool = False, strict: bool = True,
