@@ -107,6 +107,13 @@ class TestFunctional(unittest.TestCase):
         self.assertNotIn('>> Executing :tasks', full_output)   # global (SystemIO)
         self.assertNotIn('[global]', full_output)              # per-task (IO)
 
+    def test_is_a_tty(self):
+        """Checks if RKD is spawning an interactive session"""
+
+        full_output, exit_code = self._run_and_capture_output([':sh', '-c', 'tty'])
+
+        self.assertIn('/dev', full_output)
+
     def test_logging_tasks_into_separate_files(self):
         """Checks if RKD is able to log output to file per task
         """
