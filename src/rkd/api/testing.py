@@ -46,7 +46,7 @@ class OutputCapturingSafeTestCase(TestCase):
     def tearDown(self) -> None:
         self._restore_standard_out()
 
-        super().setUp()
+        super().tearDown()
 
     def _restore_standard_out(self):
         if not self._stderr or not self._stderr:
@@ -57,6 +57,21 @@ class OutputCapturingSafeTestCase(TestCase):
 
 
 class BasicTestingCase(TestCase):
+    _envs = None
+    _cwd = None
+
+    def setUp(self) -> None:
+        self._envs = deepcopy(os.environ)
+        self._cwd = os.getcwd()
+
+        super().setUp()
+
+    def tearDown(self) -> None:
+        os.environ = self._envs
+        os.chdir(self._cwd)
+
+        super().tearDown()
+
     @contextmanager
     def environment(self, environ: dict):
         """
