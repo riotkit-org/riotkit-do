@@ -4,16 +4,20 @@ import unittest
 import os
 import yaml
 from io import StringIO
+
 from rkd.yaml_context import YamlSyntaxInterpreter
 from rkd.yaml_parser import YamlFileLoader
-from rkd.api.inputoutput import IO, NullSystemIO, BufferedSystemIO
+from rkd.api.inputoutput import IO
+from rkd.api.inputoutput import NullSystemIO
+from rkd.api.inputoutput import BufferedSystemIO
+from rkd.api.testing import BasicTestingCase
 from rkd.exception import DeclarationException, YamlParsingException
 from rkd.contract import ExecutionContext
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
-class TestYamlContext(unittest.TestCase):
+class TestYamlContext(BasicTestingCase):
     def test_parse_imports_successful_case_single_task(self):
         factory = YamlSyntaxInterpreter(NullSystemIO(), YamlFileLoader([]))
         imported = factory.parse_imports(['rkd.standardlib.jinja.RenderDirectoryTask'])

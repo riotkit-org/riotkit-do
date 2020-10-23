@@ -2,69 +2,24 @@
 
 import os
 import sys
-import unittest
 import tempfile
 import subprocess
-from copy import deepcopy
 from tempfile import NamedTemporaryFile
-from typing import Tuple
-from contextlib import contextmanager
-from io import StringIO
-from rkd.api.inputoutput import IO
-from rkd import RiotKitDoApplication
+from rkd.api.testing import FunctionalTestingCase
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
-class TestFunctional(unittest.TestCase):
+class TestFunctional(FunctionalTestingCase):
     """
     Functional tests case of the whole application.
     Runs application like from the shell, captures output and performs assertions on the results.
     """
 
-    _stdout = None
-    _stderr = None
-
-    def setUp(self) -> None:
-        os.environ['RKD_DEPTH'] = '0'
-        self._stdout = sys.stdout
-        self._stderr = sys.stderr
-
-    def _restore_standard_out(self):
-        sys.stdout = self._stdout
-        sys.stderr = self._stderr
-
-    @contextmanager
-    def environment(self, environ: dict):
-        backup = deepcopy(os.environ)
-
-        try:
-            os.environ.update(environ)
-            yield
-        finally:
-            os.environ = backup
-
-    def _run_and_capture_output(self, argv: list) -> Tuple[str, int]:
-        io = IO()
-        out = StringIO()
-        exit_code = 0
-
-        try:
-            # debug: enable_standard_out=True when debugging tests
-            with io.capture_descriptors(stream=out, enable_standard_out=False):
-                app = RiotKitDoApplication()
-                app.main(['test_functional.py'] + argv)
-
-        except SystemExit as e:
-            self._restore_standard_out()
-            exit_code = e.code
-
-        return out.getvalue(), exit_code
-
     def test_tasks_listing(self):
         """ :tasks """
 
-        full_output, exit_code = self._run_and_capture_output([':tasks'])
+        full_output, exit_code = self.run_and_capture_output([':tasks'])
 
         self.assertIn(' >> Executing :tasks', full_output)
         self.assertIn('[global]', full_output)
@@ -75,7 +30,7 @@ class TestFunctional(unittest.TestCase):
     def test_global_help_switch(self):
         """ --help """
 
-        full_output, exit_code = self._run_and_capture_output(['--help'])
+        full_output, exit_code = self.run_and_capture_output(['--help'])
 
         self.assertIn('usage: :init', full_output)
         self.assertIn('--log-to-file', full_output)
@@ -86,7 +41,7 @@ class TestFunctional(unittest.TestCase):
         self.assertEqual(0, exit_code)
 
     def test_silent_switch_makes_tasks_task_to_not_show_headers(self):
-        full_output, exit_code = self._run_and_capture_output([':tasks', '--silent'])
+        full_output, exit_code = self.run_and_capture_output([':tasks', '--silent'])
 
         # this is a global header
         self.assertIn(' >> Executing :tasks', full_output)
@@ -98,7 +53,7 @@ class TestFunctional(unittest.TestCase):
         self.assertIn(':exec', full_output)
 
     def test_global_silent_switch_is_making_silent_all_fancy_output(self):
-        full_output, exit_code = self._run_and_capture_output(['--silent', ':tasks'])
+        full_output, exit_code = self.run_and_capture_output(['--silent', ':tasks'])
 
         # content is there
         self.assertIn(':exec', full_output)
@@ -110,7 +65,7 @@ class TestFunctional(unittest.TestCase):
     def test_is_a_tty(self):
         """Checks if RKD is spawning an interactive session"""
 
-        full_output, exit_code = self._run_and_capture_output([':sh', '-c', 'tty'])
+        full_output, exit_code = self.run_and_capture_output([':sh', '-c', 'tty'])
 
         self.assertIn('/dev', full_output)
 
@@ -122,7 +77,7 @@ class TestFunctional(unittest.TestCase):
         second = NamedTemporaryFile(delete=False)
 
         try:
-            self._run_and_capture_output([
+            self.run_and_capture_output([
                 ':version',
                 '--log-to-file=' + first.name,
 
@@ -154,13 +109,13 @@ class TestFunctional(unittest.TestCase):
             os.unlink(second.name)
 
     def test_env_variables_listed_in_help(self):
-        full_output, exit_code = self._run_and_capture_output(['--help'])
+        full_output, exit_code = self.run_and_capture_output(['--help'])
         self.assertIn('- RKD_DEPTH (default: 0)', full_output)
 
     def test_env_variables_not_listed_in_sh_task(self):
         """ :sh does not define any environment variables """
 
-        full_output, exit_code = self._run_and_capture_output([':sh', '--help'])
+        full_output, exit_code = self.run_and_capture_output([':sh', '--help'])
         self.assertNotIn('- RKD_DEPTH (default: )', full_output)
         self.assertIn('-- No environment variables declared --', full_output)
 
@@ -168,7 +123,7 @@ class TestFunctional(unittest.TestCase):
         """Test that when we set RKD_WHITELIST_GROUPS=:rkd, then we will see only tasks from [rkd] group"""
 
         with self.environment({'RKD_WHITELIST_GROUPS': ':rkd'}):
-            full_output, exit_code = self._run_and_capture_output([':tasks'])
+            full_output, exit_code = self.run_and_capture_output([':tasks'])
 
         self.assertIn(':rkd:create-structure', full_output)
         self.assertNotIn(':exec', full_output)
@@ -177,7 +132,7 @@ class TestFunctional(unittest.TestCase):
         """Test that when we set RKD_WHITELIST_GROUPS=,, then we will see only tasks from [global] group"""
 
         with self.environment({'RKD_WHITELIST_GROUPS': ','}):
-            full_output, exit_code = self._run_and_capture_output([':tasks'])
+            full_output, exit_code = self.run_and_capture_output([':tasks'])
 
         self.assertIn(':tasks', full_output)
         self.assertNotIn(':rkd:create-structure', full_output)
@@ -186,7 +141,7 @@ class TestFunctional(unittest.TestCase):
         """Test that with RKD_ALIAS_GROUPS=":py->:class-war" the :class-war:build would be resolved to :py:build"""
 
         with self.environment({'RKD_ALIAS_GROUPS': ':class-war->:rkd'}):
-            full_output, exit_code = self._run_and_capture_output([':class-war:create-structure', '--help'])
+            full_output, exit_code = self.run_and_capture_output([':class-war:create-structure', '--help'])
 
         self.assertIn('usage: :rkd:create-structure', full_output)
 
@@ -195,7 +150,7 @@ class TestFunctional(unittest.TestCase):
         """
 
         with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/env-in-yaml/.rkd'}):
-            full_output, exit_code = self._run_and_capture_output([':hello'])
+            full_output, exit_code = self.run_and_capture_output([':hello'])
 
             self.assertIn('Inline defined in this task: 17 May 1972 10,000 schoolchildren in the UK walked out on' +
                           ' strike in protest against corporal punishment. Within two years, London state schools ' +
@@ -217,7 +172,7 @@ class TestFunctional(unittest.TestCase):
         """
 
         with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/env-in-yaml/.rkd'}):
-            full_output, exit_code = self._run_and_capture_output([':hello', '--help'])
+            full_output, exit_code = self.run_and_capture_output([':hello', '--help'])
 
             self.assertIn('Italian-American anarchist who was framed & executed', full_output)
             self.assertIn('#2 line: This is his short autobiography:', full_output)
@@ -227,7 +182,7 @@ class TestFunctional(unittest.TestCase):
         """Test that RKD_DEPTH is increased within next calls
         """
 
-        full_output, exit_code = self._run_and_capture_output(
+        full_output, exit_code = self.run_and_capture_output(
             [':sh', '-c', '%RKD% :sh -c \'echo "DEPTH: [$RKD_DEPTH]"\'']
         )
 
@@ -237,7 +192,7 @@ class TestFunctional(unittest.TestCase):
         """Test that RKD in RKD will not show UI (fancy messages like "Executing ...")
         """
 
-        full_output, exit_code = self._run_and_capture_output([
+        full_output, exit_code = self.run_and_capture_output([
             '--no-ui', ':sh', '-c', '%RKD% :tasks'
         ])
 
@@ -282,7 +237,7 @@ class TestFunctional(unittest.TestCase):
         """
 
         with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/makefile-like/.rkd'}):
-            full_output, exit_code = self._run_and_capture_output([':alias-in-alias-test'])
+            full_output, exit_code = self.run_and_capture_output([':alias-in-alias-test'])
 
             self.assertIn('Hello world', full_output)
 
@@ -299,7 +254,7 @@ class TestFunctional(unittest.TestCase):
         """
 
         with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/recursive-env-in-yaml/.rkd'}):
-            full_output, exit_code = self._run_and_capture_output([':hello'])
+            full_output, exit_code = self.run_and_capture_output([':hello'])
 
             self.assertIn('First Second ${THIRD}', full_output)
 
@@ -313,6 +268,6 @@ class TestFunctional(unittest.TestCase):
         with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/recursive-env-in-yaml/.rkd'}):
             os.environ['HELLO_MSG'] = 'This is $PATH'
 
-            full_output, exit_code = self._run_and_capture_output(['--no-ui', ':external-env'])
+            full_output, exit_code = self.run_and_capture_output(['--no-ui', ':external-env'])
 
             self.assertIn('This is $PATH', full_output)

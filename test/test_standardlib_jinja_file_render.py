@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 
-import unittest
 import os
 from rkd.standardlib.jinja import FileRendererTask
-from rkd.test import mock_task, mock_execution_context
 from rkd.api.inputoutput import BufferedSystemIO
+from rkd.api.testing import BasicTestingCase
 
 SAMPLES_PATH = os.path.dirname(os.path.realpath(__file__)) + '/internal-samples'
 
 
-class TestFileRendererTask(unittest.TestCase):
+class TestFileRendererTask(BasicTestingCase):
     """Tests for a task that should render single JINJA2 file from SOURCE PATH to TARGET PATH
     """
 
@@ -18,8 +17,11 @@ class TestFileRendererTask(unittest.TestCase):
         io = BufferedSystemIO()
 
         task: FileRendererTask = FileRendererTask()
-        mock_task(task, io=io)
-        task.execute(mock_execution_context(task, params, envs))
+
+        BasicTestingCase.satisfy_task_dependencies(task, io=io)
+        execution_context = BasicTestingCase.mock_execution_context(task, params, envs)
+
+        task.execute(execution_context)
 
         return io
 

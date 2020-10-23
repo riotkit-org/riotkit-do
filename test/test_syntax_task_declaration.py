@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-import unittest
+from rkd.api.testing import BasicTestingCase
 from rkd.test import get_test_declaration
 
 
-class TestTaskDeclaration(unittest.TestCase):
+class TestTaskDeclaration(BasicTestingCase):
     def test_get_full_description_returns_docstring_when_description_method_does_not_return_anything(self):
         """TaskDeclaration.get_full_description() returns docstring of task to execute, when the task does not implement
         get_description() by itself

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import unittest
 import unittest.mock
 import os
 import psutil
@@ -8,13 +7,14 @@ import subprocess
 from tempfile import NamedTemporaryFile
 from collections import OrderedDict
 from io import StringIO
+from rkd.api.testing import BasicTestingCase, OutputCapturingSafeTestCase
 from rkd.standardlib import InitTask
 from rkd.api.inputoutput import IO
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
-class TestTaskUtil(unittest.TestCase):
+class TestTaskUtil(BasicTestingCase, OutputCapturingSafeTestCase):
     def test_sh_accepts_script_syntax(self):
         task = InitTask()
         task._io = IO()

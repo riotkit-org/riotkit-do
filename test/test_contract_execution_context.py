@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
-import unittest
 from rkd.standardlib import InitTask
 from rkd.contract import ExecutionContext
 from rkd.contract import ArgumentEnv
 from rkd.syntax import TaskDeclaration
 from rkd.exception import MissingInputException
 from rkd.api.inputoutput import IO
+from rkd.api.testing import BasicTestingCase
 
 
-class TestExecutionContext(unittest.TestCase):
+class TestExecutionContext(BasicTestingCase):
     def test_get_arg_or_env(self):
         """Checks logic of fetching commandline switch, with fallback to environment variable
         """
@@ -123,5 +123,3 @@ class TestExecutionContext(unittest.TestCase):
                         test(dataset_name, dataset)
                 else:
                     test(dataset_name, dataset)
-
-

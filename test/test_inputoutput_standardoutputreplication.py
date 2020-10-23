@@ -3,10 +3,11 @@
 import unittest
 from io import StringIO
 from io import BytesIO
+from rkd.api.testing import BasicTestingCase
 from rkd.api.inputoutput import StandardOutputReplication
 
 
-class TestStandardOutputReplication(unittest.TestCase):
+class TestStandardOutputReplication(BasicTestingCase):
     def test_writing_to_multiple_streams_of_different_types(self):
         """Check that it is possible to write to multiple streams at once"""
 

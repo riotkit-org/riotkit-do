@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
-import unittest
 from unittest.mock import mock_open, patch
+from rkd.api.testing import BasicTestingCase
 from rkd.api.inputoutput import Wizard
 from rkd.api.inputoutput import BufferedSystemIO
 from rkd.test import TestTask
 from rkd.exception import InterruptExecution
 
 
-class TestWizard(unittest.TestCase):
+class TestWizard(BasicTestingCase):
     def test_regexp_validation(self):
         wizard = Wizard(TestTask())
         wizard.sleep_time = 0

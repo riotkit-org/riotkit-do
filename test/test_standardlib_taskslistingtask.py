@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-import unittest
+from rkd.api.testing import BasicTestingCase
 from rkd.standardlib import TasksListingTask
 from rkd.test import get_test_declaration
 
 
-class TestTasksListingTask(unittest.TestCase):
+class TestTasksListingTask(BasicTestingCase):
     def test_ljust_task_name(self):
         """Assert that the formatting is not breaking the description alignment
         The formatting instructions should not be considered by ljust. Only visible characters should be considered

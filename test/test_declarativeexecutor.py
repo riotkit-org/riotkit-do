@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 
-import unittest
 import os
 from io import StringIO
-from rkd.contract import ExecutionContext
+
+from rkd.api.contract import ExecutionContext
 from rkd.api.inputoutput import BufferedSystemIO
 from rkd.api.inputoutput import IO
+from rkd.api.testing import BasicTestingCase
 from rkd.test import get_test_declaration
-from rkd.test import mock_task
 from rkd.execution.declarative import DeclarativeExecutor
 from rkd.execution.declarative import Step
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
-class TestDeclarativeExecutor(unittest.TestCase):
+class TestDeclarativeExecutor(BasicTestingCase):
     @staticmethod
     def _create_callable_tester(code: str, language: str, io: IO = None) -> bool:
         if not io:
@@ -91,7 +91,7 @@ return "ExecutionContext" in str(ctx) and "Task" in str(this)
         str_io = StringIO()
 
         task_declaration = get_test_declaration()
-        mock_task(task_declaration.get_task_to_execute(), io=io)
+        BasicTestingCase.satisfy_task_dependencies(task_declaration.get_task_to_execute(), io=io)
 
         ctx = ExecutionContext(task_declaration)
         executor = DeclarativeExecutor()
@@ -112,7 +112,7 @@ return "ExecutionContext" in str(ctx) and "Task" in str(this)
         buffered = BufferedSystemIO()
 
         task_declaration = get_test_declaration()
-        mock_task(task_declaration.get_task_to_execute(), io=buffered)
+        BasicTestingCase.satisfy_task_dependencies(task_declaration.get_task_to_execute(), io=buffered)
 
         ctx = ExecutionContext(task_declaration)
         executor = DeclarativeExecutor()

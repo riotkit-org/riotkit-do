@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-import unittest
 from argparse import ArgumentParser
+from rkd.api.testing import BasicTestingCase
 from rkd.argparsing import CommandlineParsingHelper
 from rkd.test import get_test_declaration
 
 
-class ArgParsingTest(unittest.TestCase):
+class ArgParsingTest(BasicTestingCase):
     def test_creates_grouped_arguments_into_tasks__task_after_flag(self):
         """ Test parsing arguments """
 

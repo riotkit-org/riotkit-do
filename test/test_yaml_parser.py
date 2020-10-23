@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
-import unittest
 import os
 import tempfile
+from rkd.api.testing import BasicTestingCase
 from rkd.yaml_parser import YamlFileLoader
 from rkd.exception import YAMLFileValidationError
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
-class TestLoader(unittest.TestCase):
+class TestLoader(BasicTestingCase):
     def test_validates_successfully(self):
         yaml_loader = YamlFileLoader([])
 

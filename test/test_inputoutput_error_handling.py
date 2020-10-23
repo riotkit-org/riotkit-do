@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 import sys
-import unittest
+from rkd.api.testing import BasicTestingCase, OutputCapturingSafeTestCase
 from rkd.api.inputoutput import BufferedSystemIO
 from rkd.api.inputoutput import output_formatted_exception
 from rkd.api.inputoutput import indent_new_lines
 
 
-class TestIOErrorHandling(unittest.TestCase):
+class TestIOErrorHandling(BasicTestingCase, OutputCapturingSafeTestCase):
     def test_is_information_written_through_stderr_methods(self):
         """To check if information is written to the proper methods we will mock stdout methods"""
 

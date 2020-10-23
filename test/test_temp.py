@@ -11,13 +11,13 @@ we often want to work only inside of given directory, never outside.
 """
 
 import os
-import unittest
 import subprocess
 from uuid import uuid4
+from rkd.api.testing import BasicTestingCase
 from rkd.api.temp import TempManager
 
 
-class TestTempManager(unittest.TestCase):
+class TestTempManager(BasicTestingCase):
     oldCwd: str = ''
 
     def setUp(self) -> None:

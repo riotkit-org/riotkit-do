@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-import unittest
+from rkd.api.testing import BasicTestingCase
 from rkd.contract import env_to_switch
 from rkd.contract import ArgumentEnv
 from rkd.exception import EnvironmentVariableNameNotAllowed
 
 
-class ArgumentEnvTest(unittest.TestCase):
+class ArgumentEnvTest(BasicTestingCase):
     def test_env_to_switch(self):
         self.assertEqual('--michael-brown', env_to_switch('MICHAEL_BROWN'))
 

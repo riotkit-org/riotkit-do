@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 
 import os
-import unittest
+
+from rkd.api.testing import BasicTestingCase
 from rkd.standardlib.jinja import RenderDirectoryTask
-from rkd.test import mock_task, mock_execution_context
 
 TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
-class TestRenderDirectoryTask(unittest.TestCase):
+class TestRenderDirectoryTask(BasicTestingCase):
     """Tests for a task that should render JINJA2 files from DIRECTORY "A" to DIRECTORY "B"
     """
 
     @staticmethod
     def _execute_mocked_task(params: dict, env: dict = {}) -> tuple:
         task: RenderDirectoryTask = RenderDirectoryTask()
-        mock_task(task)
+        BasicTestingCase.satisfy_task_dependencies(task)
 
         calls = []
         deletions = []
@@ -33,7 +33,9 @@ class TestRenderDirectoryTask(unittest.TestCase):
         task._delete_file = lambda file: deletions.append(file)
 
         # run task
-        task.execute(mock_execution_context(task, params, env))
+        task.execute(
+            BasicTestingCase.mock_execution_context(task, params, env)
+        )
 
         return calls, deletions
 

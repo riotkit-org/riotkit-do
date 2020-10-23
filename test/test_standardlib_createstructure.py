@@ -2,14 +2,14 @@
 
 import os
 import subprocess
-import unittest
 from tempfile import TemporaryDirectory
+
+from rkd.api.testing import BasicTestingCase
 from rkd.standardlib import CreateStructureTask
-from rkd.test import mock_task, mock_execution_context
 from rkd.api.inputoutput import BufferedSystemIO
 
 
-class CreateStructureTaskTest(unittest.TestCase):
+class CreateStructureTaskTest(BasicTestingCase):
     @staticmethod
     def _execute_mocked_task(params: dict, envs: dict = {}, task: CreateStructureTask = None) -> BufferedSystemIO:
         io = BufferedSystemIO()
@@ -17,8 +17,8 @@ class CreateStructureTaskTest(unittest.TestCase):
         if not task:
             task: CreateStructureTask = CreateStructureTask()
 
-        mock_task(task, io=io)
-        task.execute(mock_execution_context(task, params, envs))
+        BasicTestingCase.satisfy_task_dependencies(task, io=io)
+        task.execute(BasicTestingCase.mock_execution_context(task, params, envs))
 
         return io
 

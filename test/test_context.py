@@ -4,6 +4,7 @@ import unittest
 import unittest.mock
 import os
 from tempfile import NamedTemporaryFile
+
 from rkd.context import ContextFactory
 from rkd.context import ApplicationContext
 from rkd.context import distinct_imports
@@ -12,13 +13,14 @@ from rkd.exception import ContextException
 from rkd.api.syntax import TaskDeclaration
 from rkd.api.syntax import TaskAliasDeclaration
 from rkd.api.syntax import GroupDeclaration
+from rkd.api.testing import BasicTestingCase
 from rkd.test import TestTask
 from rkd.standardlib import InitTask
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
-class ContextTest(unittest.TestCase):
+class ContextTest(BasicTestingCase):
     def test_loads_internal_context(self) -> None:
         """Test if internal context (RKD by default has internal context) is loaded properly
         """

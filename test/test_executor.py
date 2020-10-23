@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
-import unittest
 import os
 from io import StringIO
-from rkd.contract import ExecutionContext
 from rkd.execution.executor import OneByOneTaskExecutor
 from rkd.context import ApplicationContext
 from rkd.test import get_test_declaration
@@ -12,6 +10,8 @@ from rkd.test import ret_invalid_user
 from rkd.api.temp import TempManager
 from rkd.api.inputoutput import BufferedSystemIO
 from rkd.api.inputoutput import IO
+from rkd.api.contract import ExecutionContext
+from rkd.api.testing import BasicTestingCase
 from rkd.contract import TaskInterface
 from rkd.test import TestTask
 from rkd.test import TestTaskWithRKDCallInside
@@ -19,7 +19,7 @@ from rkd.test import TestTaskWithRKDCallInside
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
-class TestOneByOneExecutor(unittest.TestCase):
+class TestOneByOneExecutor(BasicTestingCase):
     @staticmethod
     def _prepare_test_for_forking_process(task: TaskInterface = None):
         if not task:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-import unittest
 from typing import Union
+from rkd.api.testing import BasicTestingCase
 from rkd.context import ApplicationContext
 from rkd.resolver import TaskResolver
 from rkd.standardlib.shell import ShellCommandTask
@@ -10,7 +10,7 @@ from rkd.argparsing import TaskArguments
 from rkd.aliasgroups import parse_alias_groups_from_env
 
 
-class TestResolver(unittest.TestCase):
+class TestResolver(BasicTestingCase):
     def test_resolves_two_same_type_tasks_group_into_regular_tasks(self):
         """
         Tests that we can make an alias :test that will execute two times :sh command, but with different parameters

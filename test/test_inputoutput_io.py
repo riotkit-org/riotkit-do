@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
 import sys
-import unittest
+from rkd.api.testing import BasicTestingCase, OutputCapturingSafeTestCase
 from rkd.api.inputoutput import IO
 from rkd.api.inputoutput import SystemIO
 from rkd.api.inputoutput import BufferedSystemIO
 from rkd.api.inputoutput import clear_formatting
 
 
-class TestIO(unittest.TestCase):
+class TestIO(BasicTestingCase, OutputCapturingSafeTestCase):
     def test_is_log_level_at_least_info(self):
         """Test error level comparison
 

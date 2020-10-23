@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-import unittest.mock
+from rkd.api.testing import BasicTestingCase
 from rkd.contract import ArgparseArgument
 
 
-class TestArgparseArgument(unittest.TestCase):
+class TestArgparseArgument(BasicTestingCase):
     def test_arguments_are_registered(self):
         arg = ArgparseArgument(['--name', '-n'], {'default': 'Michail Bakunin'})
 

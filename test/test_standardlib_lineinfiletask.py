@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 
-import unittest
 from tempfile import NamedTemporaryFile
+from rkd.api.testing import BasicTestingCase
 from rkd.standardlib import LineInFileTask
-from rkd.test import mock_task, mock_execution_context
 from rkd.api.inputoutput import BufferedSystemIO
 
 
-class LineInFileTaskTest(unittest.TestCase):
+class LineInFileTaskTest(BasicTestingCase):
     @staticmethod
     def _execute_mocked_task(params: dict, envs: dict = {}) -> BufferedSystemIO:
         io = BufferedSystemIO()
 
         task: LineInFileTask = LineInFileTask()
-        mock_task(task, io=io)
-        task.execute(mock_execution_context(task, params, envs))
+        BasicTestingCase.satisfy_task_dependencies(task, io=io)
+        task.execute(BasicTestingCase.mock_execution_context(task, params, envs))
 
         return io
 

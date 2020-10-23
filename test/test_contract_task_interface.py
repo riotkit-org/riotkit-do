@@ -2,13 +2,15 @@
 
 import unittest
 import os
+
+from rkd.api.testing import BasicTestingCase
 from rkd.test import TestTask
 from rkd.contract import ArgumentEnv
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
-class TestTaskInterface(unittest.TestCase):
+class TestTaskInterface(BasicTestingCase):
     def test_table(self):
         """Simply test table() - the table is expected to use an external library, it is expected that external library
         will be tested already, but we need to check there if the interface matches
