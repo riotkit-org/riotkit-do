@@ -57,6 +57,16 @@ class OutputCapturingSafeTestCase(TestCase):
 
 
 class BasicTestingCase(TestCase):
+    """
+    Basic test case
+    ===============
+
+    Provides minimum of:
+      - Doing backup of environment and cwd
+      - Methods for mocking task dependencies (RKD-specific like ExecutionContext)
+
+    """
+
     _envs = None
     _cwd = None
 
@@ -159,7 +169,7 @@ class FunctionalTestingCase(BasicTestingCase, OutputCapturingSafeTestCase):
         Functional testing case
         =======================
 
-        Provides methods for running RKD task or multiple tasks with output and exit code capturing
+        Provides methods for running RKD task or multiple tasks with output and exit code capturing.
     """
 
     def run_and_capture_output(self, argv: list, verbose: bool = False) -> Tuple[str, int]:
