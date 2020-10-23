@@ -14,15 +14,15 @@ from unittest import TestCase
 from io import StringIO
 from copy import deepcopy
 from contextlib import contextmanager
-
-from rkd.api.syntax import TaskDeclaration
-
 from rkd import RiotKitDoApplication, ApplicationContext
+from rkd.execution.executor import OneByOneTaskExecutor
 from rkd.api.contract import ExecutionContext
 from rkd.api.contract import TaskInterface
+from rkd.api.syntax import TaskDeclaration
 from rkd.api.temp import TempManager
-from rkd.execution.executor import OneByOneTaskExecutor
-from rkd.api.inputoutput import IO, NullSystemIO
+from rkd.api.inputoutput import IO
+from rkd.api.inputoutput import NullSystemIO
+from rkd.api.inputoutput import BufferedSystemIO
 
 
 class OutputCapturingSafeTestCase(TestCase):
@@ -49,6 +49,9 @@ class OutputCapturingSafeTestCase(TestCase):
         super().setUp()
 
     def _restore_standard_out(self):
+        if not self._stderr or not self._stderr:
+            return
+
         sys.stdout = self._stdout
         sys.stderr = self._stderr
 
@@ -146,13 +149,14 @@ class FunctionalTestingCase(BasicTestingCase, OutputCapturingSafeTestCase):
 
     def run_and_capture_output(self, argv: list, verbose: bool = False) -> Tuple[str, int]:
         """
-        Run task(s) and capture output + exit code
+        Run task(s) and capture output + exit code.
+        Whole RKD from scratch will be bootstrapped there.
 
         Example usage:
             full_output, exit_code = self.run_and_capture_output([':tasks'])
 
-        :param argv: List of tasks, arguments, commandline switches
-        :param verbose: Print all output also to stdout
+        :param list argv: List of tasks, arguments, commandline switches
+        :param bool verbose: Print all output also to stdout
 
         :return:
         """
@@ -172,3 +176,55 @@ class FunctionalTestingCase(BasicTestingCase, OutputCapturingSafeTestCase):
 
         return out.getvalue(), exit_code
 
+    def execute_mocked_task_and_get_output(self, task: TaskInterface, args=None, env=None) -> str:
+        """
+        Run a single task, capturing it's output in a simplified way.
+        There is no whole RKD bootstrapped in this operation.
+
+        :param TaskInterface task:
+        :param dict args:
+        :param dict env:
+        :return:
+        """
+
+        if args is None:
+            args = {}
+
+        if env is None:
+            env = {}
+
+        ctx = ApplicationContext([], [], '')
+        ctx.io = BufferedSystemIO()
+
+        task.internal_inject_dependencies(
+            io=ctx.io,
+            ctx=ctx,
+            executor=OneByOneTaskExecutor(ctx=ctx),
+            temp_manager=TempManager()
+        )
+
+        merged_env = deepcopy(os.environ)
+        merged_env.update(env)
+
+        r_io = IO()
+        str_io = StringIO()
+
+        defined_args = {}
+
+        for arg, arg_value in args.items():
+            defined_args[arg] = {'default': ''}
+
+        with r_io.capture_descriptors(enable_standard_out=True, stream=str_io):
+            try:
+                result = task.execute(ExecutionContext(
+                    TaskDeclaration(task),
+                    args=args,
+                    env=merged_env,
+                    defined_args=defined_args
+                ))
+            except Exception:
+                self._restore_standard_out()
+                print(ctx.io.get_value() + "\n" + str_io.getvalue())
+                raise
+
+        return ctx.io.get_value() + "\n" + str_io.getvalue() + "\nTASK_EXIT_RESULT=" + str(result)
