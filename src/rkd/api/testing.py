@@ -170,6 +170,7 @@ class FunctionalTestingCase(BasicTestingCase, OutputCapturingSafeTestCase):
         =======================
 
         Provides methods for running RKD task or multiple tasks with output and exit code capturing.
+        Inherits OutputCapturingSafeTestCase.
     """
 
     def run_and_capture_output(self, argv: list, verbose: bool = False) -> Tuple[str, int]:

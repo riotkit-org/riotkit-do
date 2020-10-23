@@ -34,3 +34,15 @@ Storing temporary files
 -----------------------
 .. autoclass:: rkd.api.temp.TempManager
    :members:
+
+Testing
+-------
+
+.. autoclass:: api.testing.BasicTestingCase
+   :members:
+
+.. autoclass:: api.testing.FunctionalTestingCase
+   :members:
+
+.. autoclass:: api.testing.OutputCapturingSafeTestCase
+   :members:
