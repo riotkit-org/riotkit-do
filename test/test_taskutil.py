@@ -96,7 +96,7 @@ for i in range(0, 1024 * 128):
         memory_after = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
 
         self.assertEqual(iterations * text_with_newlines_length, len(out.getvalue()))
-        self.assertLessEqual(memory_after - memory_before, 15, msg='Expected less than 15 megabytes of memory usage')
+        self.assertLessEqual(memory_after - memory_before, 16, msg='Expected less than 16 megabytes of memory usage')
 
     def test_sh_captures_output_in_correct_order_with_fixed_timing(self):
         """Test if output contains stdout and stderr lines printed out in proper order,

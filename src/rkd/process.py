@@ -53,7 +53,7 @@ def check_call(command: str, script: Optional[str] = ''):
         primary_fd, replica_fd = pty.openpty()
 
         process = subprocess.Popen(command, shell=True, stdin=replica_fd, stdout=replica_fd, stderr=replica_fd,
-                                   bufsize=1, close_fds=ON_POSIX, universal_newlines=False, preexec_fn=os.setsid)
+                                   bufsize=64, close_fds=ON_POSIX, universal_newlines=False, preexec_fn=os.setsid)
 
         out_buffer = TextBuffer(buffer_size=1024 * 10)
         stdout_thread = Thread(target=push_output, args=(process, primary_fd, out_buffer))
