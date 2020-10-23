@@ -38,11 +38,11 @@ Storing temporary files
 Testing
 -------
 
-.. autoclass:: api.testing.BasicTestingCase
+.. autoclass:: rkd.api.testing.BasicTestingCase
    :members:
 
-.. autoclass:: api.testing.FunctionalTestingCase
+.. autoclass:: rkd.api.testing.FunctionalTestingCase
    :members:
 
-.. autoclass:: api.testing.OutputCapturingSafeTestCase
+.. autoclass:: rkd.api.testing.OutputCapturingSafeTestCase
    :members:
