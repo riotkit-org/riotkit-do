@@ -19,3 +19,4 @@ ADVANCED usage
    good-practices
    process-isolation
    docker-entrypoint
+   tests
