@@ -189,6 +189,8 @@ Let's at the beginning start from analyzing an example.
 - `Taiga Events docker image <https://github.com/riotkit-org/docker-taiga-events/blob/master/.rkd/makefile.yaml>`_
 - `K8S Workspace <https://github.com/riotkit-org/riotkit-do-example-kubernetes-workspace/blob/master/.rkd/makefile.yaml>`_
 
+.. _Read more about Python Makefile syntax:
+
 Extended usage - Makefile in Python syntax
 ==========================================
 

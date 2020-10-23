@@ -3,11 +3,13 @@
 Tasks development
 =================
 
-RKD has two approaches to define a task. The first one is simpler - in makefile in YAML or in Python.
+RKD has multiple approaches to define a task. The first one is simpler - in makefile in YAML or in Python.
 The second one is a set of tasks as a Python package.
 
-Creating simple tasks in YAML syntax
-------------------------------------
+Option 1) Simplest - in YAML syntax
+-----------------------------------
+
+Definitely the simplest way to define a task is to use YAML syntax, it is recommended for beginning users.
 
 **Example 1:**
 
@@ -15,7 +17,6 @@ Creating simple tasks in YAML syntax
 
 
 **Example 2:**
-
 
 .. literalinclude:: ../../examples/env-in-yaml/.rkd/makefile.yml
 
@@ -28,8 +29,10 @@ Creating simple tasks in YAML syntax
 5. "env_files" is a list of paths to .env files that should be included
 6. "imports" imports a Python package that contains tasks to be used in the makefile and in shell usage
 
-Developing a Python package
----------------------------
+Option 2) For Python developers - task as a class
+-------------------------------------------------
+
+This way allows to create tasks in a structure of a Python module. Such task can be packaged, then published to eg. PyPI (or other private repository) and used in multiple projects.
 
 Each task should implement methods of **rkd.api.contract.TaskInterface** interface, that's the basic rule.
 
@@ -49,6 +52,37 @@ Following example task could be imported with path **rkd.standardlib.ShellComman
 3. **def configure_argparse()** allows to inject arguments, and --help description for a task - it's a standard Python's argparse object to use
 4. **def execute()** provides a context of execution, please read :ref:`Tasks API` chapter about it. In short words you can get commandline arguments, environment variables there.
 5. **self.io()** is providing input-output interaction, please use it instead of print, please read :ref:`Tasks API` chapter about it.
+
+Option 3) Quick and elastic way in Python code of Makefile.py
+-------------------------------------------------------------
+
+Multiple Makefile files can be used at one time, you don't have to choose between YAML and Python.
+This opens a possibility to define more advanced tasks in pure Python, while you have most of the tasks in YAML.
+It's elastic - use YAML, or Python or both.
+
+Let's define then a task in Python in a simplest method.
+
+**Makefile.py**
+
+.. code:: python
+
+    import os
+    from rkd.api.syntax import TaskDeclaration
+    from rkd.api.contract import ExecutionContext
+    from rkd.standardlib import CallableTask
+
+    def union_method(context: ExecutionContext) -> bool:
+        os.system('xdg-open https://iwa-ait.org')
+        return True
+
+    IMPORTS = [
+        # just declare a task with a name + code as function! Yay, simple!
+        TaskDeclaration(CallableTask(':create-union', union_method))
+    ]
+
+    TASKS = []
+
+:ref:`Read more about Python Makefile syntax`.
 
 Please check :ref:`Tasks API` for interfaces description
 --------------------------------------------------------
