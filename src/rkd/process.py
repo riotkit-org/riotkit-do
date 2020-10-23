@@ -46,6 +46,8 @@ def check_call(command: str, script: Optional[str] = ''):
     os.environ['PYTHONUNBUFFERED'] = "1"
 
     old_tty = termios.tcgetattr(sys.stdin)
+    fd_thread = None
+
     try:
         tty.setraw(sys.stdin.fileno())
 
@@ -56,12 +58,15 @@ def check_call(command: str, script: Optional[str] = ''):
                                    bufsize=64, close_fds=ON_POSIX, universal_newlines=False, preexec_fn=os.setsid)
 
         out_buffer = TextBuffer(buffer_size=1024 * 10)
-        stdout_thread = Thread(target=push_output, args=(process, primary_fd, out_buffer))
-        stdout_thread.daemon = True
-        stdout_thread.start()
+        fd_thread = Thread(target=push_output, args=(process, primary_fd, out_buffer))
+        fd_thread.daemon = True
+        fd_thread.start()
 
         exit_code = process.wait()
     finally:
+        if fd_thread:
+            fd_thread.join()
+
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_tty)
 
     if exit_code > 0:
