@@ -52,6 +52,9 @@ class OutputCapturingSafeTestCase(TestCase):
         if not self._stderr or not self._stderr:
             return
 
+        if sys.stderr != self._stderr or sys.stdout != self._stdout:
+            print('!!! Test ' + self.id() + ' is not cleaning up stdout/stderr')
+
         sys.stdout = self._stdout
         sys.stderr = self._stderr
 
