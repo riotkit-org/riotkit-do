@@ -61,6 +61,9 @@ def check_call(command: str, script: Optional[str] = ''):
         # open a virtual terminal
         primary_fd, replica_fd = pty.openpty()
 
+        # little hack: give thread a time to warm up
+        command = 'sleep 0.03 && ' + command
+
         process = subprocess.Popen(command, shell=True, stdin=replica_fd, stdout=replica_fd, stderr=replica_fd,
                                    bufsize=64, close_fds=ON_POSIX, universal_newlines=False, preexec_fn=os.setsid)
 
