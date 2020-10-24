@@ -38,6 +38,13 @@ class TextBuffer(object):
         return self.text
 
 
+class ProcessState(object):
+    has_exited: bool
+
+    def __init__(self):
+        self.has_exited = False
+
+
 def check_call(command: str, script: Optional[str] = ''):
     if os.getenv('RKD_COMPAT_SUBPROCESS') == 'true':
         subprocess.check_call(command, shell=True)
@@ -46,7 +53,7 @@ def check_call(command: str, script: Optional[str] = ''):
     os.environ['PYTHONUNBUFFERED'] = "1"
 
     old_tty = termios.tcgetattr(sys.stdin)
-    fd_thread = None
+    process_state = ProcessState()
 
     try:
         tty.setraw(sys.stdin.fileno())
@@ -58,15 +65,13 @@ def check_call(command: str, script: Optional[str] = ''):
                                    bufsize=64, close_fds=ON_POSIX, universal_newlines=False, preexec_fn=os.setsid)
 
         out_buffer = TextBuffer(buffer_size=1024 * 10)
-        fd_thread = Thread(target=push_output, args=(process, primary_fd, out_buffer))
+        fd_thread = Thread(target=push_output, args=(process, primary_fd, out_buffer, process_state))
         fd_thread.daemon = True
         fd_thread.start()
 
         exit_code = process.wait()
     finally:
-        if fd_thread:
-            fd_thread.join()
-
+        process_state.has_exited = True
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_tty)
 
     if exit_code > 0:
@@ -75,7 +80,7 @@ def check_call(command: str, script: Optional[str] = ''):
         )
 
 
-def push_output(process: subprocess.Popen, primary_fd, out_buffer: TextBuffer):
+def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: ProcessState):
     while process.poll() is None:
         r, w, e = select.select([sys.stdin, primary_fd], [], [])
 
@@ -91,3 +96,12 @@ def push_output(process: subprocess.Popen, primary_fd, out_buffer: TextBuffer):
                 sys.stdout.write(o.decode('utf-8'))
                 sys.stdout.flush()
                 out_buffer.write(o.decode('utf-8'))
+
+        if process_state.has_exited:
+            return True
+
+
+def direct_debug_msg(text: str) -> None:
+    fd = open('/dev/stderr', 'w')
+    fd.write(text + "\n")
+    fd.close()
