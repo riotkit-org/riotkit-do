@@ -45,10 +45,6 @@ class ProcessState(object):
         self.has_exited = False
 
 
-def is_a_tty() -> bool:
-    return os.isatty(sys.stdout.fileno())
-
-
 def check_call(command: str, script: Optional[str] = ''):
     if os.getenv('RKD_COMPAT_SUBPROCESS') == 'true':
         subprocess.check_call(command, shell=True)
@@ -56,9 +52,13 @@ def check_call(command: str, script: Optional[str] = ''):
 
     os.environ['PYTHONUNBUFFERED'] = "1"
 
-    old_tty = termios.tcgetattr(sys.stdin)
+    try:
+        old_tty = termios.tcgetattr(sys.stdin)
+    except termios.error:
+        old_tty = None
+
+    is_interactive_session = old_tty is not None
     process_state = ProcessState()
-    is_interactive_session = is_a_tty()
 
     try:
         if is_interactive_session:
@@ -74,7 +74,8 @@ def check_call(command: str, script: Optional[str] = ''):
                                    bufsize=64, close_fds=ON_POSIX, universal_newlines=False, preexec_fn=os.setsid)
 
         out_buffer = TextBuffer(buffer_size=1024 * 10)
-        fd_thread = Thread(target=push_output, args=(process, primary_fd, out_buffer, process_state))
+        fd_thread = Thread(target=push_output,
+                           args=(process, primary_fd, out_buffer, process_state, is_interactive_session))
         fd_thread.daemon = True
         fd_thread.start()
 
@@ -91,9 +92,14 @@ def check_call(command: str, script: Optional[str] = ''):
         )
 
 
-def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: ProcessState):
+def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: ProcessState, is_interactive_session: bool):
+    to_select = [primary_fd]
+
+    if is_interactive_session:
+        to_select = [sys.stdin] + to_select
+
     while process.poll() is None:
-        r, w, e = select.select([sys.stdin, primary_fd], [], [])
+        r, w, e = select.select(to_select, [], [])
 
         if sys.stdin in r:
             d = os.read(sys.stdin.fileno(), 10240)
