@@ -45,6 +45,10 @@ class ProcessState(object):
         self.has_exited = False
 
 
+def is_a_tty() -> bool:
+    return os.isatty(sys.stdout.fileno())
+
+
 def check_call(command: str, script: Optional[str] = ''):
     if os.getenv('RKD_COMPAT_SUBPROCESS') == 'true':
         subprocess.check_call(command, shell=True)
@@ -54,9 +58,11 @@ def check_call(command: str, script: Optional[str] = ''):
 
     old_tty = termios.tcgetattr(sys.stdin)
     process_state = ProcessState()
+    is_interactive_session = is_a_tty()
 
     try:
-        tty.setraw(sys.stdin.fileno())
+        if is_interactive_session:
+            tty.setraw(sys.stdin.fileno())
 
         # open a virtual terminal
         primary_fd, replica_fd = pty.openpty()
@@ -75,7 +81,9 @@ def check_call(command: str, script: Optional[str] = ''):
         exit_code = process.wait()
     finally:
         process_state.has_exited = True
-        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_tty)
+
+        if is_interactive_session:
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_tty)
 
     if exit_code > 0:
         raise subprocess.CalledProcessError(
