@@ -45,7 +45,7 @@ class ProcessState(object):
         self.has_exited = False
 
 
-def check_call(command: str, script: Optional[str] = ''):
+def check_call(command: str, script_to_show: Optional[str] = ''):
     if os.getenv('RKD_COMPAT_SUBPROCESS') == 'true':
         subprocess.check_call(command, shell=True)
         return
@@ -88,7 +88,7 @@ def check_call(command: str, script: Optional[str] = ''):
 
     if exit_code > 0:
         raise subprocess.CalledProcessError(
-            exit_code, script if script else command, stderr=out_buffer.get_value(), output=out_buffer.get_value()
+            exit_code, script_to_show if script_to_show else command, stderr=out_buffer.get_value(), output=out_buffer.get_value()
         )
 
 

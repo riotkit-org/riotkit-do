@@ -152,7 +152,7 @@ for i in range(0, 1024 * 128):
     def test_non_interactive_session_returns_output(self):
         """Checks functionally if process.py is implementing a fall-back for non-interactive sessions
 
-        "true |" part enforces the console to be non-interactive, which should cause
+        'true |' part enforces the console to be non-interactive, which should cause
         "termios.error: (25, 'Inappropriate ioctl for device')" that should be handled and interactive mode
         should be turned off for stdin
         """
@@ -166,6 +166,35 @@ for i in range(0, 1024 * 128):
             task.sh(''' true | python3 -m rkd --silent :sh -c 'echo "Strajk Kobiet! Jebac PiS!"' ''')
 
         self.assertIn('Strajk Kobiet! Jebac PiS!', out.getvalue())
+
+    def test_full_command_is_shown_only_in_debug_output_level(self):
+        """Test that sh() will show full bash script only in case, when '-rl debug' is used
+
+        :return:
+        """
+
+        task = InitTask()
+        task._io = IO()
+        io = IO()
+        out = StringIO()
+
+        with io.capture_descriptors(stream=out, enable_standard_out=False):
+            # CASE 1
+            with self.subTest('NORMAL output level'):
+                try:
+                    task.sh('python3 -m rkd :sh -c "exit 5"')
+
+                except subprocess.CalledProcessError as e:
+                    self.assertIn("Command 'exit 5' returned non-zero exit status 5.", e.output)
+
+            # CASE 2
+            with self.subTest('DEBUG output level'):
+                try:
+                    task.sh('python3 -m rkd -rl debug :sh -c "exit 5"')
+
+                except subprocess.CalledProcessError as e:
+                    self.assertIn("Command '#!/bin/bash -eopipefail \r\nset -euo pipefail; export " +
+                                  "PYTHONUNBUFFERED=1; exit 5' returned non-zero exit status 5.", e.output)
 
     def test_dollar_symbols_are_escaped_in_shell_commands(self):
         """Check that in envrionment variable there can be defined a value that contains dollar symbols"""

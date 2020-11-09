@@ -5,6 +5,7 @@ from typing import Union
 from subprocess import check_output, Popen, DEVNULL, CalledProcessError
 from tempfile import NamedTemporaryFile
 from abc import ABC as AbstractClass, abstractmethod
+from copy import deepcopy
 from .api.inputoutput import IO
 from .process import check_call
 
@@ -64,6 +65,10 @@ class TaskUtilities(AbstractClass):
         """
 
         self.io().debug('sh(%s)' % cmd)
+        is_debug = self.io().is_log_level_at_least('debug')
+
+        # cmd without environment variables
+        original_cmd = deepcopy(cmd)
 
         cmd = 'export PYTHONUNBUFFERED=1; ' + cmd
 
@@ -92,7 +97,8 @@ class TaskUtilities(AbstractClass):
                 bash_temp_file.write(bash_script.encode('utf-8'))
                 bash_temp_file.flush()
 
-                check_call('bash ' + bash_temp_file.name, script=bash_script)
+                check_call('bash ' + bash_temp_file.name,
+                           script_to_show=original_cmd if not is_debug else bash_script)
 
             return
 
@@ -133,7 +139,7 @@ class TaskUtilities(AbstractClass):
         os.putenv('RKD_BIN', self.get_rkd_binary())
 
         if not capture:
-            check_call(cmd + ' ' + arguments, script=code)
+            check_call(cmd + ' ' + arguments, script_to_show=code)
             os.unlink(py_temp_file.name) if py_temp_file else None
             return
 
