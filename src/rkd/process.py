@@ -7,8 +7,12 @@ import termios
 import tty
 import pty
 import select
+import fcntl
+import struct
+from typing import Tuple
 from typing import Optional
 from threading import Thread
+from time import time
 
 ON_POSIX = 'posix' in sys.builtin_module_names
 
@@ -95,6 +99,11 @@ def check_call(command: str, script_to_show: Optional[str] = ''):
 def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: ProcessState, is_interactive_session: bool):
     to_select = [primary_fd]
 
+    # terminal window size updating
+    terminal_update_time = 3  # 3 seconds
+    last_terminal_update = time()
+    copy_terminal_size(sys.stdout, primary_fd)
+
     if is_interactive_session:
         to_select = [sys.stdin] + to_select
 
@@ -107,6 +116,10 @@ def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: Proc
 
         elif primary_fd in r:
             o = os.read(primary_fd, 10240)
+
+            # terminal window size updating
+            if is_interactive_session and time() - last_terminal_update >= terminal_update_time:
+                copy_terminal_size(sys.stdout, primary_fd)
 
             # propagate to stdout
             if o:
@@ -122,3 +135,38 @@ def direct_debug_msg(text: str) -> None:
     fd = open('/dev/stderr', 'w')
     fd.write(text + "\n")
     fd.close()
+
+
+def copy_terminal_size(fd_from, fd_to):
+    """
+    Set a terminal size basing on other terminal
+
+    :param fd_from:
+    :param fd_to:
+    :return:
+    """
+
+    col, row, x_pixels, y_pixels = get_terminal_size(fd_from)
+
+    winsize = struct.pack("HHHH", row, col, x_pixels, y_pixels)
+    fcntl.ioctl(fd_to, termios.TIOCSWINSZ, winsize)
+
+
+def get_terminal_size(fd) -> Optional[Tuple[int, int, int, int]]:
+    """
+    Get size of a terminal
+
+    :param fd: for example it can be sys.stdout
+    :return:
+    """
+
+    if os.name == "posix":
+        # http://bytes.com/topic/python/answers/607757-getting-terminal-display-size
+        s = struct.pack("HHHH", 0, 0, 0, 0)
+        x = fcntl.ioctl(fd.fileno(), termios.TIOCGWINSZ, s)
+        rows, cols, x_pixels, y_pixels = struct.unpack("HHHH", x)
+
+        return cols, rows, x_pixels, y_pixels
+
+    # Windows is not supported (at least yet)
+    return None
