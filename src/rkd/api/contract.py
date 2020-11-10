@@ -366,8 +366,11 @@ class TaskInterface(TaskUtilities):
 
         if env_name not in declared_envs:
             raise UndefinedEnvironmentVariableUsageError(
-                'Attempt to use not declared environment variable. ' +
-                'Please report the problem to the maintainers of this task, not to RKD (unless it is a core task)'
+                (
+                    'Attempt to use not declared environment variable "%s". ' +
+                    'Please report the problem to the maintainers of this task, not to RKD (unless it is a core task)'
+                )
+                % env_name
             )
 
         # return default value
