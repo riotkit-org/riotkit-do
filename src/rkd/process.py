@@ -102,9 +102,17 @@ def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: Proc
     # terminal window size updating
     terminal_update_time = 3  # 3 seconds
     last_terminal_update = time()
+    should_update_terminal_size = True
+
+    try:
+        copy_terminal_size(sys.stdout, primary_fd)
+    except OSError as e:
+        if e.errno == 25:
+            should_update_terminal_size = False
+        else:
+            raise
 
     if is_interactive_session:
-        copy_terminal_size(sys.stdout, primary_fd)
         to_select = [sys.stdin] + to_select
 
     while process.poll() is None:
@@ -118,7 +126,7 @@ def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: Proc
             o = os.read(primary_fd, 10240)
 
             # terminal window size updating
-            if is_interactive_session and time() - last_terminal_update >= terminal_update_time:
+            if should_update_terminal_size and time() - last_terminal_update >= terminal_update_time:
                 copy_terminal_size(sys.stdout, primary_fd)
 
             # propagate to stdout
