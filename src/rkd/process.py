@@ -66,6 +66,7 @@ def check_call(command: str, script_to_show: Optional[str] = '', use_subprocess:
 
     :param command: Command to execute
     :param script_to_show: Command to show that it failed
+    :param use_subprocess: Use subprocess.check_call() directly. Could simplify some cases.
     :return:
     """
 
