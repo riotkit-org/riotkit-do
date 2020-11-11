@@ -102,9 +102,9 @@ def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: Proc
     # terminal window size updating
     terminal_update_time = 3  # 3 seconds
     last_terminal_update = time()
-    copy_terminal_size(sys.stdout, primary_fd)
 
     if is_interactive_session:
+        copy_terminal_size(sys.stdout, primary_fd)
         to_select = [sys.stdin] + to_select
 
     while process.poll() is None:
