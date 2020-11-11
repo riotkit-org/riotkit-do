@@ -149,6 +149,7 @@ def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: Proc
             # terminal window size updating
             if should_update_terminal_size and time() - last_terminal_update >= terminal_update_time:
                 copy_terminal_size(sys.stdout, primary_fd)
+                last_terminal_update = time()
 
             # propagate to stdout
             if o:
