@@ -408,7 +408,7 @@ class TaskInterface(TaskUtilities):
         )
 
     def sh(self, cmd: str, capture: bool = False, verbose: bool = False, strict: bool = True,
-           env: dict = None) -> Union[str, None]:
+           env: dict = None, use_subprocess: bool = False) -> Union[str, None]:
         """Executes a shell script in bash. Throws exception on error.
         To capture output set capture=True
 

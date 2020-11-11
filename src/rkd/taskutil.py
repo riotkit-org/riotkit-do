@@ -59,7 +59,7 @@ class TaskUtilities(AbstractClass):
         return sys.executable
 
     def sh(self, cmd: str, capture: bool = False, verbose: bool = False, strict: bool = True,
-           env: dict = None) -> Union[str, None]:
+           env: dict = None, use_subprocess: bool = False) -> Union[str, None]:
         """ Executes a shell script in bash. Throws exception on error.
             To capture output set capture=True
         """
@@ -98,7 +98,8 @@ class TaskUtilities(AbstractClass):
                 bash_temp_file.flush()
 
                 check_call('bash ' + bash_temp_file.name,
-                           script_to_show=original_cmd if not is_debug else bash_script)
+                           script_to_show=original_cmd if not is_debug else bash_script,
+                           use_subprocess=use_subprocess)
 
             return
 

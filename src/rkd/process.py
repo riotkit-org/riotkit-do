@@ -59,7 +59,7 @@ class ProcessState(object):
         self.has_exited = False
 
 
-def check_call(command: str, script_to_show: Optional[str] = ''):
+def check_call(command: str, script_to_show: Optional[str] = '', use_subprocess: bool = False):
     """
     Another implementation of subprocess.check_call(), in comparison - this method writes output directly to
     sys.stdout and sys.stderr, which makes output capturing possible
@@ -69,7 +69,7 @@ def check_call(command: str, script_to_show: Optional[str] = ''):
     :return:
     """
 
-    if os.getenv('RKD_COMPAT_SUBPROCESS') == 'true':
+    if os.getenv('RKD_COMPAT_SUBPROCESS') == 'true' or use_subprocess:
         subprocess.check_call(command, shell=True)
         return
 
