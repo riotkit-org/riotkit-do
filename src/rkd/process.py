@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 
+"""
+Process
+=======
+
+Library that wraps standard "subprocess" library, adding a correct output capturing capabilities.
+By default standard "subprocess" library writes directly to descriptors, bypassing sys.stdout and sys.stderr
+making it impossible to capture the text for logging.
+
+"""
+
 import os
 import sys
 import subprocess
@@ -50,6 +60,15 @@ class ProcessState(object):
 
 
 def check_call(command: str, script_to_show: Optional[str] = ''):
+    """
+    Another implementation of subprocess.check_call(), in comparison - this method writes output directly to
+    sys.stdout and sys.stderr, which makes output capturing possible
+
+    :param command: Command to execute
+    :param script_to_show: Command to show that it failed
+    :return:
+    """
+
     if os.getenv('RKD_COMPAT_SUBPROCESS') == 'true':
         subprocess.check_call(command, shell=True)
         return
@@ -92,7 +111,9 @@ def check_call(command: str, script_to_show: Optional[str] = ''):
 
     if exit_code > 0:
         raise subprocess.CalledProcessError(
-            exit_code, script_to_show if script_to_show else command, stderr=out_buffer.get_value(), output=out_buffer.get_value()
+            exit_code, script_to_show if script_to_show else command,
+            stderr=out_buffer.get_value(),
+            output=out_buffer.get_value()
         )
 
 
