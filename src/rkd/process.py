@@ -21,6 +21,7 @@ import fcntl
 import struct
 from typing import Tuple
 from typing import Optional
+from typing import Union
 from threading import Thread
 from time import time
 
@@ -59,14 +60,18 @@ class ProcessState(object):
         self.has_exited = False
 
 
-def check_call(command: str, script_to_show: Optional[str] = '', use_subprocess: bool = False):
+def check_call(command: str, script_to_show: Optional[str] = '', use_subprocess: bool = False,
+               cwd: Union[dict, None] = None, env: dict = None):
     """
     Another implementation of subprocess.check_call(), in comparison - this method writes output directly to
     sys.stdout and sys.stderr, which makes output capturing possible
 
     :param command: Command to execute
     :param script_to_show: Command to show that it failed
-    :param use_subprocess: Use subprocess.check_call() directly. Could simplify some cases.
+    :param use_subprocess: (Optional) Use subprocess.check_call() directly. Could simplify some cases.
+    :param cwd: (Optional) Change current working directory
+    :param env: (Optional) Append environment variables
+
     :return:
     """
 
@@ -95,7 +100,8 @@ def check_call(command: str, script_to_show: Optional[str] = '', use_subprocess:
         command = 'sleep 0.03 && ' + command
 
         process = subprocess.Popen(command, shell=True, stdin=replica_fd, stdout=replica_fd, stderr=replica_fd,
-                                   bufsize=64, close_fds=ON_POSIX, universal_newlines=False, preexec_fn=os.setsid)
+                                   bufsize=64, close_fds=ON_POSIX, universal_newlines=False, preexec_fn=os.setsid,
+                                   cwd=cwd if cwd else os.getcwd(), env=env)
 
         out_buffer = TextBuffer(buffer_size=1024 * 10)
         fd_thread = Thread(target=push_output,

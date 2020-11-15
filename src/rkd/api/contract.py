@@ -396,7 +396,9 @@ class TaskInterface(TaskUtilities):
 
         return name
 
-    def py(self, code: str = '', become: str = None, capture: bool = False, script_path: str = None, arguments: str = '') -> Union[str, None]:
+    def py(self, code: str = '', become: str = None, capture: bool = False,
+           script_path: str = None, arguments: str = '') -> Union[str, None]:
+
         """Executes a Python code in a separate process
 
         NOTICE: Use instead of subprocess. Raw subprocess is less supported and output from raw subprocess

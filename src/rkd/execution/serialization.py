@@ -20,6 +20,11 @@ FORKED_EXECUTOR_TEMPLATE = """
 import pickle
 import base64
 import sys
+import traceback
+import os
+
+if os.getenv('RKD_CTX_PY_PATH'):
+    sys.path = os.getenv('RKD_CTX_PY_PATH').split(':')
 
 def _communicate_return(val):
     with open(communication_file, 'wb') as f:
@@ -44,6 +49,7 @@ try:
         sys.exit(0)
 
 except Exception as exc:
+    traceback.print_exc()
     _communicate_return(exc)
 
     sys.exit(0)

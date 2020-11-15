@@ -161,7 +161,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
                 return False
 
         task.io().debug('Executing python code')
-        task.py(FORKED_EXECUTOR_TEMPLATE, become=become, capture=False, arguments=communication_file)
+        task.py(code=FORKED_EXECUTOR_TEMPLATE, become=become, capture=False, arguments=communication_file)
 
         # collect, process and pass result
         task.io().debug('Parsing subprocess results from a serialized data')

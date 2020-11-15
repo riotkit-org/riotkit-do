@@ -210,7 +210,7 @@ class ContextFactory:
 
         try:
             sys.path.append(path)
-            makefile = SourceFileLoader("Makefile", makefile_path).load_module()
+            makefile = SourceFileLoader("makefile", makefile_path).load_module()
 
         except ImportError as e:
             print_exc()

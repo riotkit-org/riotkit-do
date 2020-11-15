@@ -137,15 +137,17 @@ class TaskUtilities(AbstractClass):
         if become:
             cmd = "sudo -E -u %s %s" % (become, cmd)
 
-        os.putenv('RKD_BIN', self.get_rkd_binary())
+        os.environ['RKD_BIN'] = self.get_rkd_binary()
+        os.environ['RKD_CTX_PY_PATH'] = ":".join(reversed(sys.path))
 
         if not capture:
+            # noinspection PyTypeChecker
             check_call(cmd + ' ' + arguments, script_to_show=code)
             os.unlink(py_temp_file.name) if py_temp_file else None
             return
 
         if capture:
-            out = check_output(cmd + ' ' + arguments, shell=True, stdin=read).decode('utf-8')
+            out = check_output(cmd + ' ' + arguments, shell=True, stdin=read, env=os.environ).decode('utf-8')
             os.unlink(py_temp_file.name) if py_temp_file else None
 
             return out
