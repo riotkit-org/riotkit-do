@@ -101,7 +101,7 @@ def check_call(command: str, script_to_show: Optional[str] = '', use_subprocess:
 
         process = subprocess.Popen(command, shell=True, stdin=replica_fd, stdout=replica_fd, stderr=replica_fd,
                                    bufsize=64, close_fds=ON_POSIX, universal_newlines=False, preexec_fn=os.setsid,
-                                   cwd=cwd if cwd else os.getcwd(), env=env)
+                                   cwd=cwd if cwd else os.getcwd())
 
         out_buffer = TextBuffer(buffer_size=1024 * 10)
         fd_thread = Thread(target=push_output,

@@ -147,7 +147,7 @@ class TaskUtilities(AbstractClass):
             return
 
         if capture:
-            out = check_output(cmd + ' ' + arguments, shell=True, stdin=read, env=os.environ).decode('utf-8')
+            out = check_output(cmd + ' ' + arguments, shell=True, stdin=read).decode('utf-8')
             os.unlink(py_temp_file.name) if py_temp_file else None
 
             return out
