@@ -62,3 +62,9 @@ For example project RiotKit Harbor has it's own command :code:`harbor`, which is
 in such project.
 
 RKD_BIN is automatically generated, when executing task in a separate process, but it can be also set globally.
+
+
+RKD_SYS_LOG_LEVEL
+~~~~~~~~~~~~~~~~~
+
+Use for debugging. The variable is read in very early stage of RKD initialization, before :code:`:init` task, and before context preparation.

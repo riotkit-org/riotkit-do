@@ -36,7 +36,8 @@ class InitTask(TaskInterface):
             'RKD_DEPTH': '0',
             'RKD_PATH': '',
             'RKD_ALIAS_GROUPS': '',
-            'RKD_UI': 'true'
+            'RKD_UI': 'true',
+            'RKD_SYS_LOG_LEVEL': 'info'
         }
 
     def configure_argparse(self, parser: ArgumentParser):

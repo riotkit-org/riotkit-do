@@ -45,7 +45,7 @@ class RiotKitDoApplication:
         # system wide IO instance with defaults, the :init task should override those settings
         io = SystemIO()
         io.silent = True
-        io.log_level = LOG_LEVEL_INFO
+        io.set_log_level(os.getenv('RKD_SYS_LOG_LEVEL', 'info'))
 
         # load context of components
         self._ctx = ContextFactory(io).create_unified_context()
