@@ -141,7 +141,6 @@ class TaskUtilities(AbstractClass):
         os.environ['RKD_CTX_PY_PATH'] = ":".join(reversed(sys.path))
 
         if not capture:
-            # noinspection PyTypeChecker
             check_call(cmd + ' ' + arguments, script_to_show=code)
             os.unlink(py_temp_file.name) if py_temp_file else None
             return
