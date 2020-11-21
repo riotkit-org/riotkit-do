@@ -2,8 +2,8 @@
 import os
 from typing import Optional
 from argparse import ArgumentParser
-from rkd.api.contract import TaskInterface
-from rkd.api.contract import ExecutionContext
+from ..api.syntax import TaskDeclaration
+from ..api.contract import TaskInterface, ExecutionContext
 
 
 class GetEnvTask(TaskInterface):
@@ -89,3 +89,10 @@ class SetEnvTask(TaskInterface):
             return None
 
         return parts[0]
+
+
+def imports() -> list:
+    return [
+        TaskDeclaration(GetEnvTask()),
+        TaskDeclaration(SetEnvTask())
+    ]

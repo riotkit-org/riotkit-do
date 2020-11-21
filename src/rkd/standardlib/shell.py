@@ -2,6 +2,7 @@
 from argparse import ArgumentParser
 from subprocess import CalledProcessError
 from typing import Callable
+from ..api.syntax import TaskDeclaration
 from ..api.contract import TaskInterface
 from ..api.contract import ExecutionContext
 
@@ -110,3 +111,10 @@ class BaseShellCommandWithArgumentParsingTask(TaskInterface):
             return False
 
         return True
+
+
+def imports() -> list:
+    return [
+        TaskDeclaration(ShellCommandTask()),
+        TaskDeclaration(ExecProcessCommand())
+    ]

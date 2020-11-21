@@ -13,9 +13,12 @@ from ..api.contract import TaskInterface
 from ..api.contract import ExecutionContext
 from ..api.contract import TaskDeclarationInterface
 from ..api.contract import ArgparseArgument
+from ..api.syntax import TaskDeclaration
 from ..inputoutput import SystemIO
 from ..inputoutput import clear_formatting
 from ..aliasgroups import parse_alias_groups_from_env, AliasGroup
+
+from .shell import ShellCommandTask
 
 
 class InitTask(TaskInterface):
@@ -590,3 +593,14 @@ This task is designed to be extended, see methods marked as "interface methods".
 
     def check_git_is_clean(self):
         return self.sh('git diff --stat || true', capture=True).strip() == ''
+
+
+def imports() -> list:
+    return [
+        TaskDeclaration(InitTask()),
+        TaskDeclaration(TasksListingTask()),
+        TaskDeclaration(VersionTask()),
+        TaskDeclaration(ShellCommandTask()),
+        TaskDeclaration(LineInFileTask()),
+        TaskDeclaration(CreateStructureTask())
+    ]
