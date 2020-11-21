@@ -35,6 +35,11 @@ Storing temporary files
 .. autoclass:: rkd.api.temp.TempManager
    :members:
 
+Parsing RKD syntax
+------------------
+.. autoclass:: rkd.api.syntax.SyntaxParsing
+   :members:
+
 Testing
 -------
 

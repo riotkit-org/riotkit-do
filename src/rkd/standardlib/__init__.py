@@ -17,7 +17,6 @@ from ..api.syntax import TaskDeclaration
 from ..inputoutput import SystemIO
 from ..inputoutput import clear_formatting
 from ..aliasgroups import parse_alias_groups_from_env, AliasGroup
-
 from .shell import ShellCommandTask
 
 

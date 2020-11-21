@@ -1,12 +1,11 @@
 import yaml
 import os
-import importlib
-from types import FunctionType
 from typing import List, Tuple, Union, Callable
 from dotenv import dotenv_values
 from copy import deepcopy
 from collections import OrderedDict
-from .exception import YamlParsingException
+from .api.parsing import SyntaxParsing
+from .exception import YamlParsingException, ParsingException
 from .exception import EnvironmentVariablesFileNotFound
 from .api.syntax import TaskDeclaration
 from .api.syntax import TaskAliasDeclaration
@@ -228,38 +227,7 @@ class YamlSyntaxInterpreter:
             YamlParsingException: When a class or module does not exist
         """
 
-        parsed: List[TaskDeclaration] = []
-
-        for import_str in classes:
-            parts = import_str.split('.')
-            class_name = parts[-1]
-            import_path = '.'.join(parts[:-1])
-
-            # importing just a full module name eg. "rkd_python"
-            if len(parts) == 1:
-                import_path = import_str
-                class_name = 'imports'
-            # Test if it's not a class name
-            # In this case we treat is as a module and import an importing method imports()
-            elif class_name.lower() == class_name:
-                import_path += '.' + class_name
-                class_name = 'imports'
-
-            try:
-                module = importlib.import_module(import_path)
-            except ImportError as e:
-                raise YamlParsingException('Import "%s" is invalid - cannot import class "%s" - error: %s' % (
-                    import_str, class_name, str(e)
-                ))
-
-            if class_name not in dir(module):
-                raise YamlParsingException('Import "%s" is invalid. Class "%s" not found in module "%s"' % (
-                    import_str, class_name, import_path
-                ))
-
-            if isinstance(module.__getattribute__(class_name), FunctionType):
-                parsed += module.__getattribute__(class_name)()
-            else:
-                parsed.append(TaskDeclaration(module.__getattribute__(class_name)()))
-
-        return parsed
+        try:
+            return SyntaxParsing.parse_imports_by_list_of_classes(classes)
+        except ParsingException as e:
+            raise YamlParsingException(str(e))

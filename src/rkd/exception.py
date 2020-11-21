@@ -53,6 +53,27 @@ class YAMLFileValidationError(YamlParsingException):
         ))
 
 
+class ParsingException(ContextException):
+    """Errors related to parsing YAML/Python syntax"""
+
+    @classmethod
+    def from_import_error(cls, import_str: str, class_name: str, error: Exception) -> 'ParsingException':
+        return cls(
+            'Import "%s" is invalid - cannot import class "%s" - error: %s' % (
+                import_str, class_name, str(error)
+            )
+        )
+
+    @classmethod
+    def from_class_not_found_in_module_error(cls, import_str: str, class_name: str,
+                                             import_path: str) -> 'ParsingException':
+        return cls(
+            'Import "%s" is invalid. Class "%s" not found in module "%s"' % (
+                import_str, class_name, import_path
+            )
+        )
+
+
 class DeclarationException(ContextException):
     """Something wrong with the makefile.py/makefile.yaml """
 

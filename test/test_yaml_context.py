@@ -18,50 +18,6 @@ SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestYamlContext(BasicTestingCase):
-    def test_parse_imports_successful_case_single_task(self):
-        factory = YamlSyntaxInterpreter(NullSystemIO(), YamlFileLoader([]))
-        imported = factory.parse_imports(['rkd.standardlib.jinja.RenderDirectoryTask'])
-
-        self.assertEqual(':j2:directory-to-directory', imported[0].to_full_name())
-
-    def test_parse_imports_successful_case_module(self):
-        factory = YamlSyntaxInterpreter(NullSystemIO(), YamlFileLoader([]))
-        imported = factory.parse_imports(['rkd.standardlib.jinja'])
-
-        names_of_imported_tasks = []
-
-        for task in imported:
-            names_of_imported_tasks.append(task.to_full_name())
-
-        self.assertIn(':j2:render', names_of_imported_tasks)
-        self.assertIn(':j2:directory-to-directory', names_of_imported_tasks)
-
-    def test_parse_imports_wrong_class_type_but_existing(self):
-        def test():
-            factory = YamlSyntaxInterpreter(NullSystemIO(), YamlFileLoader([]))
-            factory.parse_imports(['rkd.exception.ContextException'])
-
-        self.assertRaises(DeclarationException, test)
-
-    def test_parse_imports_cannot_import_non_existing_class(self):
-        def test():
-            factory = YamlSyntaxInterpreter(NullSystemIO(), YamlFileLoader([]))
-            factory.parse_imports(['rkd.standardlib.python.WRONG_NAME'])
-
-        self.assertRaises(YamlParsingException, test)
-
-    def test_parse_imports_importing_whole_module_without_submodules(self):
-        factory = YamlSyntaxInterpreter(NullSystemIO(), YamlFileLoader([]))
-        imported = factory.parse_imports(['rkd_python'])
-
-        names_of_imported_tasks = []
-
-        for task in imported:
-            names_of_imported_tasks.append(task.to_full_name())
-
-        self.assertIn(':py:build', names_of_imported_tasks)
-        self.assertIn(':py:publish', names_of_imported_tasks)
-
     def test_parse_tasks_successful_case(self):
         """Successful case with description, arguments and bash steps
         """
