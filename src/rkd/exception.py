@@ -68,7 +68,7 @@ class ParsingException(ContextException):
     def from_class_not_found_in_module_error(cls, import_str: str, class_name: str,
                                              import_path: str) -> 'ParsingException':
         return cls(
-            'Import "%s" is invalid. Class "%s" not found in module "%s"' % (
+            'Import "%s" is invalid. Class or method "%s" not found in module "%s"' % (
                 import_str, class_name, import_path
             )
         )

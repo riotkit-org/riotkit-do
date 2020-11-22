@@ -12,6 +12,7 @@ from .api.syntax import TaskDeclaration
 from .api.syntax import TaskAliasDeclaration
 from .api.syntax import GroupDeclaration
 from .api.contract import ContextInterface
+from .api.parsing import SyntaxParsing
 from .argparsing import CommandlineParsingHelper
 from .api.inputoutput import SystemIO
 from .exception import TaskNotFoundException
@@ -225,7 +226,20 @@ class ContextFactory:
             directory=path
         )
 
-    def create_unified_context(self, chdir: str = '') -> ApplicationContext:
+    def _load_context_from_list_of_imports(self, additional_imports: List[str]) -> ApplicationContext:
+        """
+        Creates ApplicationContext from simple list of imports
+
+        :param additional_imports:
+        :return:
+        """
+
+        declarations = SyntaxParsing.parse_imports_by_list_of_classes(additional_imports)
+        ctx = ApplicationContext(declarations, [], '')
+
+        return ctx
+
+    def create_unified_context(self, chdir: str = '', additional_imports: List[str] = None) -> ApplicationContext:
         """
         Creates a merged context in order:
         - Internal/Core (this package)
@@ -261,10 +275,14 @@ class ContextFactory:
 
             try:
                 ctx = ApplicationContext.merge(ctx, self._load_context_from_directory(path))
-                ctx.io = self._io
             except ContextFileNotFoundException:
                 pass
 
+        # imports added by eg. environment variable
+        if additional_imports:
+            ctx = ApplicationContext.merge(ctx, self._load_context_from_list_of_imports(additional_imports))
+
+        ctx.io = self._io
         ctx.compile()
 
         return ctx

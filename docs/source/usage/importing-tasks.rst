@@ -63,5 +63,19 @@ Example: Given we want to import task "InjectQEMUBinaryIntoContainerTask", or we
     IMPORTS += [TaskDeclaration(InjectQEMUBinaryIntoContainerTask)]
 
 
+3) Inline syntax
+----------------
+
+Tasks could be imported also in shell, for quick check, handy scripts, or for embedding inside other applications.
+
+.. code:: bash
+
+    # note: Those examples requires "rkt_utils" package from PyPI
+    RKD_IMPORTS="rkt_utils.docker" rkd :docker:tag
+    RKD_IMPORTS="rkt_utils.docker:rkt_ciutils.boatci:rkd_python" rkd :tasks
+
+
+For more information about this environment variable check it's documentation page: :ref:`RKD_IMPORTS`
+
 Ready to go? Check :ref:`Built-in tasks` that you can import in your Makefile
 -----------------------------------------------------------------------------

@@ -8,8 +8,8 @@ from .context import ContextFactory, ApplicationContext
 from .resolver import TaskResolver
 from .validator import TaskDeclarationValidator
 from .execution.executor import OneByOneTaskExecutor
-from .exception import TaskNotFoundException
-from .api.inputoutput import SystemIO, LEVEL_INFO as LOG_LEVEL_INFO
+from .exception import TaskNotFoundException, ParsingException, YamlParsingException
+from .api.inputoutput import SystemIO
 from .api.inputoutput import UnbufferedStdout
 from .aliasgroups import parse_alias_groups_from_env
 
@@ -47,20 +47,32 @@ class RiotKitDoApplication:
         io.silent = True
         io.set_log_level(os.getenv('RKD_SYS_LOG_LEVEL', 'info'))
 
-        # load context of components
-        self._ctx = ContextFactory(io).create_unified_context()
+        # load context of components - all tasks, plugins etc.
+        try:
+            self._ctx = ContextFactory(io).create_unified_context(
+                additional_imports=os.getenv('RKD_IMPORTS', '').split(':') if os.getenv('RKD_IMPORTS') else []
+            )
+        except ParsingException as e:
+            io.silent = False
+            io.error_msg('Cannot import tasks/module from RKD_IMPORTS environment variable. Details: {}'.format(str(e)))
+            sys.exit(1)
 
-        resolver = TaskResolver(self._ctx, parse_alias_groups_from_env(os.getenv('RKD_ALIAS_GROUPS', '')))
+        except YamlParsingException as e:
+            io.silent = False
+            io.error_msg('Cannot import tasks/module from one of makefile.yaml files. Details: {}'.format(str(e)))
+            sys.exit(1)
+
+        task_resolver = TaskResolver(self._ctx, parse_alias_groups_from_env(os.getenv('RKD_ALIAS_GROUPS', '')))
         executor = OneByOneTaskExecutor(self._ctx)
 
         # iterate over each task, parse commandline arguments
         requested_tasks = CommandlineParsingHelper.create_grouped_arguments([':init'] + argv[1:])
 
         # validate all tasks
-        resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
+        task_resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
 
         # execute all tasks
-        resolver.resolve(requested_tasks, executor.execute)
+        task_resolver.resolve(requested_tasks, executor.execute)
 
         executor.get_observer().execution_finished()
 

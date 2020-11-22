@@ -36,10 +36,11 @@ class InitTask(TaskInterface):
     def get_declared_envs(self) -> Dict[str, str]:
         return {
             'RKD_DEPTH': '0',
-            'RKD_PATH': '',
-            'RKD_ALIAS_GROUPS': '',
+            'RKD_PATH': '',                # supported by core, here only for documentation in CLI
+            'RKD_ALIAS_GROUPS': '',        # supported by core, here only for documentation in CLI
             'RKD_UI': 'true',
-            'RKD_SYS_LOG_LEVEL': 'info'
+            'RKD_SYS_LOG_LEVEL': 'info',   # supported by core, here only for documentation in CLI
+            'RKD_IMPORTS': ''              # supported by core, here only for documentation in CLI
         }
 
     def configure_argparse(self, parser: ArgumentParser):

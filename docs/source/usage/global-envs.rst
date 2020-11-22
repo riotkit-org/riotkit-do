@@ -50,6 +50,9 @@ Logs output of each executed task, when set to "true".
 
 .. code:: bash
 
+    # Note: This example requires "rkd-harbor" package to be installed from PyPI
+    RKD_AUDIT_SESSION_LOG=true harbor :service:list   # RiotKit Harbor is another project based on RKD
+
     # ls .rkd/logs/2020-06-11/11\:06\:02.068556/
     task-1-init.log  task-2-harbor_service_list.log
 
@@ -68,3 +71,26 @@ RKD_SYS_LOG_LEVEL
 ~~~~~~~~~~~~~~~~~
 
 Use for debugging. The variable is read in very early stage of RKD initialization, before :code:`:init` task, and before context preparation.
+
+.. code:: bash
+
+    RKD_SYS_LOG_LEVEL=debug rkd :tasks
+
+
+.. _RKD_IMPORTS:
+
+RKD_IMPORTS
+~~~~~~~~~~~
+
+Allows to import a task, or group of tasks (module) inline, without need to create a Makefile.
+Useful in daily tasks to create handy shortcuts, also very useful for testing tasks and embedding them inside other applications.
+
+"**:**" character is a separator for multiple imports.
+
+
+.. code:: bash
+
+    # note: Those examples requires "rkt_utils" package from PyPI
+    RKD_IMPORTS="rkt_utils.docker" rkd :docker:tag
+    RKD_IMPORTS="rkt_utils.docker:rkt_ciutils.boatci:rkd_python" rkd :tasks
+
