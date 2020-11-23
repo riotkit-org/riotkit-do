@@ -39,7 +39,7 @@ class RiotKitDoApplication:
         sys.path = [os.getcwd() + '/src'] + sys.path
 
     def main(self, argv: list):
-        if not argv[1:]:
+        if not CommandlineParsingHelper.has_any_task(argv) and not CommandlineParsingHelper.was_help_used(argv):
             self.print_banner_and_exit()
 
         # system wide IO instance with defaults, the :init task should override those settings
@@ -47,14 +47,17 @@ class RiotKitDoApplication:
         io.silent = True
         io.set_log_level(os.getenv('RKD_SYS_LOG_LEVEL', 'info'))
 
+        # preparse arguments that are before tasks
+        preparsed_args = CommandlineParsingHelper.preparse_args(argv)
+
         # load context of components - all tasks, plugins etc.
         try:
-            self._ctx = ContextFactory(io).create_unified_context(
-                additional_imports=os.getenv('RKD_IMPORTS', '').split(':') if os.getenv('RKD_IMPORTS') else []
-            )
+            self._ctx = ContextFactory(io).create_unified_context(additional_imports=preparsed_args['imports'])
+
         except ParsingException as e:
             io.silent = False
-            io.error_msg('Cannot import tasks/module from RKD_IMPORTS environment variable. Details: {}'.format(str(e)))
+            io.error_msg('Cannot import tasks/module from RKD_IMPORTS environment variable or --import switch. '
+                         'Details: {}'.format(str(e)))
             sys.exit(1)
 
         except YamlParsingException as e:
@@ -94,6 +97,7 @@ def main():
 
     try:
         app.main(argv=sys.argv)
+
     except TaskNotFoundException as e:
         print(e)
         sys.exit(127)

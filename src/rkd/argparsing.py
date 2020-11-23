@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 from typing import List
 from typing import Tuple
 from argparse import ArgumentParser
@@ -157,12 +158,12 @@ class CommandlineParsingHelper(object):
         argparse.add_argument('--become', '-rb', help='Execute task as given user (requires sudo)', default='')
 
         task.get_task_to_execute().configure_argparse(argparse)
-        cls.add_env_variables_to_argparse(argparse, task)
+        cls.add_env_variables_to_argparse_description(argparse, task)
 
         return vars(argparse.parse_args(args)), argparse.traced_arguments
 
     @classmethod
-    def add_env_variables_to_argparse(cls, argparse: ArgumentParser, task: TaskDeclarationInterface):
+    def add_env_variables_to_argparse_description(cls, argparse: ArgumentParser, task: TaskDeclarationInterface):
         if argparse.description is None:
             argparse.description = ""
 
@@ -180,3 +181,55 @@ class CommandlineParsingHelper(object):
 
         if not task.get_task_to_execute().get_declared_envs():
             argparse.description += ' -- No environment variables declared -- '
+
+    @staticmethod
+    def preparse_args(args: List[str]):
+        """
+        Parses commandline arguments which are not accessible on tasks level, but are accessible behind tasks
+        Those arguments should decide about RKD core behavior on very early stage
+
+        :param args:
+        :return:
+        """
+
+        limited_args = []
+
+        for arg in args:
+            if arg.startswith(':') or arg.startswith('@'):
+                break
+
+            limited_args.append(arg)
+
+        argparse = ArgumentParser(add_help=False)
+        argparse.add_argument('--import', '-ri')
+
+        parsed = vars(argparse.parse_known_args(args=limited_args)[0])
+
+        return {
+            'imports': list(filter(None,
+                                   os.getenv('RKD_IMPORT', parsed['import'] if parsed['import'] else '').split(':')
+                                   ))
+        }
+
+    @staticmethod
+    def has_any_task(argv: List[str]) -> bool:
+        """
+        Checks if arguments contains at least one task
+
+        :param argv:
+        :return:
+        """
+
+        for arg in argv:
+            if arg.startswith(':'):
+                return True
+
+        return False
+
+    @staticmethod
+    def was_help_used(argv: List[str]) -> bool:
+        for arg in argv:
+            if arg in ['-h', '--help']:
+                return True
+
+        return False
