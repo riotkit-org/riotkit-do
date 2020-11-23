@@ -278,12 +278,12 @@ class TestFunctional(FunctionalTestingCase):
 
         with self.subTest('Behind tasks'):
             full_output, exit_code = self.run_and_capture_output(['--help'])
-            self.assertIn('--import', full_output)
+            self.assertIn('--imports', full_output)
 
         with self.subTest('--help of a task'):
             full_output, exit_code = self.run_and_capture_output([':sh', '--help'])
-            self.assertNotIn('--import', full_output)
+            self.assertNotIn('--imports', full_output)
 
         with self.subTest('Behind tasks, but task defined'):
             full_output, exit_code = self.run_and_capture_output(['--help', ':sh'])
-            self.assertIn('--import', full_output)
+            self.assertIn('--imports', full_output)

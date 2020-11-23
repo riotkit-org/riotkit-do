@@ -134,7 +134,7 @@ class ArgParsingTest(BasicTestingCase):
         then it works
         """
 
-        args = CommandlineParsingHelper.preparse_args(['--import', 'rkd_python', ':sh'])
+        args = CommandlineParsingHelper.preparse_args(['--imports', 'rkd_python', ':sh'])
 
         self.assertIn('imports', args)
         self.assertEqual(['rkd_python'], args['imports'])
@@ -144,7 +144,7 @@ class ArgParsingTest(BasicTestingCase):
         Arguments that could be preparsed should be placed behind any task
         """
 
-        args = CommandlineParsingHelper.preparse_args([':sh', '--import', 'rkd_python'])
+        args = CommandlineParsingHelper.preparse_args([':sh', '--imports', 'rkd_python'])
 
         self.assertEqual([], args['imports'])
 
@@ -162,8 +162,8 @@ class ArgParsingTest(BasicTestingCase):
         with self.subTest(':task --test'):
             self.assertTrue(CommandlineParsingHelper.has_any_task([':task', '--test']))
 
-        with self.subTest('--import rkd_python --help'):
-            self.assertFalse(CommandlineParsingHelper.has_any_task(['--import', 'rkd_python', '--help']))
+        with self.subTest('--imports rkd_python --help'):
+            self.assertFalse(CommandlineParsingHelper.has_any_task(['--imports', 'rkd_python', '--help']))
 
     def test_was_help_used(self):
         """

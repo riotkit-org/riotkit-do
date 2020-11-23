@@ -74,6 +74,13 @@ Tasks could be imported also in shell, for quick check, handy scripts, or for em
     RKD_IMPORTS="rkt_utils.docker" rkd :docker:tag
     RKD_IMPORTS="rkt_utils.docker:rkt_ciutils.boatci:rkd_python" rkd :tasks
 
+    # via commandline switch "--imports"
+    rkd --imports "rkt_utils.docker:rkt_ciutils.boatci:rkd_python" :tasks
+
+
+*Note: The significant difference between environment variable and commandline switch is that the environment variable
+will be inherited into subshells of RKD, commandline argument not.*
+
 
 For more information about this environment variable check it's documentation page: :ref:`RKD_IMPORTS`
 

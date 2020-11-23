@@ -201,13 +201,13 @@ class CommandlineParsingHelper(object):
             limited_args.append(arg)
 
         argparse = ArgumentParser(add_help=False)
-        argparse.add_argument('--import', '-ri')
+        argparse.add_argument('--imports', '-ri')
 
         parsed = vars(argparse.parse_known_args(args=limited_args)[0])
 
         return {
             'imports': list(filter(None,
-                                   os.getenv('RKD_IMPORT', parsed['import'] if parsed['import'] else '').split(':')
+                                   os.getenv('RKD_IMPORTS', parsed['imports'] if parsed['imports'] else '').split(':')
                                    ))
         }
 

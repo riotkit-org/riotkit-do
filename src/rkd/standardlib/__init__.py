@@ -40,7 +40,7 @@ class InitTask(TaskInterface):
             'RKD_ALIAS_GROUPS': '',        # supported by core, here only for documentation in CLI
             'RKD_UI': 'true',
             'RKD_SYS_LOG_LEVEL': 'info',   # supported by core, here only for documentation in CLI
-            'RKD_IMPORT': ''               # supported by core, here only for documentation in CLI
+            'RKD_IMPORTS': ''              # supported by core, here only for documentation in CLI
         }
 
     def configure_argparse(self, parser: ArgumentParser):
@@ -48,10 +48,10 @@ class InitTask(TaskInterface):
                             help='Do not display RKD interface (similar to --silent, ' +
                                  'but does not inherit --silent into next tasks)')
 
-        parser.add_argument('--import', '-ri',
+        parser.add_argument('--imports', '-ri',
                             help='Imports a task or list of tasks separated by ":". '
                                  'Example: "rkt_utils.docker:rkt_ciutils.boatci:rkd_python". '
-                                 'Instead of switch there could be also environment variable "RKD_IMPORT" used')
+                                 'Instead of switch there could be also environment variable "RKD_IMPORTS" used')
 
     def execute(self, context: ExecutionContext) -> bool:
         """

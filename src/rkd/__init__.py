@@ -56,7 +56,7 @@ class RiotKitDoApplication:
 
         except ParsingException as e:
             io.silent = False
-            io.error_msg('Cannot import tasks/module from RKD_IMPORTS environment variable or --import switch. '
+            io.error_msg('Cannot import tasks/module from RKD_IMPORTS environment variable or --imports switch. '
                          'Details: {}'.format(str(e)))
             sys.exit(1)
 
