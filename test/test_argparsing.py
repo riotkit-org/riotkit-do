@@ -127,3 +127,58 @@ class ArgParsingTest(BasicTestingCase):
             "Task<:send:mail ([])>]",
             str(parsed)
         )
+
+    def test_preparse_args_tolerates_not_recognized_args(self):
+        """
+        Normally argparse would break the test. If it returns a value EVEN if there are unrecognized arguments,
+        then it works
+        """
+
+        args = CommandlineParsingHelper.preparse_args(['--import', 'rkd_python', ':sh'])
+
+        self.assertIn('imports', args)
+        self.assertEqual(['rkd_python'], args['imports'])
+
+    def test_preparse_ignores_arguments_after_tasks(self):
+        """
+        Arguments that could be preparsed should be placed behind any task
+        """
+
+        args = CommandlineParsingHelper.preparse_args([':sh', '--import', 'rkd_python'])
+
+        self.assertEqual([], args['imports'])
+
+    def test_has_any_task(self):
+        """
+        Checks if a commandline string has any task
+        """
+
+        with self.subTest(':task'):
+            self.assertTrue(CommandlineParsingHelper.has_any_task([':task']))
+
+        with self.subTest('--help :task'):
+            self.assertTrue(CommandlineParsingHelper.has_any_task(['--help', ':task']))
+
+        with self.subTest(':task --test'):
+            self.assertTrue(CommandlineParsingHelper.has_any_task([':task', '--test']))
+
+        with self.subTest('--import rkd_python --help'):
+            self.assertFalse(CommandlineParsingHelper.has_any_task(['--import', 'rkd_python', '--help']))
+
+    def test_was_help_used(self):
+        """
+        Checks if "--help" switch was used at all
+        :return:
+        """
+
+        with self.subTest('--help'):
+            self.assertTrue(CommandlineParsingHelper.was_help_used(['--help']))
+
+        with self.subTest('-h'):
+            self.assertTrue(CommandlineParsingHelper.was_help_used(['-h']))
+
+        with self.subTest('Not used - empty string'):
+            self.assertFalse(CommandlineParsingHelper.was_help_used([]))
+
+        with self.subTest('Not used - non empty string - :tasks --print'):
+            self.assertFalse(CommandlineParsingHelper.was_help_used([':tasks', '--print']))

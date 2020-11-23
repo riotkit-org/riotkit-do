@@ -262,7 +262,6 @@ class TestFunctional(FunctionalTestingCase):
         """
         We assume that if "$" is in environment variable, then it is because it was previously escaped
         else the shell would automatically inject a variable in its place - so we keep the escaping
-        :return:
         """
 
         with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/recursive-env-in-yaml/.rkd'}):
@@ -271,3 +270,20 @@ class TestFunctional(FunctionalTestingCase):
             full_output, exit_code = self.run_and_capture_output(['--no-ui', ':external-env'])
 
             self.assertIn('This is $PATH', full_output)
+
+    def test_help_shows_imports_switch_only_behind_tasks(self):
+        """
+        Checks that preparsed argument "--import" is available in --help only behind any task
+        """
+
+        with self.subTest('Behind tasks'):
+            full_output, exit_code = self.run_and_capture_output(['--help'])
+            self.assertIn('--import', full_output)
+
+        with self.subTest('--help of a task'):
+            full_output, exit_code = self.run_and_capture_output([':sh', '--help'])
+            self.assertNotIn('--import', full_output)
+
+        with self.subTest('Behind tasks, but task defined'):
+            full_output, exit_code = self.run_and_capture_output(['--help', ':sh'])
+            self.assertIn('--import', full_output)
