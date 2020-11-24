@@ -1,4 +1,11 @@
 
+"""
+Audit
+=====
+
+Allows to keep activity logs for future analysis
+"""
+
 import os
 import re
 from .api.syntax import TaskDeclaration
