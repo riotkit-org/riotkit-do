@@ -25,7 +25,7 @@ class ContextTest(BasicTestingCase):
         """Test if internal context (RKD by default has internal context) is loaded properly
         """
         discovery = ContextFactory(NullSystemIO())
-        ctx = discovery._load_context_from_directory(CURRENT_SCRIPT_PATH + '/../src/rkd/internal')
+        ctx = discovery._load_context_from_directory(CURRENT_SCRIPT_PATH + '/../rkd/internal')
 
         self.assertTrue(isinstance(ctx, ApplicationContext))
 

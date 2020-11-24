@@ -3,11 +3,10 @@
 #
 SHELL=/bin/bash
 TEST_OPTS=
-PYTHONPATH = $(shell echo "$$(pwd)/src:$$(pwd)/subpackages/rkd_python/src")
 
 ## Run tests
 tests: refresh_git
-	export PYTHONPATH=$${PYTHONPATH}:${PYTHONPATH}; cd src && python3 -m unittest discover -s ../test ${TEST_OPTS}
+	python3 -m unittest discover -s ./test ${TEST_OPTS}
 
 ## Release
 release: package publish

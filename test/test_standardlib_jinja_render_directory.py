@@ -46,23 +46,23 @@ class TestRenderDirectoryTask(BasicTestingCase):
         """Test with pattern, no source files deletion
         """
         renderings, deletions = self._execute_mocked_task({
-            'source': '../',
+            'source': './',
             'target': '/tmp',
             'delete_source_files': False,
-            'pattern': '(.*)(src|test)/(.*).py$',
+            'pattern': '(.*)(rkd|test)/(.*).py$',
             '--exclude-pattern': '',
             '--copy-not-matching-files': False,
             '--template-filenames': False
         })
 
         # example files (please correct if changed in filesystem)
-        self.assertIn('"../test/test_standardlib_jinja_render_directory.py" ' +
+        self.assertIn('"./test/test_standardlib_jinja_render_directory.py" ' +
                       '-> "/tmp/test/test_standardlib_jinja_render_directory.py"', renderings)
-        self.assertIn('"../src/__init__.py" -> "/tmp/src/__init__.py"', renderings)
+        self.assertIn('"./rkd/__init__.py" -> "/tmp/rkd/__init__.py"', renderings)
 
         # directories should not be included
-        self.assertNotIn('"../src/" -> "/tmp/src/"', renderings)
-        self.assertNotIn('"../src" -> "/tmp/src"', renderings)
+        self.assertNotIn('"./rkd/" -> "/tmp/rkd/"', renderings)
+        self.assertNotIn('"./rkd" -> "/tmp/rkd"', renderings)
 
     def test_files_are_copied_when_not_matching_pattern_but_switch_was_used(self):
         """Test --copy-not-matching-files switch that adds a possibility to copy all files from SOURCE to DESTINATION
@@ -72,7 +72,7 @@ class TestRenderDirectoryTask(BasicTestingCase):
         """
 
         renderings, deletions = self._execute_mocked_task({
-            'source': '../test',
+            'source': 'test',
             'target': '/tmp',
             'delete_source_files': False,
             'pattern': '(.*).j2',
@@ -86,7 +86,7 @@ class TestRenderDirectoryTask(BasicTestingCase):
         with self.subTest('Check --copy-not-matching-files - the non (.*).j2 files should be just copied ' +
                           'instead of rendered'):
 
-            self.assertIn('sh(cp -p "../test/test_standardlib_jinja_render_directory.py" ' +
+            self.assertIn('sh(cp -p "test/test_standardlib_jinja_render_directory.py" ' +
                           '"/tmp//test_standardlib_jinja_render_directory.py")', renderings)
 
         with self.subTest('Check --exclude-pattern'):
@@ -96,7 +96,7 @@ class TestRenderDirectoryTask(BasicTestingCase):
         """What happens if we specify no pattern?
         """
         renderings, deletions = self._execute_mocked_task({
-            'source': '../',
+            'source': './',
             'target': '/tmp',
             'delete_source_files': False,
             'pattern': '',
@@ -112,7 +112,7 @@ class TestRenderDirectoryTask(BasicTestingCase):
 
     def test_no_files_deleted_when_option_disabled(self):
         renderings, deletions = self._execute_mocked_task({
-            'source': '../',
+            'source': './',
             'target': '/tmp',
             'delete_source_files': False,
             'pattern': '',
@@ -125,7 +125,7 @@ class TestRenderDirectoryTask(BasicTestingCase):
 
     def test_files_are_called_to_be_deleted(self):
         renderings, deletions = self._execute_mocked_task({
-            'source': '../',
+            'source': './',
             'target': '/tmp',
             'delete_source_files': True,
             'pattern': '(.*)test_standardlib_jinja_render_directory.py$',
@@ -134,7 +134,7 @@ class TestRenderDirectoryTask(BasicTestingCase):
             '--template-filenames': False
         })
 
-        self.assertEqual(['../test/test_standardlib_jinja_render_directory.py'], deletions)
+        self.assertEqual(['./test/test_standardlib_jinja_render_directory.py'], deletions)
 
     def test_replace_vars_in_filename(self):
         name = RenderDirectoryTask().replace_vars_in_filename({'Word': 'triumph'}, 'that-agony-is-your---Word--.txt')

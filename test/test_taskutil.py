@@ -18,12 +18,12 @@ class TestTaskUtil(BasicTestingCase, OutputCapturingSafeTestCase):
     def test_sh_accepts_script_syntax(self):
         task = InitTask()
         task._io = IO()
-        self.assertIn('__init__.py', task.sh("ls -la\npwd", capture=True))
+        self.assertIn('__init__.py', task.sh("ls -la rkd\npwd", capture=True))
 
     def test_exec_spawns_process(self):
         task = InitTask()
         task._io = IO()
-        self.assertIn('__init__.py', task.exec('ls', capture=True))
+        self.assertIn('__init__.py', task.exec('ls rkd', capture=True))
 
     def test_sh_executes_in_background(self):
         task = InitTask()

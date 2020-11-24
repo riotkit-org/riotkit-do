@@ -85,7 +85,7 @@ class TestFileRendererTask(BasicTestingCase):
         """Test that JINJA2 finds files on disk in current directory when using {% extends "..." %}"""
 
         cwd_copy = os.getcwd()
-        os.chdir('../test/internal-samples/jinja2')
+        os.chdir('test/internal-samples/jinja2')
 
         try:
             io = self._execute_mocked_task(

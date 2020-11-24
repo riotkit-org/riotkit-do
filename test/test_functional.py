@@ -217,7 +217,7 @@ class TestFunctional(FunctionalTestingCase):
                 # 3. Run
                 full_output = subprocess.check_output(
                     sys.executable + " -m rkd :sh -c 'echo \"Durruti was born at $DURRUTI_BIRTHDAY_DATE\"'",
-                    env={'PYTHONPATH': SCRIPT_DIR_PATH + '/../src'},
+                    env={'PYTHONPATH': SCRIPT_DIR_PATH + '/../'},
                     shell=True
                 )
 

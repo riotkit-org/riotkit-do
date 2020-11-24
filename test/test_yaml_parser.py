@@ -123,9 +123,11 @@ tasks:
             os.environ['RKD_PATH'] = ''
 
         defined_by_rkd_path = paths.index('SOME-PATH-THERE/harbor-internal/')
-        internal_path = paths.index(os.path.realpath(SCRIPT_DIR_PATH + '/../src') + '/harbor-internal/')
 
-        self.assertGreater(defined_by_rkd_path, internal_path, msg='defined_by_rkd_path should be favored')
+        internal_path = (os.path.realpath(SCRIPT_DIR_PATH) + '/harbor-internal/').replace('test/', '')
+        internal_path_index = paths.index(internal_path)
+
+        self.assertGreater(defined_by_rkd_path, internal_path_index, msg='defined_by_rkd_path should be favored')
 
     def test_find_path_by_name_founds_path(self):
         """Assert that makefile.yml will be searched in RKD_PATH"""

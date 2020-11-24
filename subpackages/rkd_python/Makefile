@@ -2,7 +2,7 @@
 # https://github.com/riotkit-org/riotkit-do/issues/5
 #
 TEST_OPTS=
-PYTHONPATH = $(shell echo "$$(pwd)/src:$$(pwd)/../../src")
+PYTHONPATH = $(shell echo "$$(pwd)/src:$$(pwd)/../../")
 
 ## Run tests
 tests:

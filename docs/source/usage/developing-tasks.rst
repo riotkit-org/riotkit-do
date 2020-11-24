@@ -40,7 +40,7 @@ Following example task could be imported with path **rkd.standardlib.ShellComman
 
 **Example task from RKD standardlib:**
 
-.. literalinclude:: ../../../src/rkd/standardlib/shell.py
+.. literalinclude:: ../../../rkd/standardlib/shell.py
    :start-after: <sphinx=shell-command>
    :end-before: </sphinx=shell-command>
 

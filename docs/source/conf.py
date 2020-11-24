@@ -1,7 +1,7 @@
 import sys
 import os
 
-sys.path = [os.path.dirname(os.path.realpath(__file__)) + "/../../src"] + sys.path
+sys.path = [os.path.dirname(os.path.realpath(__file__)) + "/../../"] + sys.path
 
 project = 'RiotKit Do'
 copyright = '2019, RiotKit Collective'
