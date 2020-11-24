@@ -14,7 +14,7 @@ from unittest import TestCase
 from io import StringIO
 from copy import deepcopy
 from contextlib import contextmanager
-from rkd import RiotKitDoApplication, ApplicationContext
+from rkd.bootstrap import RiotKitDoApplication
 from rkd.execution.executor import OneByOneTaskExecutor
 from rkd.api.contract import ExecutionContext
 from rkd.api.contract import TaskInterface
@@ -23,6 +23,7 @@ from rkd.api.temp import TempManager
 from rkd.api.inputoutput import IO
 from rkd.api.inputoutput import NullSystemIO
 from rkd.api.inputoutput import BufferedSystemIO
+from rkd.context import ApplicationContext
 
 
 class OutputCapturingSafeTestCase(TestCase):
@@ -245,6 +246,7 @@ class FunctionalTestingCase(BasicTestingCase, OutputCapturingSafeTestCase):
 
         with r_io.capture_descriptors(enable_standard_out=True, stream=str_io):
             try:
+                # noinspection PyTypeChecker
                 result = task.execute(ExecutionContext(
                     TaskDeclaration(task),
                     args=args,

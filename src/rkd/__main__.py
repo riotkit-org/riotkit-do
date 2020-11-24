@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
 
-from . import main
+from .bootstrap import main
 
 main()
