@@ -1,4 +1,5 @@
 import os
+import sys
 from abc import ABC
 from subprocess import CalledProcessError
 from argparse import ArgumentParser
@@ -144,7 +145,8 @@ class UnitTestTask(BasePythonTask):
                             help='Relative directory to --src-dir where to look for tests')
         parser.add_argument('--pattern', help='Pattern to match tests, default test*.py', default='test*.py')
         parser.add_argument('--filter', '-p', help='Pattern to filter tests')
-        parser.add_argument('--python-bin', default='python3', help='Python binary name (if in PATH) or path')
+        parser.add_argument('--python-bin', default=sys.executable, help='Python binary name (if in PATH) or path. '
+                                                                         'Defaults is ' + sys.executable)
 
     def get_name(self) -> str:
         return ':unittest'
