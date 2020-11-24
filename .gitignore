@@ -10,4 +10,6 @@
 subpackages/rkd_python/AUTHORS
 subpackages/rkd_python/ChangeLog
 
-/subpackages/rkd_python/src/rkd_python.egg-info/
+/subpackages/rkd_python/rkd_python.egg-info/
+/subpackages/rkd_python/build/
+/subpackages/rkd_python/dist/
