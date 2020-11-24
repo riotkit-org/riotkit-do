@@ -22,9 +22,9 @@ RKD - RiotKit-Do
 	:target: https://img.shields.io/pypi/l/rkd.svg
 	:alt: License
 
-.. image:: https://travis-ci.com/riotkit-org/riotkit-do.svg?branch=master
-	:target: https://travis-ci.com/riotkit-org/riotkit-do
-	:alt: Travis CI
+.. image:: https://github.com/riotkit-org/riotkit-do/workflows/Test%20and%20release%20a%20package/badge.svg
+	:target: https://github.com/riotkit-org/riotkit-do/actions?query=workflow%3A%22Test+and+release+a+package%22
+	:alt: Test and release a package
     
 .. image:: https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square
 	:target: https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square
