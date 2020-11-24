@@ -26,7 +26,7 @@ package: refresh_git
 publish:
 	twine upload --disable-progress-bar --verbose \
 		--username=__token__ \
-		--password=$${PYPI_TOKEN} \
+		--password=${PYPI_TOKEN} \
 		--skip-existing \
 		dist/*
 
