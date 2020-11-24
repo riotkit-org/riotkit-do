@@ -1,10 +1,4 @@
 import os
-import sys
-import inspect
-
-sys.path.append(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) + '/../subpackages/rkd_python/')
-
-
 from rkd.api.syntax import TaskAliasDeclaration as Task  # RKD API (for defining shortcuts/aliases for whole tasks lists)
 from rkd.api.syntax import TaskDeclaration               # RKD API (for declaring usage of given task, importing it)
 from rkd.api.contract import ExecutionContext            # RKD API (one of dependencies - context gives us access to commandline arguments and environment variables)

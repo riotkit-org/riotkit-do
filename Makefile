@@ -6,6 +6,7 @@ TEST_OPTS=
 
 ## Run tests
 tests: refresh_git
+	export PYTHONPATH="$$(pwd):$$(pwd)/subpackages/rkd_python"; \
 	python3 -m unittest discover -s ./test ${TEST_OPTS}
 
 ## Release
