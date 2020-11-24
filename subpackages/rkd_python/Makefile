@@ -6,7 +6,7 @@ PYTHONPATH = $(shell echo "$$(pwd)/src:$$(pwd)/../../src")
 
 ## Run tests
 tests:
-	cd src && export PYTHONPATH=${PYTHONPATH} && python3 -u -m unittest discover -s ../test ${TEST_OPTS}
+	python3 -u -m unittest discover -s ./test ${TEST_OPTS}
 
 ## Release
 release: package publish

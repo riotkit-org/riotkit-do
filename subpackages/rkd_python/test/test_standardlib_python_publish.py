@@ -2,15 +2,16 @@
 
 import unittest
 import subprocess
+import os
+
+RKD_PATH = os.getcwd() + '/example/.rkd'
 
 
 class PublishTaskTest(unittest.TestCase):
     def _call_publish_via_shell(self, arguments: str):
         try:
             out = subprocess.check_output('''
-                export RKD_PATH=$(pwd)/../example/.rkd
-                
-                cd ../
+                export RKD_PATH=$(pwd)/example/.rkd
                 python3 -m rkd --silent :sh -c "python3 -m rkd --silent :py:publish ''' + arguments + '''"
             ''', shell=True)
         except subprocess.CalledProcessError as e:
@@ -24,6 +25,10 @@ class PublishTaskTest(unittest.TestCase):
         Integration test with TaskUtilities.sh()
         """
 
+        # build first
+        subprocess.check_call(['python3', '-m', 'rkd', '--silent', ':py:build'], env={'RKD_PATH': RKD_PATH})
+
+        # try to publish
         out = self._call_publish_via_shell('--username=wrong --password=wrong --test').decode('utf-8')
         self.assertIn('403 Invalid or non-existent authentication information.', out)
         self.assertIn('Uploading distributions to https://test.pypi.org', out)
