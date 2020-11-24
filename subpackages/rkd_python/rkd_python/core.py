@@ -4,7 +4,6 @@ from subprocess import CalledProcessError
 from argparse import ArgumentParser
 from typing import Dict
 from rkd.api.contract import TaskInterface, ExecutionContext
-from rkd.api.syntax import TaskDeclaration
 
 
 class BasePythonTask(TaskInterface, ABC):
@@ -140,8 +139,8 @@ class UnitTestTask(BasePythonTask):
         return True
 
     def configure_argparse(self, parser: ArgumentParser):
-        parser.add_argument('--src-dir', default='src', help='Directory where packages are placed')
-        parser.add_argument('--tests-dir', default='../test',
+        parser.add_argument('--src-dir', default='./', help='Directory where packages are placed')
+        parser.add_argument('--tests-dir', default='test',
                             help='Relative directory to --src-dir where to look for tests')
         parser.add_argument('--pattern', help='Pattern to match tests, default test*.py', default='test*.py')
         parser.add_argument('--filter', '-p', help='Pattern to filter tests')
@@ -149,13 +148,3 @@ class UnitTestTask(BasePythonTask):
 
     def get_name(self) -> str:
         return ':unittest'
-
-
-def imports():
-    return [
-        TaskDeclaration(CleanTask()),
-        TaskDeclaration(PublishTask()),
-        TaskDeclaration(BuildTask()),
-        TaskDeclaration(InstallTask()),
-        TaskDeclaration(UnitTestTask())
-    ]
