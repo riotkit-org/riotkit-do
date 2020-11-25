@@ -119,7 +119,7 @@ class UnitTestTask(BasePythonTask):
         cmd = 'export PYTHONUNBUFFERED=1; '
 
         if context.get_arg('--src-dir'):
-            cmd += 'cd %s && ' % context.get_arg('--src-dir')
+            cmd += 'set +u; export PYTHONPATH="%s:$PYTHONPATH"; ' % context.get_arg('--src-dir')
 
         cmd += '%s -m unittest discover -s %s ' % (
             context.get_arg('--python-bin'),
@@ -127,9 +127,9 @@ class UnitTestTask(BasePythonTask):
         )
 
         if context.get_arg('--pattern'):
-            cmd += ' -p %s ' % context.get_arg('--pattern')
+            cmd += ' -p \'%s\' ' % context.get_arg('--pattern')
 
-        if context.args['filter']:
+        if context.get_arg('--filter'):
             cmd += ' -k %s ' % context.get_arg('--filter')
 
         try:
