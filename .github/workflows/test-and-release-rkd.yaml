@@ -22,13 +22,16 @@ jobs:
                   python-version: ${{ matrix.python-version }}
 
             - name: Install dependencies
-              run: "pip install -r ./requirements.txt && pip install -r ./requirements-dev.txt"
+              run: "pip install -r ./requirements.txt && pip install -r ./requirements-dev.txt && pip install -r ./subpackages/rkd_python/requirements.txt"
 
             - name: Build project
               run: "make package"
 
-            - name: Run tests on Python ${{ matrix.python-version }}
+            - name: Run RKD tests on Python ${{ matrix.python-version }}
               run: "make tests"
+
+            - name: Run rkd_python tests on Python ${{ matrix.python-version }}
+              run: "cd subpackages/rkd_python && make tests"
 
     release:
         needs: [test]
@@ -47,5 +50,8 @@ jobs:
             - name: Install dependencies
               run: "pip install -r ./requirements.txt && pip install -r ./requirements-dev.txt && pip install -r ./subpackages/rkd_python/requirements.txt"
 
-            - name: Release to PyPI
+            - name: Release RKD to PyPI
               run: "make release PYPI_TOKEN=${{ secrets.PYPI_TOKEN }}"
+
+            - name: Release rkd_python to PyPI
+              run: "cd subpackages/rkd_python && make release PYPI_TOKEN=${{ secrets.PYPI_TOKEN }}"
