@@ -26,7 +26,10 @@ class PublishTaskTest(unittest.TestCase):
         """
 
         # build first
-        subprocess.check_call(['python3', '-m', 'rkd', '--silent', ':py:build'], env={'RKD_PATH': RKD_PATH})
+        env = dict(os.environ)
+        env['RKD_PATH'] = RKD_PATH
+
+        subprocess.check_call(['python3', '-m', 'rkd', '--silent', ':py:build'], env=env)
 
         # try to publish
         out = self._call_publish_via_shell('--username=wrong --password=wrong --test').decode('utf-8')
