@@ -448,6 +448,9 @@ This task is designed to be extended, see methods marked as "interface methods".
 
         template_structure_path = os.path.dirname(os.path.realpath(__file__)) + '/../misc/initial-structure'
 
+        if not os.path.isdir(template_structure_path):
+            template_structure_path = '/usr/lib/rkd/initial-structure/'
+
         self.on_startup(ctx)
 
         # 1) Create structure from template

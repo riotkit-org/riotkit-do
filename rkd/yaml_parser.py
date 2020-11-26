@@ -88,6 +88,7 @@ class YamlFileLoader(object):
         for path in global_paths:
             paths.append(path + '/' + subdirectory)
 
-        paths.append(CURRENT_SCRIPT_PATH + '/internal/' + subdirectory)
+        paths.append(CURRENT_SCRIPT_PATH + '/misc/internal/' + subdirectory)
+        paths.append('/usr/share/rkd/internal')
 
         return list(dict.fromkeys(paths))

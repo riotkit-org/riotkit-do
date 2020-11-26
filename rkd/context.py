@@ -252,6 +252,7 @@ class ContextFactory:
         paths = [
             CURRENT_SCRIPT_PATH + '/internal',
             '/usr/lib/rkd',
+            '/usr/share/rkd/internal',
             os.path.expanduser('~/.rkd'),
             os.getcwd() + '/.rkd'
         ]
