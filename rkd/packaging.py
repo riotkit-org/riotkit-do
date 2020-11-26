@@ -27,9 +27,9 @@ def get_possible_paths(path: str) -> List[str]:
     :return:
     """
 
-    return [
-        # eg. ./rkd/misc/banner.txt
-        os.path.dirname(os.path.realpath(__file__)) + '/misc/' + path,
+    paths = [
+        # eg. ~/.local/share/rkd/banner.txt
+        os.path.expanduser('~/.local/share/rkd/' + path),
 
         # eg. /home/andrew/.local/lib/python3.8/site-packages/usr/share/rkd/banner.txt
         get_user_site_packages() + '/usr/share/rkd/' + path,
@@ -40,6 +40,17 @@ def get_possible_paths(path: str) -> List[str]:
         # eg. /usr/share/rkd/banner.txt
         '/usr/share/rkd/' + path
     ]
+
+    # eg. ./rkd/misc/banner.txt
+    global_module_path = os.path.dirname(os.path.realpath(__file__)) + '/misc/' + path
+
+    # installed module directory should be less important to allow customizations
+    if "site-packages" in global_module_path:
+        paths.append(global_module_path)
+    else:  # local development directory
+        paths = [global_module_path] + paths
+
+    return paths
 
 
 def get_user_site_packages() -> str:
