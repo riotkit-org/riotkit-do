@@ -38,3 +38,8 @@ documentation:
 ## Properly tag project
 tag:
 	git tag -am "Version ${NUM}" ${NUM}
+
+uninstall:
+	sudo pip uninstall rkd || true
+	pip uninstall rkd || true
+	sudo rm -rf /usr/lib/rkd /usr/share/rkd
