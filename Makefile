@@ -16,7 +16,7 @@ release: package publish
 refresh_git:
 	git fetch --tags
 	git status
-	git tag -l
+	git tag -l -n
 
 ## Build local package
 package: refresh_git

@@ -243,14 +243,14 @@ class ContextFactory:
         """
         Creates a merged context in order:
         - Internal/Core (this package)
-        - System-wide (/usr/lib/rkd)
+        - System-wide (/usr/lib/rkd and /usr/share/rkd)
         - User-home ~/.rkd
         - Application (current directory ./.rkd)
         :return:
         """
 
         paths = [
-            CURRENT_SCRIPT_PATH + '/internal',
+            CURRENT_SCRIPT_PATH + '/misc/internal',
             '/usr/lib/rkd',
             '/usr/share/rkd/internal',
             os.path.expanduser('~/.rkd'),
