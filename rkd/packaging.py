@@ -11,7 +11,7 @@ from distutils.sysconfig import get_python_lib
 from typing import List, Optional, Callable
 
 
-def find_resource_directory(path: str, additional_paths: list = None) -> Optional[str]:
+def find_resource_directory(path: str) -> Optional[str]:
     return _find(path, os.path.isdir)
 
 
