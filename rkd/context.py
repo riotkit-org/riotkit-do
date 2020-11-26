@@ -20,6 +20,7 @@ from .exception import ContextFileNotFoundException
 from .exception import PythonContextFileNotFoundException
 from .exception import NotImportedClassException
 from .exception import ContextException
+from .packaging import get_user_site_packages
 from .yaml_context import YamlSyntaxInterpreter
 from .yaml_parser import YamlFileLoader
 
@@ -251,6 +252,7 @@ class ContextFactory:
 
         paths = [
             CURRENT_SCRIPT_PATH + '/misc/internal',
+            get_user_site_packages() + '/usr/share/rkd/internal',
             '/usr/lib/rkd',
             '/usr/share/rkd/internal',
             os.path.expanduser('~/.rkd'),

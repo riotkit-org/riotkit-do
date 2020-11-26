@@ -15,6 +15,7 @@ from jsonschema import validate
 from jsonschema import ValidationError
 from jsonschema import draft7_format_checker
 from .exception import YAMLFileValidationError
+from .packaging import get_user_site_packages
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -89,6 +90,8 @@ class YamlFileLoader(object):
             paths.append(path + '/' + subdirectory)
 
         paths.append(CURRENT_SCRIPT_PATH + '/misc/internal/' + subdirectory)
+        paths.append(get_user_site_packages() + '/usr/share/rkd/internal')
+        paths.append(get_user_site_packages() + '/usr/share/rkd/internal/' + subdirectory)
         paths.append('/usr/share/rkd/internal')
 
         return list(dict.fromkeys(paths))

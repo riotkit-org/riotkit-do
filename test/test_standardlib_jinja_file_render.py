@@ -13,7 +13,10 @@ class TestFileRendererTask(BasicTestingCase):
     """
 
     @staticmethod
-    def _execute_mocked_task(params: dict, envs: dict = {}) -> BufferedSystemIO:
+    def _execute_mocked_task(params: dict, envs: dict = None) -> BufferedSystemIO:
+        if envs is None:
+            envs = {}
+
         io = BufferedSystemIO()
 
         task: FileRendererTask = FileRendererTask()

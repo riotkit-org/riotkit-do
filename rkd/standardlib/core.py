@@ -18,6 +18,7 @@ from ..inputoutput import SystemIO
 from ..inputoutput import clear_formatting
 from ..aliasgroups import parse_alias_groups_from_env, AliasGroup
 from .shell import ShellCommandTask
+from ..packaging import find_resource_directory
 
 
 class InitTask(TaskInterface):
@@ -446,10 +447,7 @@ This task is designed to be extended, see methods marked as "interface methods".
                                 'please commit them or stash first')
             return False
 
-        template_structure_path = os.path.dirname(os.path.realpath(__file__)) + '/../misc/initial-structure'
-
-        if not os.path.isdir(template_structure_path):
-            template_structure_path = '/usr/lib/rkd/initial-structure/'
+        template_structure_path = find_resource_directory('initial-structure')
 
         self.on_startup(ctx)
 

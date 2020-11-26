@@ -20,6 +20,7 @@ from .exception import TaskNotFoundException, ParsingException, YamlParsingExcep
 from .api.inputoutput import SystemIO
 from .api.inputoutput import UnbufferedStdout
 from .aliasgroups import parse_alias_groups_from_env
+from .packaging import find_resource_file
 
 
 class RiotKitDoApplication(object):
@@ -91,7 +92,7 @@ class RiotKitDoApplication(object):
 
     @staticmethod
     def print_banner_and_exit():
-        with open(os.path.dirname(os.path.realpath(__file__)) + '/misc/banner.txt', 'rb') as banner_file:
+        with open(find_resource_file('banner.txt'), 'rb') as banner_file:
             print(banner_file.read().replace(b'\\x1B', b'\x1B').decode('utf-8'))
 
         sys.exit(0)
