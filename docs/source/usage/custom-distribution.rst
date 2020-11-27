@@ -85,3 +85,14 @@ Example
 
 Read more in :ref:`global environment variables`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Customizing RKD resource files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Files like banner, internal Makefiles can be overridden in user's home directory, or in operating system-wide directory.
+
+Here is the priority list, first matching result stops the search:
+
+.. include:: ../../rkd/packaging.py
+   :start-after: <sphinx_resources-get_possible_paths>
+   :end-before: </sphinx_resources-get_possible_paths>

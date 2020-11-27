@@ -27,6 +27,7 @@ def get_possible_paths(path: str) -> List[str]:
     :return:
     """
 
+    # <sphinx_resources-get_possible_paths>
     paths = [
         # eg. ~/.local/share/rkd/banner.txt
         os.path.expanduser('~/.local/share/rkd/' + path),
@@ -40,6 +41,7 @@ def get_possible_paths(path: str) -> List[str]:
         # eg. /usr/share/rkd/banner.txt
         '/usr/share/rkd/' + path
     ]
+    # </sphinx_resources-get_possible_paths>
 
     # eg. ./rkd/misc/banner.txt
     global_module_path = _get_current_script_path() + '/misc/' + path

@@ -388,12 +388,13 @@ class Wizard(object):
         """Asks user a question
 
         Usage:
-            wizard = Wizard(self)
-            wizard.ask('In which year the Spanish social revolution has begun?',
-                       attribute='year',
-                       choices=['1936', '1910'])
-            wizard.finish()
+            .. code:: python
 
+                wizard = Wizard(self)
+                wizard.ask('In which year the Spanish social revolution has begun?',
+                           attribute='year',
+                           choices=['1936', '1910'])
+                wizard.finish()
         """
 
         retried = 0

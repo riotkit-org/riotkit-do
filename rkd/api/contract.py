@@ -201,6 +201,7 @@ class ExecutionContext:
             Below example maps "COMMAND" environment variable to "--cmd" switch.
 
             .. code:: python
+
                 def get_declared_envs(self) -> Dict[str, Union[str, ArgumentEnv]]:
                     return {
                         'COMMAND': ArgumentEnv(name='COMMAND', switch='--cmd', default='')

@@ -37,7 +37,7 @@ Storing temporary files
 
 Parsing RKD syntax
 ------------------
-.. autoclass:: rkd.api.syntax.SyntaxParsing
+.. autoclass:: rkd.api.parsing.SyntaxParsing
    :members:
 
 Testing
