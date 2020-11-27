@@ -31,18 +31,18 @@ def get_possible_paths(path: str) -> List[str]:
         # eg. ~/.local/share/rkd/banner.txt
         os.path.expanduser('~/.local/share/rkd/' + path),
 
-        # eg. /home/andrew/.local/lib/python3.8/site-packages/usr/share/rkd/banner.txt
-        get_user_site_packages() + '/usr/share/rkd/' + path,
+        # eg. /home/andrew/.local/lib/python3.8/site-packages/rkd/misc/banner.txt
+        get_user_site_packages() + '/rkd/misc/' + path,
 
-        # eg. /usr/lib/python3.8/site-packages/usr/share/rkd/banner.txt
-        _get_global_site_packages() + '/usr/share/rkd/' + path,
+        # eg. /usr/lib/python3.8/site-packages/rkd/misc/banner.txt
+        _get_global_site_packages() + '/rkd/misc/' + path,
 
         # eg. /usr/share/rkd/banner.txt
         '/usr/share/rkd/' + path
     ]
 
     # eg. ./rkd/misc/banner.txt
-    global_module_path = os.path.dirname(os.path.realpath(__file__)) + '/misc/' + path
+    global_module_path = _get_current_script_path() + '/misc/' + path
 
     # installed module directory should be less important to allow customizations
     if "site-packages" in global_module_path:
@@ -73,3 +73,6 @@ def _find(path: str, method: Callable) -> Optional[str]:
 def _get_global_site_packages() -> str:
     return get_python_lib()
 
+
+def _get_current_script_path() -> str:
+    return os.path.dirname(os.path.realpath(__file__))
