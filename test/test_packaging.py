@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-
+import glob
+import os
+import subprocess
+import tempfile
 from unittest import mock
 from rkd.api.testing import BasicTestingCase
 import rkd.packaging
@@ -45,3 +48,35 @@ class TestPackaging(BasicTestingCase):
 
     def test_get_user_site_packages(self):
         self.assertIsNotNone(rkd.packaging.get_user_site_packages())
+
+    def test_functionally_package_contains_complete_misc_directory(self):
+        """
+        "misc" directory is essential for RKD to work. There were issues with packaging this directory that contains
+        non-python files.
+
+        This test is installing RKD inside of a virtual environment and checking installed files.
+
+        :return:
+        """
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            subprocess.check_output(['python', '-m', 'venv', tempdir])
+            subprocess.check_output(
+                'bash --init-file {tempdir}/bin/activate -c "source {tempdir}/bin/activate; ./setup.py install"'.format(tempdir=tempdir),
+                shell=True
+            )
+
+            for file in scantree('rkd/misc'):
+                file: os.DirEntry
+
+                self.assertTrue(len(glob.glob(tempdir + '/lib/python*/site-packages/' + file.path)) == 1,
+                                msg='Expected {} file to be present'.format(tempdir + '/lib/python*/site-packages/' + file.path))
+
+
+def scantree(path):
+    """Recursively yield DirEntry objects for given directory."""
+    for entry in os.scandir(path):
+        if entry.is_dir(follow_symlinks=False):
+            yield from scantree(entry.path)  # see below for Python 2.x
+        else:
+            yield entry

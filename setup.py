@@ -9,6 +9,13 @@ setup(
     packages=find_packages(where='./'),
     include_package_data=True,
     package_data={
-        'rkd': ['misc/*', 'misc/**/*', 'misc/initial-structure/.rkd/*', 'misc/internal/**/*']
+        'rkd': [
+            'misc/*',
+            'misc/**/*',
+            'misc/initial-structure/.rkd/*',
+            'misc/initial-structure/.rkd/**/*',
+            'misc/initial-structure/.rkd/logs/.gitkeep',
+            'misc/internal/**/*'
+        ]
     }
 )
