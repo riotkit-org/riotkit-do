@@ -1,4 +1,3 @@
-recursive-include misc *
 recursive-include rkd/misc *
 recursive-exclude test *
 recursive-exclude docs *
