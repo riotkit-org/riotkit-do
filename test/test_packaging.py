@@ -49,6 +49,10 @@ class TestPackaging(BasicTestingCase):
     def test_get_user_site_packages(self):
         self.assertIsNotNone(rkd.packaging.get_user_site_packages())
 
+    def test_get_user_site_packages_fallbacks_when_no_user_site_packages_directory(self):
+        with mock.patch('sys.path', returns_value=[]):
+            self.assertEqual(rkd.packaging._get_global_site_packages(), rkd.packaging.get_user_site_packages())
+
     def test_functionally_package_contains_complete_misc_directory(self):
         """
         "misc" directory is essential for RKD to work. There were issues with packaging this directory that contains
