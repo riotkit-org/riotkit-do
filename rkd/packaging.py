@@ -61,7 +61,10 @@ def get_user_site_packages() -> str:
     :return:
     """
 
-    return next(p for p in sys.path if 'site-packages' in p)
+    try:
+        return next(p for p in sys.path if 'site-packages' in p)
+    except StopIteration:
+        return _get_global_site_packages()
 
 
 def _find(path: str, method: Callable) -> Optional[str]:
