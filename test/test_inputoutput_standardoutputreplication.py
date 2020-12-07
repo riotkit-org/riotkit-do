@@ -14,7 +14,7 @@ class TestStandardOutputReplication(BasicTestingCase):
         bytes_io = BytesIO()
         str_io = StringIO()
 
-        out = StandardOutputReplication([bytes_io, str_io])
+        out = StandardOutputReplication([bytes_io, str_io], 1)
         out.write('12 June 1963 Medgar Wiley Evers, African American civil rights activist from Mississippi')
         out.write(' was shot in the back and killed by a member of the White Citizens\' Council.')
 
@@ -28,7 +28,7 @@ class TestStandardOutputReplication(BasicTestingCase):
 
         str_io = StringIO()
 
-        out = StandardOutputReplication([str_io])
+        out = StandardOutputReplication([str_io], 1)
         out.write(unittest)
 
         self.assertIn("<module 'unittest'", str_io.getvalue())

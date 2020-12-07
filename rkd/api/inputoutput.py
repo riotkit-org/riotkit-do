@@ -43,9 +43,11 @@ LOG_LEVEL_FORMATTING_MAPPING = {
 
 class StandardOutputReplication(object):
     _out_streams: list
+    _fileno: int
 
-    def __init__(self, out_streams: list):
+    def __init__(self, out_streams: list, fileno: int = None):
         self._out_streams = out_streams
+        self._fileno = fileno
 
     def write(self, buf):
         for stream in self._out_streams:
@@ -60,7 +62,7 @@ class StandardOutputReplication(object):
         self.flush()
 
     def fileno(self):
-        return 1
+        return self._fileno
 
     def flush(self):
         pass
@@ -113,8 +115,8 @@ class IO:
             outputs_stderr.append(stream)
 
         # 4. Mock
-        sys.stdout = StandardOutputReplication(outputs_stdout)
-        sys.stderr = StandardOutputReplication(outputs_stderr)
+        sys.stdout = StandardOutputReplication(outputs_stdout, sys.stdout.fileno())
+        sys.stderr = StandardOutputReplication(outputs_stderr, sys.stderr.fileno())
 
         # 5. Action!
         yield
