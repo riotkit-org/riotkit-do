@@ -100,7 +100,7 @@ def check_call(command: str, script_to_show: Optional[str] = '', use_subprocess:
         command = 'sleep 0.03 && ' + command
 
         process = subprocess.Popen(command, shell=True, stdin=replica_fd, stdout=replica_fd, stderr=replica_fd,
-                                   bufsize=64, close_fds=ON_POSIX, universal_newlines=False, preexec_fn=os.setsid,
+                                   bufsize=0, close_fds=ON_POSIX, universal_newlines=True, preexec_fn=os.setsid,
                                    cwd=cwd if cwd else os.getcwd())
 
         out_buffer = TextBuffer(buffer_size=1024 * 10)
@@ -125,7 +125,8 @@ def check_call(command: str, script_to_show: Optional[str] = '', use_subprocess:
 
 
 def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: ProcessState, is_interactive_session: bool):
-    to_select = [primary_fd]
+    poller = select.epoll()
+    poller.register(primary_fd, select.EPOLLIN)
 
     # terminal window size updating
     terminal_update_time = 3  # 3 seconds
@@ -141,33 +142,32 @@ def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: Proc
             raise
 
     if is_interactive_session:
-        to_select = [sys.stdin] + to_select
+        poller.register(sys.stdin, select.EPOLLIN)
 
     while process.poll() is None:
-        r, w, e = select.select(to_select, [], [])
+        for r, flags in poller.poll(timeout=0.01):
+            if sys.stdin.fileno() is r:
+                d = os.read(r, 10240)
+                os.write(primary_fd, d)
 
-        if sys.stdin in r:
-            d = os.read(sys.stdin.fileno(), 10240)
-            os.write(primary_fd, d)
+            elif primary_fd is r:
+                o = os.read(primary_fd, 10240)
 
-        elif primary_fd in r:
-            o = os.read(primary_fd, 10240)
+                # terminal window size updating
+                if should_update_terminal_size and time() - last_terminal_update >= terminal_update_time:
+                    copy_terminal_size(sys.stdout, primary_fd)
+                    last_terminal_update = time()
 
-            # terminal window size updating
-            if should_update_terminal_size and time() - last_terminal_update >= terminal_update_time:
-                copy_terminal_size(sys.stdout, primary_fd)
-                last_terminal_update = time()
+                # propagate to stdout
+                if o:
+                    decoded = carefully_decode(o, 'utf-8')
 
-            # propagate to stdout
-            if o:
-                decoded = carefully_decode(o, 'utf-8')
+                    sys.stdout.write(decoded)
+                    sys.stdout.flush()
+                    out_buffer.write(decoded)
 
-                sys.stdout.write(decoded)
-                sys.stdout.flush()
-                out_buffer.write(decoded)
-
-        if process_state.has_exited:
-            return True
+            if process_state.has_exited:
+                return True
 
 
 def carefully_decode(txt_as_bytes: bytes, enc: str) -> str:
