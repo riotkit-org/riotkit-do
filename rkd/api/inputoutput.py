@@ -549,6 +549,9 @@ class UnbufferedStdout(object):
         self.stream.writelines(datas)
         self.stream.flush()
 
+    def fileno(self):
+        return self.stream.fileno()
+
     def __getattr__(self, attr):
         return getattr(self.stream, attr)
 

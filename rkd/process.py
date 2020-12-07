@@ -46,8 +46,8 @@ class TextBuffer(object):
 
         self.text += text
 
-    def trim_left_by(self, bytes: int):
-        self.text = self.text[bytes:]
+    def trim_left_by(self, chars: int):
+        self.text = self.text[chars:]
 
     def get_value(self) -> str:
         return self.text
@@ -160,12 +160,38 @@ def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: Proc
 
             # propagate to stdout
             if o:
-                sys.stdout.write(o.decode('utf-8'))
+                decoded = carefully_decode(o, 'utf-8')
+
+                sys.stdout.write(decoded)
                 sys.stdout.flush()
-                out_buffer.write(o.decode('utf-8'))
+                out_buffer.write(decoded)
 
         if process_state.has_exited:
             return True
+
+
+def carefully_decode(txt_as_bytes: bytes, enc: str) -> str:
+    """
+    Decode from BYTES to STR.
+    In case of decode error attempt to decode a character-by-character to recover as much as possible
+
+    :param txt_as_bytes:
+    :param enc:
+    :return:
+    """
+
+    try:
+        return txt_as_bytes.decode(enc)
+    except UnicodeDecodeError:
+        decoded = ''
+
+        for char in range(0, len(txt_as_bytes)):
+            try:
+                decoded += txt_as_bytes[char:char+1].decode(enc)
+            except UnicodeDecodeError:
+                pass
+
+        return decoded
 
 
 def direct_debug_msg(text: str) -> None:
