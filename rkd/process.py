@@ -116,6 +116,12 @@ def check_call(command: str, script_to_show: Optional[str] = '', use_subprocess:
         if is_interactive_session:
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_tty)
 
+        try:
+            for fd in [primary_fd, replica_fd]:
+                os.close(fd)
+        except NameError:
+            pass
+
     if exit_code > 0:
         raise subprocess.CalledProcessError(
             exit_code, script_to_show if script_to_show else command,
