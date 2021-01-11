@@ -21,6 +21,7 @@ from .api.inputoutput import SystemIO
 from .api.inputoutput import UnbufferedStdout
 from .aliasgroups import parse_alias_groups_from_env
 from .packaging import find_resource_file
+from rkd import env
 
 
 class RiotKitDoApplication(object):
@@ -29,7 +30,7 @@ class RiotKitDoApplication(object):
 
     @staticmethod
     def load_environment():
-        paths = os.getenv('RKD_PATH', '').split(':')
+        paths = env.rkd_paths()
 
         for path in paths:
             if os.path.isfile(path + '/.env'):
@@ -54,7 +55,7 @@ class RiotKitDoApplication(object):
         # system wide IO instance with defaults, the :init task should override those settings
         io = SystemIO()
         io.silent = True
-        io.set_log_level(os.getenv('RKD_SYS_LOG_LEVEL', 'info'))
+        io.set_log_level(env.system_log_level())
 
         # preparse arguments that are before tasks
         preparsed_args = CommandlineParsingHelper.preparse_args(argv)

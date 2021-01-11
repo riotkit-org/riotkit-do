@@ -15,6 +15,7 @@ from traceback import format_exc
 from typing import List
 from ..api.contract import TaskInterface
 from ..api.contract import ExecutionContext
+from rkd import env
 
 
 Step = namedtuple('Step', ['language', 'code', 'task_name', 'rkd_path', 'envs', 'task_num'])
@@ -123,7 +124,7 @@ class DeclarativeExecutor(object):
             process_env = OrderedDict()
             process_env.update(step.envs)
             process_env.update(args)
-            process_env.update({'RKD_PATH': step.rkd_path, 'RKD_DEPTH': int(os.getenv('RKD_DEPTH', 0))})
+            process_env.update({'RKD_PATH': step.rkd_path, 'RKD_DEPTH': env.rkd_depth()})
 
             this.sh(step.code, strict=True, env=process_env)
             return True

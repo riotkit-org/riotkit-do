@@ -14,11 +14,11 @@ from ..api.contract import ExecutionContext
 from ..api.contract import TaskDeclarationInterface
 from ..api.contract import ArgparseArgument
 from ..api.syntax import TaskDeclaration
-from ..inputoutput import SystemIO
 from ..inputoutput import clear_formatting
 from ..aliasgroups import parse_alias_groups_from_env, AliasGroup
 from .shell import ShellCommandTask
 from ..packaging import find_resource_directory
+from rkd import env
 
 
 class InitTask(TaskInterface):
@@ -65,9 +65,8 @@ class InitTask(TaskInterface):
         """
 
         # increment RKD_DEPTH
-        os.environ['RKD_DEPTH'] = str(int(os.getenv('RKD_DEPTH', '0')) + 1)
+        os.environ['RKD_DEPTH'] = str(env.rkd_depth() + 1)
 
-        self._ctx.io  # type: SystemIO
         self._ctx.io.silent = context.args['silent']
 
         # log level is optional to be set
@@ -77,7 +76,7 @@ class InitTask(TaskInterface):
         if context.get_env('RKD_UI'):
             self._ctx.io.set_display_ui(context.get_env('RKD_UI').lower() == 'true')
 
-        if int(os.getenv('RKD_DEPTH')) >= 2 or context.args['no_ui']:
+        if env.rkd_depth() >= 2 or context.args['no_ui']:
             self._ctx.io.set_display_ui(False)
 
         return True

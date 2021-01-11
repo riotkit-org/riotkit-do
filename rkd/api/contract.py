@@ -6,8 +6,6 @@ CONTRACT (part of API)
 Core interfaces that should be changed WITH CAREFUL as those are parts of API.
 Any breaking change there requires to bump RKD major version (see: Semantic Versioning)
 """
-
-
 from tabulate import tabulate
 from abc import abstractmethod, ABC as AbstractClass
 from typing import Dict, List, Union, Optional
@@ -19,6 +17,7 @@ from ..exception import MissingInputException
 from ..exception import EnvironmentVariableNameNotAllowed
 from ..taskutil import TaskUtilities
 from .temp import TempManager
+from .inputoutput import SystemIO
 
 
 def env_to_switch(env_name: str) -> str:
@@ -118,6 +117,7 @@ class GroupDeclarationInterface(AbstractClass):
 
 class ContextInterface(AbstractClass):
     directories: []
+    io: SystemIO
 
     @abstractmethod
     def merge(cls, first, second):

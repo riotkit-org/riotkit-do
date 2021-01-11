@@ -8,6 +8,7 @@ from abc import ABC as AbstractClass, abstractmethod
 from copy import deepcopy
 from .api.inputoutput import IO
 from .process import check_call
+from rkd import env
 
 
 class TaskUtilities(AbstractClass):
@@ -39,8 +40,8 @@ class TaskUtilities(AbstractClass):
     def get_rkd_binary():
         """Gets the command how RKD was launched"""
 
-        if os.getenv('RKD_BIN'):
-            return os.getenv('RKD_BIN')
+        if env.binary_name():
+            return env.binary_name()
 
         binary = sys.argv[0]
         sys_executable_basename = os.path.basename(sys.executable)

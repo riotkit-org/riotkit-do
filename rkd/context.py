@@ -8,6 +8,8 @@ from datetime import datetime
 from typing import Dict, List, Union, Tuple
 from importlib.machinery import SourceFileLoader
 from traceback import print_exc
+
+from rkd import env
 from .api.syntax import TaskDeclaration
 from .api.syntax import TaskAliasDeclaration
 from .api.syntax import GroupDeclaration
@@ -262,8 +264,7 @@ class ContextFactory:
         if chdir:
             paths += chdir + '/.rkd'
 
-        if os.getenv('RKD_PATH'):
-            paths += os.getenv('RKD_PATH', '').split(':')
+        paths += env.rkd_paths()
 
         # export for usage inside in makefiles
         os.environ['RKD_PATH'] = ":".join(paths)

@@ -14,6 +14,7 @@ from json import load as json_load
 from jsonschema import validate
 from jsonschema import ValidationError
 from jsonschema import draft7_format_checker
+from . import env
 from .exception import YAMLFileValidationError
 from .packaging import get_user_site_packages
 
@@ -70,6 +71,9 @@ class YamlFileLoader(object):
         """Find schema in one of RKD directories or in current path
         """
 
+        if "/" in filename and os.path.isfile(filename):
+            return filename
+
         for path in self.get_lookup_paths(subdir):
             file_path = path + '/' + filename
 
@@ -79,8 +83,12 @@ class YamlFileLoader(object):
         return ''
 
     def get_lookup_paths(self, subdirectory: str) -> List[str]:
-        paths = [os.getcwd(), os.getcwd() + '/' + subdirectory, os.getcwd() + '/.rkd/' + subdirectory]
-        global_paths = os.getenv('RKD_PATH', '').split(':')
+        paths = [
+            os.getcwd(),
+            os.getcwd() + '/' + subdirectory,
+            (os.getcwd() + '/.%s/' + subdirectory) % env.distribution_name()
+        ]
+        global_paths = env.rkd_paths()
         global_paths.reverse()
 
         for path in self.paths:
@@ -90,8 +98,8 @@ class YamlFileLoader(object):
             paths.append(path + '/' + subdirectory)
 
         paths.append(CURRENT_SCRIPT_PATH + '/misc/internal/' + subdirectory)
-        paths.append(get_user_site_packages() + '/usr/share/rkd/internal')
-        paths.append(get_user_site_packages() + '/usr/share/rkd/internal/' + subdirectory)
-        paths.append('/usr/share/rkd/internal')
+        paths.append(get_user_site_packages() + '/usr/share/%s/internal' % env.distribution_name())
+        paths.append((get_user_site_packages() + '/usr/share/%s/internal/' + subdirectory) % env.distribution_name())
+        paths.append('/usr/share/%s/internal' % env.distribution_name())
 
         return list(dict.fromkeys(paths))

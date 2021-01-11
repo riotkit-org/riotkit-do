@@ -9,6 +9,7 @@ import os
 import sys
 from distutils.sysconfig import get_python_lib
 from typing import List, Optional, Callable
+from . import env
 
 
 def find_resource_directory(path: str) -> Optional[str]:
@@ -28,18 +29,20 @@ def get_possible_paths(path: str) -> List[str]:
     """
 
     # <sphinx_resources-get_possible_paths>
+    dist_name = env.distribution_name()  # RKD_DIST_NAME env variable
+
     paths = [
         # eg. ~/.local/share/rkd/banner.txt
-        os.path.expanduser('~/.local/share/rkd/' + path),
+        os.path.expanduser(('~/.local/share/%s/' + path) % dist_name),
 
         # eg. /home/andrew/.local/lib/python3.8/site-packages/rkd/misc/banner.txt
-        get_user_site_packages() + '/rkd/misc/' + path,
+        (get_user_site_packages() + '/%s/misc/' + path) % dist_name,
 
         # eg. /usr/lib/python3.8/site-packages/rkd/misc/banner.txt
-        _get_global_site_packages() + '/rkd/misc/' + path,
+        (_get_global_site_packages() + '/%s/misc/' + path) % dist_name,
 
         # eg. /usr/share/rkd/banner.txt
-        '/usr/share/rkd/' + path
+        ('/usr/share/%s/' + path) % dist_name
     ]
     # </sphinx_resources-get_possible_paths>
 

@@ -6,10 +6,12 @@ Audit
 Allows to keep activity logs for future analysis
 """
 
-import os
 import re
+
+from rkd import env
 from .api.syntax import TaskDeclaration
 from .context import ApplicationContext
+
 
 
 def decide_about_target_log_files(ctx: ApplicationContext, log_to_file: str, declaration: TaskDeclaration,
@@ -17,7 +19,7 @@ def decide_about_target_log_files(ctx: ApplicationContext, log_to_file: str, dec
     """Decides where to save logs"""
 
     log_files = []
-    session_log: bool = os.getenv('RKD_AUDIT_SESSION_LOG', '').lower() in ['true', '1', 'yes']
+    session_log: bool = env.audit_session_log_enabled()
 
     if log_to_file:
         log_files.append(log_to_file)

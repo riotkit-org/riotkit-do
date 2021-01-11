@@ -24,6 +24,7 @@ from typing import Optional
 from typing import Union
 from threading import Thread
 from time import time
+from rkd import env as rkd_env
 
 ON_POSIX = 'posix' in sys.builtin_module_names
 
@@ -75,7 +76,7 @@ def check_call(command: str, script_to_show: Optional[str] = '', use_subprocess:
     :return:
     """
 
-    if os.getenv('RKD_COMPAT_SUBPROCESS') == 'true' or use_subprocess:
+    if rkd_env.is_subprocess_compat_mode() or use_subprocess:
         subprocess.check_call(command, shell=True)
         return
 
