@@ -75,6 +75,7 @@ class TestIO(BasicTestingCase, OutputCapturingSafeTestCase):
                 self.__setattr__('is_text_optional', True)
 
             io.opt_outln = opt_outln
+            io.opt_errln = opt_outln
 
             try:
                 method('test')

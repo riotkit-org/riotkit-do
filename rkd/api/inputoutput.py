@@ -186,6 +186,12 @@ class IO:
         self.err(text)
         self._stderr("\n")
 
+    def opt_errln(self, text):
+        """ Optional errln() """
+
+        if not self.is_silent():
+            self.errln(text)
+
     def opt_out(self, text):
         """ Optional output - fancy output skipped in --silent mode """
 
@@ -231,7 +237,7 @@ class IO:
         """
 
         if self.log_level >= LEVEL_ERROR:
-            self.log(text, 'error')
+            self.err_log(text, 'error')
 
     def critical(self, text):
         """Logger: critical
@@ -239,14 +245,21 @@ class IO:
         """
 
         if self.log_level >= LEVEL_FATAL:
-            self.log(text, 'critical')
+            self.err_log(text, 'critical')
 
     def log(self, text, level: str):
         if not self.is_silent():
-            current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-            level = LOG_LEVEL_FORMATTING_MAPPING[level].replace('%TEXT%', level)
+            self.outln(self._format_log(text, level))
 
-            self.outln("\x1B[2m[%s]\x1B[0m[%s]: \x1B[2m%s\x1B[0m" % (current_time, level, text))
+    def err_log(self, text, level: str):
+        if not self.is_silent():
+            self.errln(self._format_log(text, level))
+
+    def _format_log(self, text, level: str) -> str:
+        current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        level = LOG_LEVEL_FORMATTING_MAPPING[level].replace('%TEXT%', level)
+
+        return "\x1B[2m[%s]\x1B[0m[%s]: \x1B[2m%s\x1B[0m" % (current_time, level, text)
 
     def print_group(self, text):
         """Prints a colored text inside brackets [text] (optional output)
@@ -291,7 +304,7 @@ class IO:
         """Error message (optional output)
         """
 
-        self.opt_outln("\x1B[91m%s\x1B[0m" % text)
+        self.opt_errln("\x1B[91m%s\x1B[0m" % text)
 
     def info_msg(self, text):
         """Informational message (optional output)
