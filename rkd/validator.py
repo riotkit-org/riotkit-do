@@ -1,7 +1,7 @@
 
 from typing import Union
 from .api.syntax import TaskDeclaration, GroupDeclaration
-from .argparsing import CommandlineParsingHelper
+from .argparsing.parser import CommandlineParsingHelper
 from .exception import NotSupportedEnvVariableError
 
 

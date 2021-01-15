@@ -1,6 +1,6 @@
 import re
-from copy import deepcopy
 from typing import Tuple, List, Union, Dict
+from .model import ArgumentBlock
 
 
 TOKEN_SEPARATOR = ' '
@@ -9,39 +9,6 @@ TOKEN_BEGIN_BLOCK_ENDING = '{/@'
 TOKEN_CLOSING_BLOCK = '}'
 TOKEN_BLOCK_REFERENCE_OPENING = '[[[$RKT_BLOCK'
 TOKEN_BLOCK_REFERENCE_CLOSING = ']]]'
-
-
-class ArgumentBlock(object):
-    body: str
-    on_rescue: str = ''
-    on_error: str = ''
-    retry: int = 0
-    _tasks: list
-
-    def __init__(self, body: str = '', rescue: str = '', error: str = '', retry: int = 0):
-        """
-        :param body Can be empty - it means that block will have tasks filled up later
-        """
-
-        self.body = body
-        self.on_rescue = rescue
-        self.on_error = error
-        self.retry = retry
-
-    def with_tasks(self, task):
-        cloned = deepcopy(self)
-        cloned._tasks = task
-
-        return cloned
-
-    def tasks(self) -> list:
-        return self._tasks
-
-    def with_tasks_from_first_block(self, blocks: List['ArgumentBlock']):
-        try:
-            return self.with_tasks(blocks[0]._tasks)
-        except IndexError:
-            return self
 
 
 def parse_blocks(commandline: List[str]) -> Tuple[List[str], dict]:

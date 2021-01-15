@@ -4,7 +4,7 @@ import pwd
 from pickle import dumps as pickle_dumps
 from pickle import loads as pickle_loads
 from typing import Union
-from ..argparsing import CommandlineParsingHelper
+from ..argparsing.parser import CommandlineParsingHelper
 from ..api.syntax import TaskDeclaration, GroupDeclaration
 from ..api.contract import TaskInterface
 from ..api.contract import ExecutorInterface

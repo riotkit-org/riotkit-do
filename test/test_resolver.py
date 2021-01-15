@@ -6,7 +6,7 @@ from rkd.context import ApplicationContext
 from rkd.resolver import TaskResolver
 from rkd.standardlib.shell import ShellCommandTask
 from rkd.syntax import TaskDeclaration, GroupDeclaration, TaskAliasDeclaration
-from rkd.argparsing import TaskArguments
+from rkd.argparsing.model import TaskArguments
 from rkd.aliasgroups import parse_alias_groups_from_env
 
 

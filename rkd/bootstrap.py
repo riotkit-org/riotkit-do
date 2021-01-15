@@ -11,7 +11,7 @@ Only this layer can use sys.exit() call to pass exit code to the operating syste
 import sys
 import os
 from dotenv import load_dotenv
-from .argparsing import CommandlineParsingHelper
+from .argparsing.parser import CommandlineParsingHelper
 from .context import ContextFactory, ApplicationContext
 from .resolver import TaskResolver
 from .validator import TaskDeclarationValidator

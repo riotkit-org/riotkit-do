@@ -15,7 +15,7 @@ from .api.syntax import TaskAliasDeclaration
 from .api.syntax import GroupDeclaration
 from .api.contract import ContextInterface
 from .api.parsing import SyntaxParsing
-from .argparsing import CommandlineParsingHelper
+from .argparsing.parser import CommandlineParsingHelper
 from .api.inputoutput import SystemIO
 from .exception import TaskNotFoundException
 from .exception import ContextFileNotFoundException

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
 import os
-from copy import deepcopy
 from typing import List
 from typing import Tuple
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
-from .api.contract import TaskDeclarationInterface
-from .api.contract import ArgumentEnv
-from .argparsingblocks import parse_blocks, TOKEN_BLOCK_REFERENCE_OPENING, TOKEN_BLOCK_REFERENCE_CLOSING, TOKEN_SEPARATOR, ArgumentBlock
+from ..api.contract import TaskDeclarationInterface
+from ..api.contract import ArgumentEnv
+from .blocks import parse_blocks, TOKEN_BLOCK_REFERENCE_OPENING, TOKEN_BLOCK_REFERENCE_CLOSING, TOKEN_SEPARATOR, ArgumentBlock
+from .model import TaskArguments
 
 
 class TraceableArgumentParser(ArgumentParser):
@@ -37,30 +37,6 @@ class TraceableArgumentParser(ArgumentParser):
 
     def get_traced_argument(self, name: str):
         return self.traced_arguments[name]
-
-
-class TaskArguments(object):
-    _name: str
-    _args: list
-
-    def __init__(self, task_name: str, args: list):
-        self._name = task_name
-        self._args = args
-
-    def __repr__(self):
-        return 'Task<%s (%s)>' % (self._name, str(self._args))
-
-    def name(self):
-        return self._name
-
-    def args(self):
-        return self._args
-
-    def with_args(self, new_args: list) -> 'TaskArguments':
-        clone = deepcopy(self)
-        clone._args = new_args
-
-        return clone
 
 
 class CommandlineParsingHelper(object):

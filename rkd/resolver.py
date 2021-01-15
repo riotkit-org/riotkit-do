@@ -1,6 +1,6 @@
 
 from typing import List, Callable, Union, Optional
-from .argparsing import TaskArguments
+from .argparsing.model import TaskArguments
 from .api.syntax import TaskDeclaration, GroupDeclaration
 from .context import ApplicationContext
 from .exception import InterruptExecution
