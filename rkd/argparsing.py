@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 import os
+from copy import deepcopy
 from typing import List
 from typing import Tuple
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
 from .api.contract import TaskDeclarationInterface
 from .api.contract import ArgumentEnv
+from .argparsingblocks import parse_blocks, TOKEN_BLOCK_REFERENCE_OPENING, TOKEN_BLOCK_REFERENCE_CLOSING, TOKEN_SEPARATOR, ArgumentBlock
 
 
 class TraceableArgumentParser(ArgumentParser):
@@ -54,19 +56,28 @@ class TaskArguments(object):
     def args(self):
         return self._args
 
+    def with_args(self, new_args: list) -> 'TaskArguments':
+        clone = deepcopy(self)
+        clone._args = new_args
+
+        return clone
+
 
 class CommandlineParsingHelper(object):
     """
-    Extends argparse functionality by grouping arguments into tasks -> tasks arguments
+    Extends argparse functionality by grouping arguments into Blocks -> Tasks arguments
     """
 
     @classmethod
-    def create_grouped_arguments(cls, commandline: List[str]) -> List[TaskArguments]:
+    def create_grouped_arguments(cls, commandline: List[str]) -> List[ArgumentBlock]:
+        commandline, blocks = parse_blocks(commandline)
+
         current_group_elements = []
         current_task_name = 'rkd:initialize'
-        tasks = []
         cursor = -1
         max_cursor = len(commandline)
+
+        parsed_into_blocks = []
 
         for part in commandline:
             cursor += 1
@@ -76,11 +87,23 @@ class CommandlineParsingHelper(object):
 
             is_flag = part[0:1] == "-"
             is_task = part[0:1] in (':', '@')
+            is_block = part.startswith(TOKEN_BLOCK_REFERENCE_OPENING) and part.endswith(TOKEN_BLOCK_REFERENCE_CLOSING)
             previous_is_flag = commandline[cursor-1][0:1] == "-" if cursor >= 1 else False
 
             # option name or flag
             if is_flag:
                 current_group_elements.append(part)
+
+            elif is_block:
+                if not part in blocks:
+                    raise Exception('Parser error. Cannot find block "{}"'.format(part))
+
+                block: ArgumentBlock = blocks[part]
+                block = block.with_tasks_from_first_block(
+                    cls.create_grouped_arguments(block.body.split(TOKEN_SEPARATOR))
+                )
+
+                parsed_into_blocks.append(block)
 
             # option value
             elif not is_flag and previous_is_flag and not is_task:
@@ -89,7 +112,8 @@ class CommandlineParsingHelper(object):
             # new task
             elif is_task:
                 if current_task_name != 'rkd:initialize':
-                    tasks.append([current_task_name, current_group_elements])
+                    # by default every task is in an empty block, unless it was defined in a block
+                    parsed_into_blocks.append(ArgumentBlock('').with_tasks([TaskArguments(current_task_name, current_group_elements)]))
 
                 current_task_name = part
                 current_group_elements = []
@@ -99,41 +123,35 @@ class CommandlineParsingHelper(object):
                 current_group_elements.append(part)
 
             if cursor + 1 == max_cursor:
-                tasks.append([current_task_name, current_group_elements])
+                parsed_into_blocks.append(ArgumentBlock('').with_tasks([TaskArguments(current_task_name, current_group_elements)]))
 
-        return cls._map_to_task_arguments(
-            cls._parse_shared_arguments(tasks)
-        )
+        return cls._parse_shared_arguments(parsed_into_blocks)
 
     @classmethod
-    def _map_to_task_arguments(cls, tasks: list) -> List[TaskArguments]:
-        return list(map(
-            lambda task: TaskArguments(task[0], task[1]),
-            tasks
-        ))
-
-    @classmethod
-    def _parse_shared_arguments(cls, tasks: list) -> list:
+    def _parse_shared_arguments(cls, blocks: List[ArgumentBlock]) -> List[ArgumentBlock]:
         """Apply arguments from task "@" that is before a group of tasks
            "@" without any arguments is clearing previous "@" with arguments
         """
 
         global_group_elements = []
-        edited_tasks = []
+        new_blocks = []
 
-        for task in tasks:
-            task_name, group_elements = task
+        for block in blocks:
+            block_tasks = []
 
-            if task_name == '@':
-                global_group_elements = group_elements
-                continue
+            for task in block.tasks():
+                task: TaskArguments
 
-            edited_tasks.append([
-                task_name,
-                group_elements + global_group_elements
-            ])
+                if task.name() == '@':
+                    global_group_elements = task.args()
+                    continue
 
-        return edited_tasks
+                task.with_args(task.args() + global_group_elements)
+                block_tasks.append(task)
+
+            new_blocks.append(block.with_tasks(block_tasks))
+
+        return new_blocks
 
     @classmethod
     def parse(cls, task: TaskDeclarationInterface, args: list) -> Tuple[dict, dict]:
@@ -195,7 +213,8 @@ class CommandlineParsingHelper(object):
         limited_args = []
 
         for arg in args:
-            if arg.startswith(':') or arg.startswith('@'):
+            # parse everything before any task or block starts
+            if arg.startswith(':') or arg.startswith('@') or arg.startswith('{@'):
                 break
 
             limited_args.append(arg)
