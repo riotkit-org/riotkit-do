@@ -59,7 +59,7 @@ def parse_blocks(commandline: List[str]) -> Tuple[List[str], dict]:
             if TOKEN_BEGIN_BLOCK in body:
                 raise Exception('Nesting blocks "{}" not allowed, attempted inside block "{}"'.format(TOKEN_BEGIN_BLOCK, header))
 
-            block_token = ((TOKEN_BLOCK_REFERENCE_OPENING + '%i' + TOKEN_BLOCK_REFERENCE_CLOSING + ' ') % block_id)
+            block_token = ((TOKEN_BLOCK_REFERENCE_OPENING + '%i' + TOKEN_BLOCK_REFERENCE_CLOSING) % block_id)
             commandline_as_str = commandline_as_str[0:opening_match] + \
                                  block_token + \
                                  commandline_as_str[block_ending_match + len(block_ending_content):]

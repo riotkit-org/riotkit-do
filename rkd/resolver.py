@@ -1,6 +1,6 @@
 
 from typing import List, Callable, Union, Optional
-from .argparsing.model import TaskArguments
+from .argparsing.model import TaskArguments, ArgumentBlock
 from .api.syntax import TaskDeclaration, GroupDeclaration
 from .context import ApplicationContext
 from .exception import InterruptExecution
@@ -26,24 +26,25 @@ class TaskResolver(object):
         self._ctx = ctx
         self._alias_groups = alias_groups
 
-    def resolve(self, requested_tasks: List[TaskArguments], callback: CALLBACK_DEF):
+    def resolve(self, requested_blocks: List[ArgumentBlock], callback: CALLBACK_DEF):
         """
         Iterate over flatten list of tasks, one by one and call a callback for each task
 
-        :param requested_tasks:
+        :param requested_blocks:
         :param callback:
         :return:
         """
 
         task_num = 0
 
-        for task_request in requested_tasks:
-            task_num += 1
+        for block in requested_blocks:
+            for task_request in block.tasks():
+                task_num += 1
 
-            try:
-                self._resolve_element(task_request, callback, task_num)
-            except InterruptExecution:
-                return
+                try:
+                    self._resolve_element(task_request, callback, task_num)
+                except InterruptExecution:
+                    return
 
     def _resolve_name_from_alias(self, task_name: str) -> Optional[str]:
         """Resolves task group's shortcuts eg. :hb -> :harbor"""

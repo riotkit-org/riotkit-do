@@ -49,7 +49,7 @@ class ArgumentBlock(object):
 
         return cloned
 
-    def tasks(self) -> list:
+    def tasks(self) -> List[TaskArguments]:
         return self._tasks
 
     def with_tasks_from_first_block(self, blocks: List['ArgumentBlock']):

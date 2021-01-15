@@ -202,7 +202,6 @@ def merge_env(env: Dict[str, str]):
     """Merge custom environment variables set per-task with system environment
     """
 
-    # todo: Unit test
     merged_dict = deepcopy(env)
     merged_dict.update(get_environment_copy())
 

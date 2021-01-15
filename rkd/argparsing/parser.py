@@ -71,7 +71,7 @@ class CommandlineParsingHelper(object):
                 current_group_elements.append(part)
 
             elif is_block:
-                if not part in blocks:
+                if part not in blocks:
                     raise Exception('Parser error. Cannot find block "{}"'.format(part))
 
                 block: ArgumentBlock = blocks[part]
@@ -89,7 +89,9 @@ class CommandlineParsingHelper(object):
             elif is_task:
                 if current_task_name != 'rkd:initialize':
                     # by default every task is in an empty block, unless it was defined in a block
-                    parsed_into_blocks.append(ArgumentBlock('').with_tasks([TaskArguments(current_task_name, current_group_elements)]))
+                    parsed_into_blocks.append(ArgumentBlock('').with_tasks(
+                        [TaskArguments(current_task_name, current_group_elements)])
+                    )
 
                 current_task_name = part
                 current_group_elements = []
@@ -99,7 +101,9 @@ class CommandlineParsingHelper(object):
                 current_group_elements.append(part)
 
             if cursor + 1 == max_cursor:
-                parsed_into_blocks.append(ArgumentBlock('').with_tasks([TaskArguments(current_task_name, current_group_elements)]))
+                parsed_into_blocks.append(ArgumentBlock('').with_tasks(
+                    [TaskArguments(current_task_name, current_group_elements)]
+                ))
 
         return cls._parse_shared_arguments(parsed_into_blocks)
 

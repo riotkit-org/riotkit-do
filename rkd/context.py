@@ -113,32 +113,39 @@ class ApplicationContext(ContextInterface):
         Parse commandline args to fetch list of tasks to join into a group
 
         Produced result will be available to fetch via find_task_by_name()
+
+        Scenario:
+            Given as input a list of chained tasks eg. ":task1 :task2 --arg1=value :task3"
+            Expected to resolve as TaskDeclaration objects with injected arguments
         """
 
         args = CommandlineParsingHelper.create_grouped_arguments(alias.get_arguments())
         resolved_tasks = []
 
-        for argument_group in args:
-            resolved_declarations = [self.find_task_by_name(argument_group.name())]
+        for block in args:
+            for argument_group in block.tasks():
+                # single TaskDeclaration
+                resolved_declarations = [self.find_task_by_name(argument_group.name())]
 
-            if isinstance(resolved_declarations[0], GroupDeclaration):
-                resolved_declarations = self._resolve_recursively(resolved_declarations[0])
+                # or GroupDeclaration (multiple)
+                if isinstance(resolved_declarations[0], GroupDeclaration):
+                    resolved_declarations = self._resolve_recursively(resolved_declarations[0])
 
-            for resolved_declaration in resolved_declarations:
-                resolved_declaration: TaskDeclaration
+                for resolved_declaration in resolved_declarations:
+                    resolved_declaration: TaskDeclaration
 
-                # preserve original task env, and append alias env in priority
-                merged_env = resolved_declaration.get_env()
-                merged_env.update(alias.get_env())
+                    # preserve original task env, and append alias env in priority
+                    merged_env = resolved_declaration.get_env()
+                    merged_env.update(alias.get_env())
 
-                new_task = resolved_declaration \
-                    .with_env(merged_env) \
-                    .with_args(argument_group.args() + resolved_declaration.get_args()) \
-                    .with_user_overridden_env(
-                        alias.get_user_overridden_envs() + resolved_declaration.get_user_overridden_envs()
-                    )
+                    new_task = resolved_declaration \
+                        .with_env(merged_env) \
+                        .with_args(argument_group.args() + resolved_declaration.get_args()) \
+                        .with_user_overridden_env(
+                            alias.get_user_overridden_envs() + resolved_declaration.get_user_overridden_envs()
+                        )
 
-                resolved_tasks.append(new_task)
+                    resolved_tasks.append(new_task)
 
         return GroupDeclaration(name, resolved_tasks, alias.get_description())
 
