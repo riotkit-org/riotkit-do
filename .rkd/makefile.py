@@ -9,7 +9,8 @@ from rkd.standardlib import CallableTask                 # Basic Python callable
 
 
 def example_method(ctx: ExecutionContext, task: CallableTask) -> bool:
-    os.system('xdg-open https://twitter.com/wrkclasshistory')
+    print('I AM EXECUTED')
+    raise Exception('test123')
     return True
 
 

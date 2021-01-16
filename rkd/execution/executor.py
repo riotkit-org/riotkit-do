@@ -3,7 +3,7 @@ import os
 import pwd
 from pickle import dumps as pickle_dumps
 from pickle import loads as pickle_loads
-from typing import Union
+from typing import Union, Optional
 from ..argparsing.parser import CommandlineParsingHelper
 from ..api.syntax import TaskDeclaration, GroupDeclaration
 from ..api.contract import TaskInterface
@@ -14,7 +14,10 @@ from ..inputoutput import IO
 from ..inputoutput import SystemIO
 from ..inputoutput import output_formatted_exception
 from .results import ProgressObserver
-from ..exception import InterruptExecution
+from ..exception import InterruptExecution, \
+    ExecutionRetryException, \
+    ExecutionRescueException, \
+    ExecutionErrorActionException
 from ..audit import decide_about_target_log_files
 from ..api.temp import TempManager
 from .serialization import FORKED_EXECUTOR_TEMPLATE
@@ -28,18 +31,18 @@ class OneByOneTaskExecutor(ExecutorInterface):
     _observer: ProgressObserver
     io: SystemIO
 
-    def __init__(self, ctx: ApplicationContext):
+    def __init__(self, ctx: ApplicationContext, observer: ProgressObserver):
         self._ctx = ctx
         self.io = ctx.io
-        self._observer = ProgressObserver(ctx.io)
+        self._observer = observer
 
     def execute(self, declaration: TaskDeclaration, task_num: int, parent: Union[GroupDeclaration, None] = None,
-                args: list = []):
+                args: list = None):
 
         """ Executes a single task passing the arguments, redirecting/capturing the output and handling the errors """
 
-        result = False
-        is_exception = False
+        if args is None:
+            args = []
 
         # 1. notify
         self._observer.task_started(declaration, parent, args)
@@ -81,26 +84,64 @@ class OneByOneTaskExecutor(ExecutorInterface):
 
         # 4. capture result
         except Exception as e:
-            # allows to keep going on, even if task fails
-            if not keep_going:
-                output_formatted_exception(e, str(task.get_full_name()), self.io)
-                raise InterruptExecution()
-
-            self._observer.task_errored(declaration, e)
-            is_exception = True
-
-        finally:
+            #
+            # When: Task has a failure
+            #
             temp.finally_clean_up()
+            self._on_failure(declaration, keep_going, e, parent)
 
-            if result is True:
-                self._observer.task_succeed(declaration, parent)
-            else:
-                if not is_exception:  # do not do double summary
-                    self._observer.task_failed(declaration, parent)
+            return
 
-                # break the whole pipeline only if not --keep-going
-                if not keep_going:
-                    raise InterruptExecution()
+        #
+        # When: Task did not raise exception
+        #
+        temp.finally_clean_up()
+
+        if result is True:
+            self._observer.task_succeed(declaration, parent)
+        else:
+            self._on_failure(declaration, keep_going, None, parent)
+
+    def _on_failure(self, declaration: TaskDeclaration, keep_going: bool,
+                    exception: Optional[Exception] = None,
+                    parent: Union[GroupDeclaration, None] = None):
+
+        """Executed when task fails - regardless of if it is an Exception raised or just a False returned"""
+
+        # block modifiers (issue #50): @retry a task up to X times
+        if declaration.block().should_task_be_retried(declaration):
+            declaration.block().task_retried(declaration)
+            self._observer.task_retried(declaration)
+
+            raise ExecutionRetryException() from exception
+
+        # regardless of @error & @rescue there should be a visible information that task failed
+        self._notify_error(declaration, parent, exception)
+
+        # block modifiers (issue #50): @error and @rescue
+        if declaration.block().should_rescue():
+            self._observer.task_rescue_attempt(declaration)
+            raise ExecutionRescueException(declaration.block()) from exception
+
+        elif declaration.block().has_action_on_error():
+            raise ExecutionErrorActionException(declaration.block()) from exception
+
+        # break the whole pipeline only if not --keep-going
+        if not keep_going:
+            raise InterruptExecution() from exception
+
+    def _notify_error(self, declaration: TaskDeclaration,
+                      parent: Union[GroupDeclaration, None] = None,
+                      exception: Optional[Exception] = None):
+
+        """Write to console, notify observers"""
+
+        # distinct between error and failure, first has a stacktrace, second is a logical task failure
+        if not exception:
+            self._observer.task_failed(declaration, parent)
+        else:
+            output_formatted_exception(exception, str(declaration.get_task_to_execute().get_full_name()), self.io)
+            self._observer.task_errored(declaration, exception)
 
     def _execute_directly_or_forked(self, cmdline_become: str, task: TaskInterface, temp: TempManager, ctx: ExecutionContext):
         """Execute directly or pass to a forked process

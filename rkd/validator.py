@@ -10,7 +10,14 @@ class TaskDeclarationValidator(object):
     @staticmethod
     def assert_declaration_is_valid(task: TaskDeclaration, task_num: int,
                                     parent: Union[GroupDeclaration, None] = None,
-                                    args: list = []):
+                                    args: list = None):
+
+        if args is None:
+            args = []
+
+        # @todo: Other exception type
+        if task.block().has_action_on_error() and task.block().should_rescue():
+            raise Exception('Block "{0:s}" cannot define both @rescue and @error'.format(task.block().body))
 
         # check if arguments are satisfied
         CommandlineParsingHelper.parse(task, args)

@@ -3,9 +3,12 @@ from typing import List, Callable, Union, Optional
 from .argparsing.model import TaskArguments, ArgumentBlock
 from .api.syntax import TaskDeclaration, GroupDeclaration
 from .context import ApplicationContext
-from .exception import InterruptExecution
-from .exception import TaskNotFoundException
+from .exception import InterruptExecution, \
+    ExecutionRetryException, \
+    ExecutionErrorActionException, \
+    TaskNotFoundException, ExecutionRescueException
 from .aliasgroups import AliasGroup
+from .execution.results import ProgressObserver
 
 
 CALLBACK_DEF = Callable[[TaskDeclaration, int, Union[GroupDeclaration, None], list], None]
@@ -32,6 +35,7 @@ class TaskResolver(object):
 
         :param requested_blocks:
         :param callback:
+        :param respect_modifiers:
         :return:
         """
 
@@ -42,7 +46,7 @@ class TaskResolver(object):
                 task_num += 1
 
                 try:
-                    self._resolve_element(task_request, callback, task_num)
+                    self._resolve_element(task_request, callback, task_num, block)
                 except InterruptExecution:
                     return
 
@@ -55,7 +59,15 @@ class TaskResolver(object):
             if resolved:
                 return resolved
 
-    def _resolve_element(self, task_request: TaskArguments, callback: CALLBACK_DEF, task_num: int):
+    def _resolve_elements(self, requests: List[TaskArguments], callback: CALLBACK_DEF, task_num: int,
+                          block: ArgumentBlock) -> None:
+
+        for request in requests:
+            self._resolve_element(request, callback, task_num, block)
+
+    def _resolve_element(self, task_request: TaskArguments, callback: CALLBACK_DEF, task_num: int,
+                         block: ArgumentBlock) -> None:
+
         """Checks task by name if it was defined in context, if yes then unpacks declarations and prepares callbacks"""
 
         try:
@@ -71,13 +83,20 @@ class TaskResolver(object):
             ctx_declaration = self._ctx.find_task_by_name(task_from_alias)
 
         if isinstance(ctx_declaration, TaskDeclaration):
-            declarations = ctx_declaration.to_list()
+            declarations: List[TaskDeclaration] = ctx_declaration.to_list()
             parent = None
         elif isinstance(ctx_declaration, GroupDeclaration):
-            declarations = ctx_declaration.get_declarations()
+            declarations: List[TaskDeclaration] = ctx_declaration.get_declarations()
             parent = ctx_declaration
         else:
             raise Exception('Cannot resolve task - unknown type "%s"' % str(ctx_declaration))
+
+        # connect TaskDeclaration to blocks for context
+        declaration_num = 0
+        for declaration in declarations:
+            declaration: TaskDeclaration
+            declarations[declaration_num] = declaration.with_connected_block(block)
+            declaration_num += 1
 
         self._iterate_over_declarations(callback, declarations, task_num, parent, task_request)
 
@@ -87,6 +106,8 @@ class TaskResolver(object):
         """Recursively go through all tasks in correct order, executing a callable on each"""
 
         for declaration in declarations:
+            declaration: TaskDeclaration
+
             if isinstance(declaration, GroupDeclaration):
                 self._iterate_over_declarations(
                     callback, declaration.get_declarations(),
@@ -94,15 +115,48 @@ class TaskResolver(object):
                 )
                 continue
 
-            callback(
-                declaration,
-                task_num,
-                parent,
-                # the arguments there will be mixed in order:
-                #  - first: defined in Makefile
-                #  - second: commandline arguments
-                #
-                #  The argparse in Python will take the second one as priority.
-                #  We do not try to remove duplications there to not increase complexity of the solution - it works now.
-                declaration.get_args() + task_request.args()
-            )
+            try:
+                callback(
+                    declaration,
+                    task_num,
+                    parent,
+                    # the arguments there will be mixed in order:
+                    #  - first: defined in Makefile
+                    #  - second: commandline arguments
+                    #
+                    #  The argparse in Python will take the second one as priority.
+                    #  We do not try to remove duplications there to not increase complexity
+                    #  of the solution - it works now.
+                    declaration.get_args() + task_request.args()
+                )
+
+            #
+            # Resolver is able to resolve dynamically additional fallback tasks on-demand
+            # The status of the overall pipeline depends on decision of ProgressObserver, the resolver is only
+            # resolving and scheduling tasks, not deciding about results
+            #
+
+            except ExecutionRetryException:
+                self._iterate_over_declarations(
+                    callback=callback,
+                    declarations=[declaration],
+                    task_num=task_num,
+                    parent=parent,
+                    task_request=task_request
+                )
+
+            except ExecutionErrorActionException as err_action:
+                self._resolve_elements(
+                    requests=err_action.block.on_error,
+                    callback=callback,
+                    task_num=task_num,
+                    block=ArgumentBlock.from_empty()
+                )
+
+            except ExecutionRescueException as rescue_action:
+                self._resolve_elements(
+                    requests=rescue_action.block.on_rescue,
+                    callback=callback,
+                    task_num=task_num,
+                    block=ArgumentBlock.from_empty()
+                )

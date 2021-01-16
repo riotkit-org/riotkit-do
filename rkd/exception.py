@@ -1,4 +1,5 @@
 from jsonschema import ValidationError
+from .argparsing.model import ArgumentBlock
 
 
 class ContextException(Exception):
@@ -9,8 +10,34 @@ class TaskNotFoundException(ContextException):
     pass
 
 
-class InterruptExecution(Exception):
+class TaskExecutionException(Exception):
     pass
+
+
+class InterruptExecution(TaskExecutionException):
+    pass
+
+
+class ExecutionRetryException(TaskExecutionException):
+    """Internal signal to retry a task"""
+
+
+class ExecutionRescueException(TaskExecutionException):
+    """Internal signal to call a rescue set of tasks in case of given task fails"""
+
+    block: ArgumentBlock
+
+    def __init__(self, block: ArgumentBlock):
+        self.block = block
+
+
+class ExecutionErrorActionException(TaskExecutionException):
+    """Internal signal to call an error notification in case when given task fails"""
+
+    block: ArgumentBlock
+
+    def __init__(self, block: ArgumentBlock):
+        self.block = block
 
 
 class TaskException(ContextException):
@@ -121,3 +148,5 @@ class MissingInputException(RuntimeException):
         super().__init__('Either "%s" switch not used, either "%s" was not defined in environment' % (
             arg_name, env_name
         ))
+
+

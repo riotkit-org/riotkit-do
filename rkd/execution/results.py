@@ -106,3 +106,12 @@ class ProgressObserver(object):
 
     def has_at_least_one_failed_task(self) -> bool:
         return self._failed_count > 0
+
+    def task_retried(self, declaration: TaskDeclaration):
+        self._io.warn_msg('Task "{}" was retried'.format(declaration.to_full_name()))
+
+    def task_rescue_attempt(self, declaration: TaskDeclaration):
+        self._io.warn_msg('Task "{}" rescue attempt started'.format(declaration.to_full_name()))
+        self._failed_count -= 1
+
+        del self._tasks[declaration.to_full_name()]

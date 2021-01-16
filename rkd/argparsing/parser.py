@@ -5,6 +5,7 @@ from typing import List
 from typing import Tuple
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
+from shlex import split as split_argv
 from ..api.contract import TaskDeclarationInterface
 from ..api.contract import ArgumentEnv
 from .blocks import parse_blocks, TOKEN_BLOCK_REFERENCE_OPENING, TOKEN_BLOCK_REFERENCE_CLOSING, TOKEN_SEPARATOR, ArgumentBlock
@@ -76,7 +77,7 @@ class CommandlineParsingHelper(object):
 
                 block: ArgumentBlock = blocks[part]
                 block = block.with_tasks_from_first_block(
-                    cls.create_grouped_arguments(block.body.split(TOKEN_SEPARATOR))
+                    cls.create_grouped_arguments(block.body)
                 )
 
                 parsed_into_blocks.append(block)
@@ -89,23 +90,39 @@ class CommandlineParsingHelper(object):
             elif is_task:
                 if current_task_name != 'rkd:initialize':
                     # by default every task is in an empty block, unless it was defined in a block
-                    parsed_into_blocks.append(ArgumentBlock('').with_tasks(
+                    parsed_into_blocks.append(ArgumentBlock([]).with_tasks(
                         [TaskArguments(current_task_name, current_group_elements)])
                     )
 
                 current_task_name = part
                 current_group_elements = []
 
-            # is not an option (--some or -s) but an argument actually
+            # is not an option (--some or -s) but a positional argument actually
             else:
                 current_group_elements.append(part)
 
             if cursor + 1 == max_cursor:
-                parsed_into_blocks.append(ArgumentBlock('').with_tasks(
+                parsed_into_blocks.append(ArgumentBlock([]).with_tasks(
                     [TaskArguments(current_task_name, current_group_elements)]
                 ))
 
-        return cls._parse_shared_arguments(parsed_into_blocks)
+        return cls._parse_shared_arguments(cls.parse_modifiers_in_blocks(parsed_into_blocks))
+
+    @classmethod
+    def parse_modifiers_in_blocks(cls, blocks: List[ArgumentBlock]) -> List[ArgumentBlock]:
+        """Parse list of tasks in blocks attributes eg.
+        @error :notify -m 'Failed' and resolve as Notify task with -m argument"""
+
+        for block in blocks:
+            attributes = block.raw_attributes()
+
+            if attributes['error']:
+                block.set_parsed_error_handler(cls.create_grouped_arguments(split_argv(attributes['error']))[0].tasks())
+
+            if attributes['rescue']:
+                block.set_parsed_rescue(cls.create_grouped_arguments(split_argv(attributes['rescue']))[0].tasks())
+
+        return blocks
 
     @classmethod
     def _parse_shared_arguments(cls, blocks: List[ArgumentBlock]) -> List[ArgumentBlock]:

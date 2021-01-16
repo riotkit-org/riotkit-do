@@ -288,10 +288,15 @@ class IO:
         self.opt_outln("\x1B[92m%s\x1B[0m" % text)
 
     def error_msg(self, text):
-        """Error message (optional output)
+        """Error message
         """
 
-        self.opt_outln("\x1B[91m%s\x1B[0m" % text)
+        self.outln("\x1B[91m%s\x1B[0m" % text)
+
+    def warn_msg(self, text) -> None:
+        """Warning message (optional output)"""
+
+        self.opt_outln("\x1B[33m%s\x1B[0m" % text)
 
     def info_msg(self, text):
         """Informational message (optional output)

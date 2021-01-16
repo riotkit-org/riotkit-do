@@ -11,6 +11,7 @@ Only this layer can use sys.exit() call to pass exit code to the operating syste
 import sys
 import os
 from dotenv import load_dotenv
+from .execution.results import ProgressObserver
 from .argparsing.parser import CommandlineParsingHelper
 from .context import ContextFactory, ApplicationContext
 from .resolver import TaskResolver
@@ -75,8 +76,9 @@ class RiotKitDoApplication(object):
             io.error_msg('Cannot import tasks/module from one of makefile.yaml files. Details: {}'.format(str(e)))
             sys.exit(1)
 
+        observer = ProgressObserver(io)
         task_resolver = TaskResolver(self._ctx, parse_alias_groups_from_env(os.getenv('RKD_ALIAS_GROUPS', '')))
-        executor = OneByOneTaskExecutor(self._ctx)
+        executor = OneByOneTaskExecutor(self._ctx, observer)
 
         # iterate over each task, parse commandline arguments
         requested_tasks = CommandlineParsingHelper.create_grouped_arguments([':init'] + argv[1:])

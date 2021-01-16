@@ -13,6 +13,7 @@ from .contract import TaskDeclarationInterface
 from .contract import GroupDeclarationInterface
 from .contract import TaskInterface
 from .inputoutput import get_environment_copy
+from ..argparsing.model import ArgumentBlock
 from ..exception import DeclarationException
 
 
@@ -21,8 +22,15 @@ class TaskDeclaration(TaskDeclarationInterface):
     _env: Dict[str, str]       # environment at all
     _user_defined_env: list    # list of env variables overridden by user
     _args: List[str]
+    _block: ArgumentBlock = None
 
-    def __init__(self, task: TaskInterface, env: Dict[str, str] = {}, args: List[str] = []):
+    def __init__(self, task: TaskInterface, env: Dict[str, str] = None, args: List[str] = None):
+        if env is None:
+            env = {}
+
+        if args is None:
+            args = []
+
         if not isinstance(task, TaskInterface):
             raise DeclarationException('Invalid class: TaskDeclaration needs to take TaskInterface as task argument')
 
@@ -37,7 +45,7 @@ class TaskDeclaration(TaskDeclarationInterface):
     def with_env(self, envs: Dict[str, str]):
         """ Immutable environment setter. Produces new object each time. """
 
-        copy = deepcopy(self)
+        copy = self._clone()
         copy._env = envs
 
         return copy
@@ -45,7 +53,7 @@ class TaskDeclaration(TaskDeclarationInterface):
     def with_args(self, args: List[str]):
         """ Immutable arguments setter. Produces new object each time """
 
-        copy = deepcopy(self)
+        copy = self._clone()
         copy._args = args
 
         return copy
@@ -53,8 +61,26 @@ class TaskDeclaration(TaskDeclarationInterface):
     def with_user_overridden_env(self, env_list: list):
         """ Immutable arguments setter. Produces new object each time """
 
-        copy = deepcopy(self)
+        copy = self._clone()
         copy._user_defined_env = env_list
+
+        return copy
+
+    def with_connected_block(self, block: ArgumentBlock):
+        """Immutable arguments setter. Produces new object each time
+           Block should be a REFERENCE to an object, not a copy
+        """
+
+        copy = self._clone()
+        copy._block = block
+
+        return copy
+
+    def _clone(self) -> 'TaskDeclaration':
+        """Clone securely the object. There fields shared across objects as references could be kept"""
+
+        copy = deepcopy(self)
+        copy._block = self._block
 
         return copy
 
@@ -105,6 +131,9 @@ class TaskDeclaration(TaskDeclarationInterface):
             return task.get_description()
 
         return task.__doc__.strip() if task.__doc__ else ''
+
+    def block(self) -> ArgumentBlock:
+        return self._block
 
     @staticmethod
     def parse_name(name: str) -> tuple:

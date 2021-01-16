@@ -87,7 +87,7 @@ class ApplicationContext(ContextInterface):
         self._compiled = self._imported_tasks
 
         for name, details in self._task_aliases.items():
-            self._compiled[name] = self._resolve_alias(name, details)
+            self._compiled[name] = self._resolve_pipeline(name, details)
 
     def find_task_by_name(self, name: str) -> Union[TaskDeclaration, GroupDeclaration]:
         try:
@@ -108,11 +108,12 @@ class ApplicationContext(ContextInterface):
     def _add_task(self, task: TaskAliasDeclaration) -> None:
         self._task_aliases[task.get_name()] = task
 
-    def _resolve_alias(self, name: str, alias: TaskAliasDeclaration) -> GroupDeclaration:
+    def _resolve_pipeline(self, name: str, alias: TaskAliasDeclaration) -> GroupDeclaration:
         """
         Parse commandline args to fetch list of tasks to join into a group
 
         Produced result will be available to fetch via find_task_by_name()
+        This brings a support for "Pipelines" (also called Task Aliases)
 
         Scenario:
             Given as input a list of chained tasks eg. ":task1 :task2 --arg1=value :task3"
@@ -143,7 +144,8 @@ class ApplicationContext(ContextInterface):
                         .with_args(argument_group.args() + resolved_declaration.get_args()) \
                         .with_user_overridden_env(
                             alias.get_user_overridden_envs() + resolved_declaration.get_user_overridden_envs()
-                        )
+                        ) \
+                        .with_connected_block(block)
 
                     resolved_tasks.append(new_task)
 
