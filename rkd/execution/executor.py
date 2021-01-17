@@ -121,10 +121,10 @@ class OneByOneTaskExecutor(ExecutorInterface):
         # block modifiers (issue #50): @error and @rescue
         if declaration.block().should_rescue():
             self._observer.task_rescue_attempt(declaration)
-            raise ExecutionRescueException(declaration.block()) from exception
+            raise ExecutionRescueException(declaration.block().on_rescue) from exception
 
         elif declaration.block().has_action_on_error():
-            raise ExecutionErrorActionException(declaration.block()) from exception
+            raise ExecutionErrorActionException(declaration.block().on_error) from exception
 
         # break the whole pipeline only if not --keep-going
         if not keep_going:

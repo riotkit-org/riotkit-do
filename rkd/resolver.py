@@ -6,9 +6,8 @@ from .context import ApplicationContext
 from .exception import InterruptExecution, \
     ExecutionRetryException, \
     ExecutionErrorActionException, \
-    TaskNotFoundException, ExecutionRescueException
+    TaskNotFoundException, ExecutionRescueException, ExecutionRescheduleException
 from .aliasgroups import AliasGroup
-from .execution.results import ProgressObserver
 
 
 CALLBACK_DEF = Callable[[TaskDeclaration, int, Union[GroupDeclaration, None], list], None]
@@ -145,17 +144,9 @@ class TaskResolver(object):
                     task_request=task_request
                 )
 
-            except ExecutionErrorActionException as err_action:
+            except ExecutionRescheduleException as reschedule_action:
                 self._resolve_elements(
-                    requests=err_action.block.on_error,
-                    callback=callback,
-                    task_num=task_num,
-                    block=ArgumentBlock.from_empty()
-                )
-
-            except ExecutionRescueException as rescue_action:
-                self._resolve_elements(
-                    requests=rescue_action.block.on_rescue,
+                    requests=reschedule_action.tasks_to_schedule,
                     callback=callback,
                     task_num=task_num,
                     block=ArgumentBlock.from_empty()

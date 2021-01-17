@@ -1,5 +1,6 @@
+from typing import List
 from jsonschema import ValidationError
-from .argparsing.model import ArgumentBlock
+from .argparsing.model import ArgumentBlock, TaskArguments
 
 
 class ContextException(Exception):
@@ -22,22 +23,21 @@ class ExecutionRetryException(TaskExecutionException):
     """Internal signal to retry a task"""
 
 
-class ExecutionRescueException(TaskExecutionException):
+class ExecutionRescheduleException(TaskExecutionException):
+    """Internal signal to put extra task into resolve/schedule queue of TaskResolver"""
+
+    tasks_to_schedule: List[TaskArguments]
+
+    def __init__(self, tasks_to_schedule: List[TaskArguments]):
+        self.tasks_to_schedule = tasks_to_schedule
+
+
+class ExecutionRescueException(ExecutionRescheduleException):
     """Internal signal to call a rescue set of tasks in case of given task fails"""
 
-    block: ArgumentBlock
 
-    def __init__(self, block: ArgumentBlock):
-        self.block = block
-
-
-class ExecutionErrorActionException(TaskExecutionException):
+class ExecutionErrorActionException(ExecutionRescheduleException):
     """Internal signal to call an error notification in case when given task fails"""
-
-    block: ArgumentBlock
-
-    def __init__(self, block: ArgumentBlock):
-        self.block = block
 
 
 class TaskException(ContextException):
