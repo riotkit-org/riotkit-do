@@ -8,7 +8,7 @@ from json import dumps as json_encode
 from json import loads as json_decode
 from copy import deepcopy
 from time import sleep
-from typing import List
+from typing import List, Callable, Union
 from getpass import getpass
 from contextlib import contextmanager
 from datetime import datetime
@@ -39,6 +39,8 @@ LOG_LEVEL_FORMATTING_MAPPING = {
     'error':   "\x1B[91m%TEXT%\x1B[0m",
     'fatal':   "\x1B[91m\x1B[5m%TEXT%\x1B[0m"
 }
+
+OUTPUT_PROCESSOR_CALLABLE_DEF = Callable[[Union[str, bytes], str], Union[str, bytes]]
 
 
 class StandardOutputReplication(object):
@@ -73,6 +75,10 @@ class IO:
 
     silent = False
     log_level = LEVEL_INFO
+    output_processors: List[OUTPUT_PROCESSOR_CALLABLE_DEF]
+
+    def __init__(self):
+        self.output_processors = []
 
     @contextmanager
     def capture_descriptors(self, target_files: List[str] = None, stream=None, enable_standard_out: bool = True):
@@ -156,7 +162,7 @@ class IO:
             if severity == self.log_level:
                 return name
 
-        raise Exception('Unset log level')
+        raise Exception('Log level not set')
 
     #
     # Standard output/error
@@ -170,21 +176,19 @@ class IO:
 
     def out(self, text):
         """ Standard output """
-        self._stdout(text)
+        self._stdout(self._process_output(text, 'stdout'))
 
     def outln(self, text):
         """ Standard output + newline """
-        self.out(text)
-        self._stdout("\n")
+        self.out(text + "\n")
 
     def err(self, text):
         """ Standard error """
-        self._stderr(text)
+        self._stderr(self._process_output(text, 'stderr'))
 
     def errln(self, text):
         """ Standard error + newline """
-        self.err(text)
-        self._stderr("\n")
+        self.err(text + "\n")
 
     def opt_errln(self, text):
         """ Optional errln() """
@@ -338,6 +342,50 @@ class IO:
         """
 
         self.opt_outln("\x1B[33m     ... %s\x1B[0m" % text)
+
+    def add_output_processor(self, callback: OUTPUT_PROCESSOR_CALLABLE_DEF):
+        """
+        Registers a output processing callback
+        Each byte outputted by this IO instance will go through a set of registered processors
+
+        Example use cases:
+            - Hide sensitive information (secrets)
+            - Reformat output
+            - Strip long stdouts from commands
+            - Change colors
+            - Add/remove formatting
+
+        :param callback:
+        :return:
+        """
+
+        self.output_processors.append(callback)
+
+    def _process_output(self, text, origin: str):
+        """
+        Process output by passing it through multiple registered processors
+        :param text:
+        :param origin:
+        :return:
+        """
+
+        for txt_filter in self.output_processors:
+            try:
+                processed = txt_filter(text, origin)
+
+                if type(processed) != str:
+                    raise Exception('Output processor must return a str')
+
+                text = processed
+
+            # do not allow exceptions in core output buffering module, unless we are debugging
+            except Exception:
+                if self.log_level >= LEVEL_DEBUG:
+                    raise
+
+                pass
+
+        return text
 
 
 class SystemIO(IO):
