@@ -1,3 +1,30 @@
+"""
+Commandline Blocks
+==================
+
+Blocks are adding error handling to pipeline of tasks, allowing to define fallback actions.
+Can be used in shell, in TaskAliases.
+
+Example:
+
+.. code:: shell
+
+    :prepare '{@rescue :rollback @error :notify "Failed" @retry 3}' :deploy --env=test{/@}
+
+
+Rules:
+
+    - @error and @rescue cannot exist together
+    - Blocks cannot be nested
+
+Available modifiers:
+
+    - @error (execute a task, when any of task fails, break the pipeline. Good for notifications)
+    - @rescue (execute a task, when any of task fails, don't break the pipeline if rescue action succeeds)
+    - @retry (retry failed task up to X times, good for unstable tasks as a workaround until those tasks are not fixed)
+    - @retry-block (retry whole block in case, when a single task fails)
+"""
+
 import re
 from typing import Tuple, List, Union, Dict
 from .model import ArgumentBlock
@@ -31,6 +58,8 @@ def strip_empty_elements(to_strip: list) -> list:
 
 def parse_blocks(commandline: List[str]) -> Tuple[List[str], dict]:
     """
+    Parses commandline into blocks. Uses a cursor-based methodology
+
     Examples:
         :aaa {@rescue :rollback --env=test-2} :deploy --env=test {/@}
         :bbb {@rescue :rollback @error :notify "Failed" @retry 3}:deploy --env=test{/@}
