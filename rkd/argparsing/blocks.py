@@ -66,6 +66,8 @@ def parse_blocks(commandline: List[str]) -> Tuple[List[str], dict]:
 
         Given we have ":bbb {@rescue :rollback @error :notify "Failed" @retry 3}:deploy --env=test{/@}"
         Then we extract it into ":bbb [[[$_RKD_GROUP_1]]]" + list of objects [ArgumentBlock] with one element
+
+    :author: dkwebbie <github.com/dkwebbie>
     """
 
     # TEMPORARY_SEPARATOR allows to keep original data structure, as manual, primitive parsing can lose quoted strings
@@ -135,6 +137,12 @@ def parse_blocks(commandline: List[str]) -> Tuple[List[str], dict]:
 
 
 def parse_block_header(block_header: str) -> Dict[str, Union[str, int]]:
+    """
+    Parses a header ex. "{@retry 3"
+
+    :author: dkwebbie <github.com/dkwebbie>
+    """
+
     parsed = re.findall('@([a-z\-]+)([^@]*)', block_header)
     as_dict = {}
 
