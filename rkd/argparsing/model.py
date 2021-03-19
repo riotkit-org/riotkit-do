@@ -44,6 +44,9 @@ class ArgumentBlock(object):
         - At last stage the *RKD's Executor component* is reading from ArgumentBlock and deciding if task should be
           retried, if there should be any error handling. The *_retry_counter_per_task* and *_retry_counter_on_whole_block*
           fields are mutable to track the progress of error handling
+
+    Notice: Fields like on_error, on_rescue are filled up after block creation ex. in CommandlineParsingHelper class
+            See usages of set_parsed_error_handler(), set_parsed_rescue()
     """
 
     body: List[str]
@@ -76,6 +79,7 @@ class ArgumentBlock(object):
         except ValueError:
             self.retry_whole_block = 0
 
+        # lazy-filled by parser on later stage
         self.on_rescue = []
         self.on_error = []
         self._retry_counter_per_task = {}

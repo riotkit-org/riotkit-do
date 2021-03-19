@@ -17,7 +17,7 @@ from .context import ContextFactory, ApplicationContext
 from .resolver import TaskResolver
 from .validator import TaskDeclarationValidator
 from .execution.executor import OneByOneTaskExecutor
-from .exception import TaskNotFoundException, ParsingException, YamlParsingException
+from .exception import TaskNotFoundException, ParsingException, YamlParsingException, CommandlineParsingError
 from .api.inputoutput import SystemIO
 from .api.inputoutput import UnbufferedStdout
 from .aliasgroups import parse_alias_groups_from_env
@@ -83,7 +83,11 @@ class RiotKitDoApplication(object):
         executor = OneByOneTaskExecutor(self._ctx, observer)
 
         # iterate over each task, parse commandline arguments
-        requested_tasks = cmdline_parser.create_grouped_arguments([':init'] + argv[1:])
+        try:
+            requested_tasks = cmdline_parser.create_grouped_arguments([':init'] + argv[1:])
+        except CommandlineParsingError as err:
+            io.error_msg(str(err))
+            sys.exit(1)
 
         # validate all tasks
         task_resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)

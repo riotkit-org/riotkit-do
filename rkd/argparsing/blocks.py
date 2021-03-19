@@ -10,14 +10,21 @@ TOKEN_CLOSING_BLOCK = '}'
 TOKEN_BLOCK_REFERENCE_OPENING = '[[[$RKT_BLOCK'
 TOKEN_BLOCK_REFERENCE_CLOSING = ']]]'
 TEMPORARY_SEPARATOR = '[[[$_RKD_SEP]]]'
+ALLOWED_MODIFIERS = ['rescue', 'error', 'retry', 'retry-block']
 
 
 def strip_empty_elements(to_strip: list) -> list:
-    if not to_strip[0]:
-        del to_strip[0]
+    try:
+        if not to_strip[0]:
+            del to_strip[0]
+    except KeyError:
+        pass
 
-    if not to_strip[-1]:
-        del to_strip[-1]
+    try:
+        if not to_strip[-1]:
+            del to_strip[-1]
+    except KeyError:
+        pass
 
     return to_strip
 
@@ -51,9 +58,13 @@ def parse_blocks(commandline: List[str]) -> Tuple[List[str], dict]:
 
             closing_match = commandline_as_str.find(TOKEN_CLOSING_BLOCK, cursor)
 
+            # if accidentally closing tag was matched, then we do not have a match
+            if commandline_as_str[closing_match - 3:closing_match] == "{/@":
+                closing_match = 0
+
             # 2. Find closing "}" of the "{@"
             if closing_match < 0:
-                raise Exception('Parsing exception: Closing not found for {@ opened at %i' % cursor)
+                raise CommandlineParsingError.from_block_closing_not_found(cursor)
 
             cursor = closing_match + 1  # after "{@block}"
             header = commandline_as_str[opening_match:closing_match]
@@ -64,7 +75,7 @@ def parse_blocks(commandline: List[str]) -> Tuple[List[str], dict]:
             block_ending_match = commandline_as_str.find(block_ending_content, cursor)
 
             if block_ending_match < 0:
-                raise Exception('Block ending - %s not found' % block_ending_content)
+                raise CommandlineParsingError.from_block_ending_not_found(block_ending_content)
 
             body = strip_empty_elements(
                 commandline_as_str[closing_match + 1:block_ending_match].split(TEMPORARY_SEPARATOR)
@@ -95,7 +106,7 @@ def parse_blocks(commandline: List[str]) -> Tuple[List[str], dict]:
 
 
 def parse_block_header(block_header: str) -> Dict[str, Union[str, int]]:
-    parsed = re.findall('@(retry-block|retry|rescue|error)([^@]*)', block_header)
+    parsed = re.findall('@([a-z\-]+)([^@]*)', block_header)
     as_dict = {}
 
     if not parsed:
@@ -104,6 +115,10 @@ def parse_block_header(block_header: str) -> Dict[str, Union[str, int]]:
     for result in parsed:
         result: List[str]
         name = result[0].strip()
+
+        if name not in ALLOWED_MODIFIERS:
+            raise CommandlineParsingError.from_block_unknown_modifier(block_header,
+                                                                      Exception('Unknown modifier "%s"' % name))
 
         if name in as_dict:
             raise CommandlineParsingError.from_block_modifier_declared_twice(name, block_header)

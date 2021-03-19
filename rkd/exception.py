@@ -25,6 +25,9 @@ class ExecutionRetryException(TaskExecutionException):
     args: List[TaskArguments]
 
     def __init__(self, args: List[TaskArguments] = None):
+        if args is None:
+            args = []
+
         self.args = args
 
 
@@ -178,3 +181,11 @@ class CommandlineParsingError(RuntimeException):
     def from_nested_blocks_not_allowed(token: str, header: str) -> 'CommandlineParsingError':
         return CommandlineParsingError('Nesting blocks "{}" not allowed, attempted inside block "{}"'
                                        .format(token, header))
+
+    @staticmethod
+    def from_block_closing_not_found(pos: int):
+        return CommandlineParsingError('Parsing exception: Closing character "}" not found for {@ opened at %i' % pos)
+
+    @staticmethod
+    def from_block_ending_not_found(block: str):
+        return CommandlineParsingError('Parsing exception: Block ending - %s not found' % block)
