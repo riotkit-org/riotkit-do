@@ -34,7 +34,6 @@ class TaskResolver(object):
 
         :param requested_blocks:
         :param callback:
-        :param respect_modifiers:
         :return:
         """
 
@@ -69,7 +68,10 @@ class TaskResolver(object):
 
         """Checks task by name if it was defined in context, if yes then unpacks declarations and prepares callbacks"""
 
+        self._ctx.io.internal('Resolving {}'.format(task_request))
+
         try:
+            # @todo: Possibly clone required - shell summary shows only 2 tasks executed, when there were executed more but of same type
             ctx_declaration = self._ctx.find_task_by_name(task_request.name())
 
         # maybe a task name is an alias to other task defined by alias groups
@@ -80,6 +82,8 @@ class TaskResolver(object):
                 raise
 
             ctx_declaration = self._ctx.find_task_by_name(task_from_alias)
+
+        self._ctx.io.internal('Resolved as {}'.format(ctx_declaration))
 
         if isinstance(ctx_declaration, TaskDeclaration):
             declarations: List[TaskDeclaration] = ctx_declaration.to_list()
@@ -135,7 +139,18 @@ class TaskResolver(object):
             # resolving and scheduling tasks, not deciding about results
             #
 
-            except ExecutionRetryException:
+            except ExecutionRetryException as exc:
+                # multiple tasks to resolve, then retry
+                if exc.args:
+                    self._resolve_elements(
+                        requests=exc.args,
+                        callback=callback,
+                        task_num=task_num,
+                        block=ArgumentBlock.from_empty()
+                    )
+                    return
+
+                # single task to retry
                 self._iterate_over_declarations(
                     callback=callback,
                     declarations=[declaration],

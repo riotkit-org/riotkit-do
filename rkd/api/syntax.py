@@ -15,6 +15,7 @@ from .contract import TaskInterface
 from .inputoutput import get_environment_copy
 from ..argparsing.model import ArgumentBlock
 from ..exception import DeclarationException
+from uuid import uuid4
 
 
 class TaskDeclaration(TaskDeclarationInterface):
@@ -23,6 +24,7 @@ class TaskDeclaration(TaskDeclarationInterface):
     _user_defined_env: list    # list of env variables overridden by user
     _args: List[str]
     _block: ArgumentBlock = None
+    _unique_id: str
 
     def __init__(self, task: TaskInterface, env: Dict[str, str] = None, args: List[str] = None):
         if env is None:
@@ -34,6 +36,7 @@ class TaskDeclaration(TaskDeclarationInterface):
         if not isinstance(task, TaskInterface):
             raise DeclarationException('Invalid class: TaskDeclaration needs to take TaskInterface as task argument')
 
+        self._unique_id = uuid4().hex
         self._task = task
         self._env = merge_env(env)
         self._args = args
@@ -80,6 +83,7 @@ class TaskDeclaration(TaskDeclarationInterface):
         """Clone securely the object. There fields shared across objects as references could be kept"""
 
         copy = deepcopy(self)
+        copy._unique_id = uuid4().hex
         copy._block = self._block
 
         return copy
@@ -145,6 +149,12 @@ class TaskDeclaration(TaskDeclarationInterface):
 
     def format_task_name(self, name: str) -> str:
         return self.get_task_to_execute().format_task_name(name)
+
+    def get_unique_id(self) -> str:
+        """
+        Unique ID of a declaration is a TEMPORARY ID created during runtime to distinct even very similar declarations
+        """
+        return self._unique_id
 
     def __str__(self):
         return 'TaskDeclaration<%s>' % self.get_task_to_execute().get_full_name()

@@ -120,7 +120,8 @@ class ApplicationContext(ContextInterface):
             Expected to resolve as TaskDeclaration objects with injected arguments
         """
 
-        args = CommandlineParsingHelper.create_grouped_arguments(alias.get_arguments())
+        cmdline_parser = CommandlineParsingHelper(self.io)
+        args = cmdline_parser.create_grouped_arguments(alias.get_arguments())
         resolved_tasks = []
 
         for block in args:

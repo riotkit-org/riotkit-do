@@ -6,9 +6,10 @@ from typing import Tuple
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
 from shlex import split as split_argv
+from ..api.inputoutput import IO
 from ..api.contract import TaskDeclarationInterface
 from ..api.contract import ArgumentEnv
-from .blocks import parse_blocks, TOKEN_BLOCK_REFERENCE_OPENING, TOKEN_BLOCK_REFERENCE_CLOSING, TOKEN_SEPARATOR, ArgumentBlock
+from .blocks import parse_blocks, TOKEN_BLOCK_REFERENCE_OPENING, TOKEN_BLOCK_REFERENCE_CLOSING, ArgumentBlock
 from .model import TaskArguments
 
 
@@ -45,8 +46,12 @@ class CommandlineParsingHelper(object):
     Extends argparse functionality by grouping arguments into Blocks -> Tasks arguments
     """
 
-    @classmethod
-    def create_grouped_arguments(cls, commandline: List[str]) -> List[ArgumentBlock]:
+    io: IO
+
+    def __init__(self, io: IO):
+        self.io = io
+
+    def create_grouped_arguments(self, commandline: List[str]) -> List[ArgumentBlock]:
         commandline, blocks = parse_blocks(commandline)
 
         current_group_elements = []
@@ -77,7 +82,7 @@ class CommandlineParsingHelper(object):
 
                 block: ArgumentBlock = blocks[part]
                 block = block.with_tasks_from_first_block(
-                    cls.create_grouped_arguments(block.body)
+                    self.create_grouped_arguments(block.body)
                 )
 
                 parsed_into_blocks.append(block)
@@ -89,10 +94,13 @@ class CommandlineParsingHelper(object):
             # new task
             elif is_task:
                 if current_task_name != 'rkd:initialize':
-                    # by default every task is in an empty block, unless it was defined in a block
-                    parsed_into_blocks.append(ArgumentBlock([]).with_tasks(
-                        [TaskArguments(current_task_name, current_group_elements)])
-                    )
+                    task_arguments = [TaskArguments(current_task_name, current_group_elements)]
+
+                    self.io.internal('Creating task with arguments {}'.format(task_arguments))
+
+                    # by default every task belongs to a block, even if the block for it was not defined
+                    parsed_into_blocks.append(ArgumentBlock([current_task_name] + current_group_elements)
+                                              .clone_with_tasks(task_arguments))
 
                 current_task_name = part
                 current_group_elements = []
@@ -102,14 +110,17 @@ class CommandlineParsingHelper(object):
                 current_group_elements.append(part)
 
             if cursor + 1 == max_cursor:
-                parsed_into_blocks.append(ArgumentBlock([]).with_tasks(
-                    [TaskArguments(current_task_name, current_group_elements)]
-                ))
+                task_arguments = [TaskArguments(current_task_name, current_group_elements)]
 
-        return cls._parse_shared_arguments(cls.parse_modifiers_in_blocks(parsed_into_blocks))
+                self.io.internal('End of commandline arguments, closing current task collection with {}'
+                                 .format(task_arguments))
 
-    @classmethod
-    def parse_modifiers_in_blocks(cls, blocks: List[ArgumentBlock]) -> List[ArgumentBlock]:
+                parsed_into_blocks.append(ArgumentBlock([current_task_name] + current_group_elements)
+                                          .clone_with_tasks(task_arguments))
+
+        return self._parse_shared_arguments(self.parse_modifiers_in_blocks(parsed_into_blocks))
+
+    def parse_modifiers_in_blocks(self, blocks: List[ArgumentBlock]) -> List[ArgumentBlock]:
         """Parse list of tasks in blocks attributes eg.
         @error :notify -m 'Failed' and resolve as Notify task with -m argument"""
 
@@ -117,10 +128,11 @@ class CommandlineParsingHelper(object):
             attributes = block.raw_attributes()
 
             if attributes['error']:
-                block.set_parsed_error_handler(cls.create_grouped_arguments(split_argv(attributes['error']))[0].tasks())
+                block.set_parsed_error_handler(
+                    self.create_grouped_arguments(split_argv(attributes['error']))[0].tasks())
 
             if attributes['rescue']:
-                block.set_parsed_rescue(cls.create_grouped_arguments(split_argv(attributes['rescue']))[0].tasks())
+                block.set_parsed_rescue(self.create_grouped_arguments(split_argv(attributes['rescue']))[0].tasks())
 
         return blocks
 
@@ -135,18 +147,25 @@ class CommandlineParsingHelper(object):
 
         for block in blocks:
             block_tasks = []
+            block_body = []
 
             for task in block.tasks():
                 task: TaskArguments
 
                 if task.name() == '@':
                     global_group_elements = task.args()
+                    # jump to next task - "@" task should not be finally on the list
                     continue
 
-                task.with_args(task.args() + global_group_elements)
-                block_tasks.append(task)
+                block_body.append([task.name()] + task.args() + global_group_elements)
+                block_tasks.append(task.with_args(task.args() + global_group_elements))
 
-            new_blocks.append(block.with_tasks(block_tasks))
+            # cut off empty blocks (ex. ['@', '--type', 'human-rights'] -> [] -> to be removed after propagation)
+            if not block_body:
+                continue
+
+            # replace all blocks with new blocks that contains the additional arguments
+            new_blocks.append(block.clone_with_tasks(block_tasks))
 
         return new_blocks
 

@@ -1,4 +1,4 @@
-
+import inspect
 import re
 import sys
 import os
@@ -18,6 +18,7 @@ from ..exception import InterruptExecution
 this = sys.modules[__name__]
 this.IS_CAPTURING_DESCRIPTORS = False
 
+LEVEL_INTERNAL = 999
 LEVEL_DEBUG = 37
 LEVEL_INFO = 36
 LEVEL_WARNING = 33
@@ -25,6 +26,7 @@ LEVEL_ERROR = 31
 LEVEL_FATAL = 20
 
 LOG_LEVELS = {
+    'internal': LEVEL_INTERNAL,
     'debug': LEVEL_DEBUG,
     'info': LEVEL_INFO,
     'warning': LEVEL_WARNING,
@@ -33,11 +35,12 @@ LOG_LEVELS = {
 }
 
 LOG_LEVEL_FORMATTING_MAPPING = {
-    'debug':   "\x1B[0m%TEXT%\x1B[0m",
-    'info':    "\x1B[1m%TEXT%\x1B[0m",
-    'warn':    "\x1B[93m%TEXT%\x1B[0m",
-    'error':   "\x1B[91m%TEXT%\x1B[0m",
-    'fatal':   "\x1B[91m\x1B[5m%TEXT%\x1B[0m"
+    'internal': "\x1B[0m%TEXT%\x1B[0m",
+    'debug':    "\x1B[0m%TEXT%\x1B[0m",
+    'info':     "\x1B[1m%TEXT%\x1B[0m",
+    'warn':     "\x1B[93m%TEXT%\x1B[0m",
+    'error':    "\x1B[91m%TEXT%\x1B[0m",
+    'fatal':    "\x1B[91m\x1B[5m%TEXT%\x1B[0m"
 }
 
 
@@ -202,6 +205,16 @@ class IO:
     # Logs
     #
 
+    def internal(self, text):
+        """Logger: internal
+           Should be used only by RKD core for more intensive logging
+        """
+        if self.log_level < LEVEL_INTERNAL:
+            return
+
+        text = inspect.stack()[1][3] + ' ~> ' + text
+        self.log(text, 'internal')
+
     def debug(self, text):
         """Logger: debug
 
@@ -291,7 +304,7 @@ class IO:
         """Error message
         """
 
-        self.outln("\x1B[91m%s\x1B[0m" % text)
+        self.errln("\x1B[91m%s\x1B[0m" % text)
 
     def warn_msg(self, text) -> None:
         """Warning message (optional output)"""

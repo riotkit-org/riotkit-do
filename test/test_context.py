@@ -8,7 +8,7 @@ from tempfile import NamedTemporaryFile
 from rkd.context import ContextFactory
 from rkd.context import ApplicationContext
 from rkd.context import distinct_imports
-from rkd.api.inputoutput import NullSystemIO
+from rkd.api.inputoutput import NullSystemIO, IO
 from rkd.exception import ContextException
 from rkd.api.syntax import TaskDeclaration
 from rkd.api.syntax import TaskAliasDeclaration
@@ -179,6 +179,7 @@ class ContextTest(BasicTestingCase):
             TaskAliasDeclaration(':deep', [':init', ':deeper'])
         ], directory='')
 
+        ctx.io = IO()
         ctx.compile()
         task = ctx.find_task_by_name(':deep')
         task: GroupDeclaration

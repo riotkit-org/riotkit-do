@@ -3,6 +3,7 @@ import glob
 import os
 import subprocess
 import tempfile
+import time
 from unittest import mock
 from rkd.api.testing import BasicTestingCase
 import rkd.packaging
@@ -67,7 +68,8 @@ class TestPackaging(BasicTestingCase):
             subprocess.check_output(['python', '-m', 'venv', tempdir])
             subprocess.check_output(
                 'bash --init-file {tempdir}/bin/activate -c "source {tempdir}/bin/activate; ./setup.py install"'.format(tempdir=tempdir),
-                shell=True
+                shell=True,
+                stderr=subprocess.STDOUT
             )
 
             for file in scantree('rkd/misc'):
@@ -81,6 +83,6 @@ def scantree(path):
     """Recursively yield DirEntry objects for given directory."""
     for entry in os.scandir(path):
         if entry.is_dir(follow_symlinks=False):
-            yield from scantree(entry.path)  # see below for Python 2.x
+            yield from scantree(entry.path)
         else:
             yield entry

@@ -7,6 +7,8 @@ from rkd.standardlib.jinja import FileRendererTask       # single task
 from rkd.standardlib import CallableTask                 # Basic Python callable task for a little bit advanced usage
 # from .mypackage import MyTask                          # import your task from local package
 
+os.putenv('LANG', 'c')
+
 
 def example_method(ctx: ExecutionContext, task: CallableTask) -> bool:
     print('I AM EXECUTED')

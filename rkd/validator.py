@@ -2,7 +2,7 @@
 from typing import Union
 from .api.syntax import TaskDeclaration, GroupDeclaration
 from .argparsing.parser import CommandlineParsingHelper
-from .exception import NotSupportedEnvVariableError
+from .exception import NotSupportedEnvVariableError, BlockDefinitionLogicError
 
 
 class TaskDeclarationValidator(object):
@@ -15,9 +15,8 @@ class TaskDeclarationValidator(object):
         if args is None:
             args = []
 
-        # @todo: Other exception type
-        if task.block().has_action_on_error() and task.block().should_rescue():
-            raise Exception('Block "{0:s}" cannot define both @rescue and @error'.format(task.block().body))
+        if task.block().has_action_on_error() and task.block().should_rescue_task():
+            raise BlockDefinitionLogicError.from_both_rescue_and_error_defined()
 
         # check if arguments are satisfied
         CommandlineParsingHelper.parse(task, args)

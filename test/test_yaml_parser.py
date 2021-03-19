@@ -9,6 +9,10 @@ from rkd.exception import YAMLFileValidationError
 SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
+def last_occurrence_replace(s, old, new):
+    return (s[::-1].replace(old[::-1], new[::-1], 1))[::-1]
+
+
 class TestLoader(BasicTestingCase):
     def test_validates_successfully(self):
         yaml_loader = YamlFileLoader([])
@@ -124,7 +128,7 @@ tasks:
 
         defined_by_rkd_path = paths.index('SOME-PATH-THERE/harbor-internal/')
 
-        internal_path = (os.path.realpath(SCRIPT_DIR_PATH) + '/harbor-internal/').replace('test/', '')
+        internal_path = last_occurrence_replace(os.path.realpath(SCRIPT_DIR_PATH) + '/harbor-internal/', 'test/', '')
         internal_path_index = paths.index(internal_path)
 
         self.assertGreater(defined_by_rkd_path, internal_path_index, msg='defined_by_rkd_path should be favored')

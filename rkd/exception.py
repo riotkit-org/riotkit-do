@@ -1,6 +1,6 @@
 from typing import List
 from jsonschema import ValidationError
-from .argparsing.model import ArgumentBlock, TaskArguments
+from .argparsing.model import TaskArguments
 
 
 class ContextException(Exception):
@@ -21,6 +21,11 @@ class InterruptExecution(TaskExecutionException):
 
 class ExecutionRetryException(TaskExecutionException):
     """Internal signal to retry a task"""
+
+    args: List[TaskArguments]
+
+    def __init__(self, args: List[TaskArguments] = None):
+        self.args = args
 
 
 class ExecutionRescheduleException(TaskExecutionException):
@@ -60,6 +65,12 @@ class EnvironmentVariableNameNotAllowed(TaskException):
 
 class UserInputException(Exception):
     pass
+
+
+class BlockDefinitionLogicError(Exception):
+    @staticmethod
+    def from_both_rescue_and_error_defined():
+        return BlockDefinitionLogicError('Block "{0:s}" cannot define both @rescue and @error'.format(task.block().body))
 
 
 class NotSupportedEnvVariableError(UserInputException):
@@ -150,3 +161,20 @@ class MissingInputException(RuntimeException):
         ))
 
 
+class CommandlineParsingError(RuntimeException):
+    @staticmethod
+    def from_block_header_parsing_exception(block_header: str) -> 'CommandlineParsingError':
+        return CommandlineParsingError('Cannot parse block header "{}"'.format(block_header))
+
+    @staticmethod
+    def from_block_modifier_declared_twice(name: str, block_header: str) -> 'CommandlineParsingError':
+        return CommandlineParsingError('Cannot declare "{}" twice in block "{}'.format(name, block_header))
+
+    @staticmethod
+    def from_block_unknown_modifier(header: str, e: Exception) -> 'CommandlineParsingError':
+        return CommandlineParsingError('Block "{}" contains invalid modifier, raised error: {}'.format(header, str(e)))
+
+    @staticmethod
+    def from_nested_blocks_not_allowed(token: str, header: str) -> 'CommandlineParsingError':
+        return CommandlineParsingError('Nesting blocks "{}" not allowed, attempted inside block "{}"'
+                                       .format(token, header))

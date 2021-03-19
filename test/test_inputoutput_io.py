@@ -65,7 +65,7 @@ class TestIO(BasicTestingCase, OutputCapturingSafeTestCase):
         io = BufferedSystemIO()
 
         methods = [
-            io.h1, io.h2, io.h3, io.h4, io.success_msg, io.error_msg, io.info_msg, io.print_separator, io.print_group
+            io.h1, io.h2, io.h3, io.h4, io.success_msg, io.info_msg, io.print_separator, io.print_group
         ]
 
         for method in methods:

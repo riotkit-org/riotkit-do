@@ -9,11 +9,12 @@ Provides tools for easier testing of RKD-based workflows, tasks, plugins.
 
 import os
 import sys
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 from unittest import TestCase
 from io import StringIO
 from copy import deepcopy
 from contextlib import contextmanager
+from rkd.execution.results import ProgressObserver
 from rkd.bootstrap import RiotKitDoApplication
 from rkd.execution.executor import OneByOneTaskExecutor
 from rkd.api.contract import ExecutionContext
@@ -126,7 +127,7 @@ class BasicTestingCase(TestCase):
         task.internal_inject_dependencies(
             io=io,
             ctx=ctx,
-            executor=OneByOneTaskExecutor(ctx),
+            executor=OneByOneTaskExecutor(ctx, ProgressObserver(io)),
             temp_manager=TempManager()
         )
 
@@ -166,6 +167,14 @@ class BasicTestingCase(TestCase):
             env=env,
             defined_args=defined_args
         )
+
+    @staticmethod
+    def list_to_str(in_list: list) -> List[str]:
+        """
+        Execute __str__ on each list element, and replace element with the result
+        """
+
+        return list(map(lambda element: str(element), in_list))
 
 
 class FunctionalTestingCase(BasicTestingCase, OutputCapturingSafeTestCase):

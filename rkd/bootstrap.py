@@ -55,8 +55,10 @@ class RiotKitDoApplication(object):
 
         # system wide IO instance with defaults, the :init task should override those settings
         io = SystemIO()
-        io.silent = True
+        io.silent = env.system_log_level() not in ['debug', 'internal']
         io.set_log_level(env.system_log_level())
+
+        cmdline_parser = CommandlineParsingHelper(io)
 
         # preparse arguments that are before tasks
         preparsed_args = CommandlineParsingHelper.preparse_args(argv)
@@ -81,7 +83,7 @@ class RiotKitDoApplication(object):
         executor = OneByOneTaskExecutor(self._ctx, observer)
 
         # iterate over each task, parse commandline arguments
-        requested_tasks = CommandlineParsingHelper.create_grouped_arguments([':init'] + argv[1:])
+        requested_tasks = cmdline_parser.create_grouped_arguments([':init'] + argv[1:])
 
         # validate all tasks
         task_resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
@@ -91,7 +93,7 @@ class RiotKitDoApplication(object):
 
         executor.get_observer().execution_finished()
 
-        sys.exit(1 if executor.get_observer().has_at_least_one_failed_task() else 0)
+        sys.exit(1 if executor.get_observer().is_at_least_one_task_failing() else 0)
 
     @staticmethod
     def print_banner_and_exit():

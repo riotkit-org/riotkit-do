@@ -39,7 +39,9 @@ class OneByOneTaskExecutor(ExecutorInterface):
     def execute(self, declaration: TaskDeclaration, task_num: int, parent: Union[GroupDeclaration, None] = None,
                 args: list = None):
 
-        """ Executes a single task passing the arguments, redirecting/capturing the output and handling the errors """
+        """
+        Executes a single task passing the arguments, redirecting/capturing the output and handling the errors
+        """
 
         if args is None:
             args = []
@@ -106,7 +108,16 @@ class OneByOneTaskExecutor(ExecutorInterface):
                     exception: Optional[Exception] = None,
                     parent: Union[GroupDeclaration, None] = None):
 
-        """Executed when task fails - regardless of if it is an Exception raised or just a False returned"""
+        """
+        Executed when task fails - regardless of if it is an Exception raised or just a False returned
+
+        Roles:
+            - Block: a domain logic, tracks TaskDeclaration execution
+              (only those declarations that are declared in that block)
+            - Observer: Observes execution RESULTS to notify user, the console (to set exit code for example).
+                        Needs also to be notified, when tasks are retried and when those retried tasks are passing
+                        eg. second time ater failing first time
+        """
 
         # block modifiers (issue #50): @retry a task up to X times
         if declaration.block().should_task_be_retried(declaration):
@@ -115,12 +126,20 @@ class OneByOneTaskExecutor(ExecutorInterface):
 
             raise ExecutionRetryException() from exception
 
+        elif declaration.block().should_block_be_retried():
+            declaration.block().whole_block_retried(declaration)
+
+            self._observer.group_of_tasks_retried(declaration.block())
+
+            raise ExecutionRetryException(declaration.block().tasks()) from exception
+
         # regardless of @error & @rescue there should be a visible information that task failed
         self._notify_error(declaration, parent, exception)
 
         # block modifiers (issue #50): @error and @rescue
-        if declaration.block().should_rescue():
+        if declaration.block().should_rescue_task():
             self._observer.task_rescue_attempt(declaration)
+
             raise ExecutionRescueException(declaration.block().on_rescue) from exception
 
         elif declaration.block().has_action_on_error():

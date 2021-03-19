@@ -2,13 +2,16 @@
 
 import os
 from io import StringIO
+
+from rkd.execution.results import ProgressObserver
+
 from rkd.execution.executor import OneByOneTaskExecutor
 from rkd.context import ApplicationContext
 from rkd.test import get_test_declaration
 from rkd.test import ret_true
 from rkd.test import ret_invalid_user
 from rkd.api.temp import TempManager
-from rkd.api.inputoutput import BufferedSystemIO
+from rkd.api.inputoutput import BufferedSystemIO, SystemIO
 from rkd.api.inputoutput import IO
 from rkd.api.contract import ExecutionContext
 from rkd.api.testing import BasicTestingCase
@@ -31,7 +34,7 @@ class TestOneByOneExecutor(BasicTestingCase):
         temp = TempManager(chdir='/tmp/')
         container = ApplicationContext([], [], '')
         container.io = BufferedSystemIO()
-        executor = OneByOneTaskExecutor(container)
+        executor = OneByOneTaskExecutor(container, observer=ProgressObserver(SystemIO()))
 
         declaration = get_test_declaration(task)
         task._io = io

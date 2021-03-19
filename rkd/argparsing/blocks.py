@@ -1,7 +1,7 @@
 import re
 from typing import Tuple, List, Union, Dict
 from .model import ArgumentBlock
-
+from ..exception import CommandlineParsingError
 
 TOKEN_SEPARATOR = ' '
 TOKEN_BEGIN_BLOCK = '{@'
@@ -52,7 +52,7 @@ def parse_blocks(commandline: List[str]) -> Tuple[List[str], dict]:
             closing_match = commandline_as_str.find(TOKEN_CLOSING_BLOCK, cursor)
 
             # 2. Find closing "}" of the "{@"
-            if not closing_match:
+            if closing_match < 0:
                 raise Exception('Parsing exception: Closing not found for {@ opened at %i' % cursor)
 
             cursor = closing_match + 1  # after "{@block}"
@@ -63,7 +63,7 @@ def parse_blocks(commandline: List[str]) -> Tuple[List[str], dict]:
             block_ending_content = TOKEN_BEGIN_BLOCK_ENDING + TOKEN_CLOSING_BLOCK
             block_ending_match = commandline_as_str.find(block_ending_content, cursor)
 
-            if not block_ending_match:
+            if block_ending_match < 0:
                 raise Exception('Block ending - %s not found' % block_ending_content)
 
             body = strip_empty_elements(
@@ -72,7 +72,7 @@ def parse_blocks(commandline: List[str]) -> Tuple[List[str], dict]:
             cursor = block_ending_match + len(block_ending_content)  # after "{/@}"
 
             if TOKEN_BEGIN_BLOCK in str(body):
-                raise Exception('Nesting blocks "{}" not allowed, attempted inside block "{}"'.format(TOKEN_BEGIN_BLOCK, header))
+                raise CommandlineParsingError.from_nested_blocks_not_allowed(TOKEN_BEGIN_BLOCK, header)
 
             block_token = ((TOKEN_BLOCK_REFERENCE_OPENING + '%i' + TOKEN_BLOCK_REFERENCE_CLOSING) % block_id)
             commandline_as_str = commandline_as_str[0:opening_match] + \
@@ -86,7 +86,7 @@ def parse_blocks(commandline: List[str]) -> Tuple[List[str], dict]:
             try:
                 collected_blocks[block_token.strip()] = ArgumentBlock(body=body, **inner_arguments)
             except TypeError as e:
-                raise Exception('Block "{}" contains invalid modifier, raised error: {}'.format(header, str(e)))
+                raise CommandlineParsingError.from_block_unknown_modifier(header, e)
 
         else:
             cursor += 1
@@ -95,19 +95,19 @@ def parse_blocks(commandline: List[str]) -> Tuple[List[str], dict]:
 
 
 def parse_block_header(block_header: str) -> Dict[str, Union[str, int]]:
-    parsed = re.findall('@(retry|rescue|error)([^@]*)', block_header)  # @todo: Verify unknown modifiers
+    parsed = re.findall('@(retry-block|retry|rescue|error)([^@]*)', block_header)
     as_dict = {}
 
     if not parsed:
-        raise Exception('Cannot parse block header "{}"'.format(block_header))
+        raise CommandlineParsingError.from_block_header_parsing_exception(block_header)
 
     for result in parsed:
         result: List[str]
         name = result[0].strip()
 
         if name in as_dict:
-            raise Exception('Cannot declare "{}" twice in block "{}'.format(name, block_header))
+            raise CommandlineParsingError.from_block_modifier_declared_twice(name, block_header)
 
-        as_dict[name] = result[1].strip()
+        as_dict[name.replace('-', '_')] = result[1].strip()
 
     return as_dict

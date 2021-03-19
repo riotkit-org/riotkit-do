@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
 from typing import Union
+
+from rkd.api.inputoutput import IO
+
 from rkd.api.testing import BasicTestingCase
 from rkd.context import ApplicationContext
 from rkd.resolver import TaskResolver
 from rkd.standardlib.shell import ShellCommandTask
 from rkd.syntax import TaskDeclaration, GroupDeclaration, TaskAliasDeclaration
-from rkd.argparsing.model import TaskArguments
+from rkd.argparsing.model import TaskArguments, ArgumentBlock
 from rkd.aliasgroups import parse_alias_groups_from_env
 
 
@@ -17,17 +20,20 @@ class TestResolver(BasicTestingCase):
         :return:
         """
 
+        # test data
         context = ApplicationContext(
             tasks=[TaskDeclaration(ShellCommandTask())],
             aliases=[
+                # note: there is 2x :sh with DIFFERENT arguments
                 TaskAliasDeclaration(':test', [':sh', '-c', 'uname -a', ':sh', '-c', 'ps aux'],
                                      description='Task for testing')
             ],
             directory=''
         )
-
+        context.io = IO()
         context.compile()
 
+        # results collection
         result_tasks = []
 
         def assertion_callback(declaration: TaskDeclaration,
@@ -36,9 +42,10 @@ class TestResolver(BasicTestingCase):
                                args: list = []):
             result_tasks.append(declaration.to_full_name() + ' ' + (' '.join(declaration.get_args())))
 
+        # action
         resolver = TaskResolver(context, [])
         resolver.resolve(
-            [TaskArguments(':test', ['--short'])],
+            [ArgumentBlock([':test', '--short']).clone_with_tasks([TaskArguments(':test', ['--short'])])],
             assertion_callback
         )
 
@@ -52,7 +59,7 @@ class TestResolver(BasicTestingCase):
             aliases=[],
             directory=''
         )
-
+        context.io = IO()
         context.compile()
 
         result_tasks = []
@@ -64,7 +71,7 @@ class TestResolver(BasicTestingCase):
             result_tasks.append(declaration.to_full_name())
 
         resolver = TaskResolver(context, [])
-        resolver.resolve([TaskArguments(':sh', [])], assertion_callback)
+        resolver.resolve([ArgumentBlock([':sh']).clone_with_tasks([TaskArguments(':sh', [])])], assertion_callback)
 
         self.assertEqual([':sh'], result_tasks)
 
@@ -80,6 +87,7 @@ class TestResolver(BasicTestingCase):
             aliases=[],
             directory=''
         )
+        context.io = IO()
         context.compile()
         result_tasks = []
 
@@ -90,6 +98,7 @@ class TestResolver(BasicTestingCase):
             result_tasks.append(declaration.to_full_name())
 
         resolver = TaskResolver(context, parse_alias_groups_from_env(':bella-ciao->'))
-        resolver.resolve([TaskArguments(':bella-ciao:sh', [])], assertion_callback)
+        resolver.resolve([ArgumentBlock([':bella-ciao:sh'])
+                         .clone_with_tasks([TaskArguments(':bella-ciao:sh', [])])], assertion_callback)
 
         self.assertEqual([':sh'], result_tasks)
