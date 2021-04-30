@@ -75,6 +75,7 @@ class TestIO(BasicTestingCase, OutputCapturingSafeTestCase):
                 self.__setattr__('is_text_optional', True)
 
             io.opt_outln = opt_outln
+            io.opt_errln = opt_outln
 
             try:
                 method('test')
@@ -121,3 +122,90 @@ He was killed by shelling in 1943 before the end of the war\x1B[0m"""
 
         self.assertEqual(stdout_backup, sys.stdout)
         self.assertEqual(stderr_backup, sys.stderr)
+
+    def test_io_output_processing_changes_output(self):
+        """
+        Tests adding "[stdout]" and "[stderr]" prefixes to the output
+        """
+
+        mocked_output = []
+
+        io = IO()
+        io.set_log_level('info')
+        io._stderr = io._stdout = lambda txt: mocked_output.append(txt)
+
+        # add a processor that will append origin - "stdout" or "stderr"
+        io.add_output_processor(lambda txt, origin: '[{}]: {}'.format(origin, txt))
+
+        io.info('Hello from stdout')
+        io.error('Hello from stderr')
+
+        mocked_output_as_str = " ".join(mocked_output)
+
+        self.assertIn('[stdout]: \x1b', mocked_output_as_str)
+        self.assertIn('[stderr]: \x1b', mocked_output_as_str)
+
+    def test_io_output_processing_does_not_break_on_exception_in_processing_method_when_error_level_is_not_debug(self):
+        """
+        Verify error handling - when level is not "debug", then no any error should be present from processors
+        because we cannot mess with the I/O that is written to the console
+        """
+
+        mocked_output = []
+
+        io = IO()
+        io.set_log_level('info')
+        io._stderr = io._stdout = lambda txt: mocked_output.append(txt)
+
+        def processor_that_raises_exceptions(txt, origin):
+            raise Exception('Hello')
+
+        io.add_output_processor(processor_that_raises_exceptions)
+
+        io.info('26 Jan 1932 4000 mainly Jewish tenants in New York attacked police reserve forces who were trying ' +
+                'to evict 17 tenants. The mob was led by women on rooftops who directed the action with megaphones ' +
+                'and hurled missiles at police.')
+
+        self.assertIn('were trying to evict 17 tenants', str(mocked_output))
+
+    def test_io_output_processing_is_raising_exception_in_debug_mode(self):
+        """
+        Error handling - when level is "debug", then we should be raising exceptions
+        """
+
+        mocked_output = []
+
+        io = IO()
+        io.set_log_level('debug')
+        io._stderr = io._stdout = lambda txt: mocked_output.append(txt)
+
+        def processor_that_raises_exceptions(txt, origin):
+            raise Exception('Hello')
+
+        io.add_output_processor(processor_that_raises_exceptions)
+
+        with self.assertRaises(Exception):
+            io.info('There will be no shelter here')
+
+    def test_io_output_processing_is_raising_exception_when_invalid_type_returned_in_debug_mode(self):
+        """
+        Error handling - when level is "debug", then we should be raising exceptions
+        Variant: returned invalid type (not a STR - returned INT)
+        """
+
+        mocked_output = []
+
+        io = IO()
+        io.set_log_level('debug')
+        io._stderr = io._stdout = lambda txt: mocked_output.append(txt)
+
+        def processor_that_raises_exceptions(txt, origin):
+            return 123456
+
+        # noinspection PyTypeChecker
+        io.add_output_processor(processor_that_raises_exceptions)
+
+        with self.assertRaises(Exception):
+            io.info('Face the facts, no thanks, "Your passport lacks stamps Please go back for war, ' +
+                    'torture and the death camps" Join the ranks, labeled as illegal people, Cursed by those who ' +
+                    'suck blood from golden calf’s nipple')
