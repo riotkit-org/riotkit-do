@@ -15,6 +15,10 @@ class TaskExecutionException(Exception):
     pass
 
 
+class TaskNotConfiguredException(TaskExecutionException):
+    pass
+
+
 class InterruptExecution(TaskExecutionException):
     pass
 

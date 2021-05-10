@@ -5,6 +5,7 @@ from typing import Callable
 from ..api.syntax import TaskDeclaration
 from ..api.contract import TaskInterface
 from ..api.contract import ExecutionContext
+from ..exception import TaskNotConfiguredException
 
 
 # <sphinx=shell-command>
@@ -24,12 +25,16 @@ class ShellCommandTask(TaskInterface):
         # self.sh() and self.io() are part of TaskUtilities via TaskInterface
 
         try:
-            self.sh(context.get_arg('cmd'), capture=False)
+            self.sh(self._get_cmd(context), capture=False)
         except CalledProcessError as e:
             self.io().error_msg(str(e))
             return False
 
         return True
+
+    def _get_cmd(self, context: ExecutionContext) -> str:
+        return context.get_arg('cmd')
+
 # </sphinx=shell-command>
 
 
@@ -111,6 +116,22 @@ class BaseShellCommandWithArgumentParsingTask(TaskInterface):
             return False
 
         return True
+
+
+class ShellCommandAbstractTask(ShellCommandTask):
+    command: str
+
+    def __init__(self):
+        self.command = ''
+
+    def configure_argparse(self, parser: ArgumentParser):
+        pass
+
+    def _get_cmd(self, context: ExecutionContext) -> str:
+        if not self.command:
+            raise TaskNotConfiguredException('"self.command" not configured')
+
+        return self.command
 
 
 def imports() -> list:

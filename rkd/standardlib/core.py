@@ -82,6 +82,8 @@ class InitTask(TaskInterface):
         return True
 
     def is_silent_in_observer(self) -> bool:
+        """Skips user feedback 'Task :init executed'"""
+
         return True
 
 

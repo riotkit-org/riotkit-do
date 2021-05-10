@@ -6,6 +6,7 @@ CONTRACT (part of API)
 Core interfaces that should be changed WITH CAREFUL as those are parts of API.
 Any breaking change there requires to bump RKD major version (see: Semantic Versioning)
 """
+
 from tabulate import tabulate
 from abc import abstractmethod, ABC as AbstractClass
 from typing import Dict, List, Union, Optional
@@ -286,6 +287,11 @@ class TaskInterface(TaskUtilities):
 
         task.internal_inject_dependencies(self._io, self._ctx, self._executor, self.temp)
 
+    def configure(self):
+        """Executes a task configuration right after task creation"""
+
+        pass
+
     @abstractmethod
     def get_name(self) -> str:
         """Task name  eg. ":sh"
@@ -384,7 +390,7 @@ class TaskInterface(TaskUtilities):
         return envs[env_name]
 
     def is_silent_in_observer(self) -> bool:
-        """"""  # sphinx: skip
+        """Internal method"""  # sphinx: skip
         return False
 
     def io(self) -> IO:
@@ -482,6 +488,18 @@ class TaskInterface(TaskUtilities):
         return tabulate(body, headers=header, floatfmt=floatfmt, numalign=numalign, tablefmt=tablefmt,
                         stralign=stralign, missingval=missingval, showindex=showindex,
                         disable_numparse=disable_numparse, colalign=colalign)
+
+
+class ConfigurableTaskInterface(TaskInterface):
+    """
+    Abstract task: Tasks implementing this interface are designed to be EXTENDED, not imported directly
+    """
+
+    @staticmethod
+    @abstractmethod
+    def get_configurable_attributes() -> List[str]:
+        # @todo: Validation
+        pass
 
 
 class ArgparseArgument(object):
