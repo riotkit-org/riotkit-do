@@ -1,6 +1,6 @@
 
 import os
-import pwd
+from pwd import getpwnam
 from pickle import dumps as pickle_dumps
 from pickle import loads as pickle_loads
 from typing import Union, Optional
@@ -215,7 +215,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
             os.chmod(communication_file, 0o777)
 
             try:
-                pwd.getpwnam(become)
+                getpwnam(become)
             except KeyError:
                 task.io().error('Unknown user "%s"' % become)
                 return False

@@ -19,7 +19,7 @@ import pty
 import select
 import fcntl
 import struct
-from typing import Tuple
+from typing import Tuple, Callable
 from typing import Optional
 from typing import Union
 from threading import Thread
@@ -32,10 +32,12 @@ ON_POSIX = 'posix' in sys.builtin_module_names
 class TextBuffer(object):
     text: str
     size: int
+    callback: Optional[Callable[[str, str], None]]
 
-    def __init__(self, buffer_size: int):
+    def __init__(self, buffer_size: int, callback: Optional[Callable[[str, str], None]] = None):
         self.text = ''
         self.size = buffer_size
+        self.callback = callback
 
     def write(self, text: str):
         buf_len = len(self.text)
@@ -46,6 +48,9 @@ class TextBuffer(object):
             self.trim_left_by(missing_len)
 
         self.text += text
+
+        if self.callback:
+            self.callback(text, self.text)
 
     def trim_left_by(self, chars: int):
         self.text = self.text[chars:]
@@ -61,8 +66,11 @@ class ProcessState(object):
         self.has_exited = False
 
 
-def check_call(command: str, script_to_show: Optional[str] = '', use_subprocess: bool = False,
-               cwd: Union[dict, None] = None, env: dict = None):
+def check_call(command: str, script_to_show: Optional[str] = '',
+               use_subprocess: bool = False,
+               cwd: Union[dict, None] = None,
+               env: dict = None,
+               output_capture_callback: Optional[Callable[[str, str], None]] = None):
     """
     Another implementation of subprocess.check_call(), in comparison - this method writes output directly to
     sys.stdout and sys.stderr, which makes output capturing possible
@@ -72,6 +80,7 @@ def check_call(command: str, script_to_show: Optional[str] = '', use_subprocess:
     :param use_subprocess: (Optional) Use subprocess.check_call() directly. Could simplify some cases.
     :param cwd: (Optional) Change current working directory
     :param env: (Optional) Append environment variables
+    :param output_capture_callback: Optional callback that can read each buffered text
 
     :return:
     """
@@ -104,7 +113,7 @@ def check_call(command: str, script_to_show: Optional[str] = '', use_subprocess:
                                    bufsize=0, close_fds=ON_POSIX, universal_newlines=True, preexec_fn=os.setsid,
                                    cwd=cwd if cwd else os.getcwd())
 
-        out_buffer = TextBuffer(buffer_size=1024 * 10)
+        out_buffer = TextBuffer(buffer_size=1024 * 10, callback=output_capture_callback)
         fd_thread = Thread(target=push_output,
                            args=(process, primary_fd, out_buffer, process_state, is_interactive_session))
         fd_thread.daemon = True
