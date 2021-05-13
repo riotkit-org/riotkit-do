@@ -27,14 +27,15 @@ from time import time
 from rkd import env as rkd_env
 
 ON_POSIX = 'posix' in sys.builtin_module_names
+TEXT_BUFFER_CALLBACK_DEFINITION = Optional[Callable[[str], None]]
 
 
 class TextBuffer(object):
     text: str
     size: int
-    callback: Optional[Callable[[str, str], None]]
+    callback: TEXT_BUFFER_CALLBACK_DEFINITION
 
-    def __init__(self, buffer_size: int, callback: Optional[Callable[[str, str], None]] = None):
+    def __init__(self, buffer_size: int, callback: TEXT_BUFFER_CALLBACK_DEFINITION = None):
         self.text = ''
         self.size = buffer_size
         self.callback = callback
@@ -50,7 +51,7 @@ class TextBuffer(object):
         self.text += text
 
         if self.callback:
-            self.callback(text, self.text)
+            self.callback(text)
 
     def trim_left_by(self, chars: int):
         self.text = self.text[chars:]
@@ -61,6 +62,7 @@ class TextBuffer(object):
 
 class ProcessState(object):
     has_exited: bool
+    exception: Exception = None
 
     def __init__(self):
         self.has_exited = False
@@ -70,7 +72,7 @@ def check_call(command: str, script_to_show: Optional[str] = '',
                use_subprocess: bool = False,
                cwd: Union[dict, None] = None,
                env: dict = None,
-               output_capture_callback: Optional[Callable[[str, str], None]] = None):
+               output_capture_callback: TEXT_BUFFER_CALLBACK_DEFINITION = None):
     """
     Another implementation of subprocess.check_call(), in comparison - this method writes output directly to
     sys.stdout and sys.stderr, which makes output capturing possible
@@ -96,8 +98,17 @@ def check_call(command: str, script_to_show: Optional[str] = '',
     except termios.error:
         old_tty = None
 
+    # merge system environment with environment from parameters
+    if env:
+        merged_env = dict(os.environ)
+        merged_env.update(env)
+        env = merged_env
+
     is_interactive_session = old_tty is not None
     process_state = ProcessState()
+    primary_fd = None
+    replica_fd = None
+    process: Optional[subprocess.Popen] = None
 
     try:
         if is_interactive_session:
@@ -111,36 +122,88 @@ def check_call(command: str, script_to_show: Optional[str] = '',
 
         process = subprocess.Popen(command, shell=True, stdin=replica_fd, stdout=replica_fd, stderr=replica_fd,
                                    bufsize=0, close_fds=ON_POSIX, universal_newlines=True, preexec_fn=os.setsid,
-                                   cwd=cwd if cwd else os.getcwd())
+                                   cwd=cwd if cwd else os.getcwd(), env=env if env else None)
 
         out_buffer = TextBuffer(buffer_size=1024 * 10, callback=output_capture_callback)
-        fd_thread = Thread(target=push_output,
-                           args=(process, primary_fd, out_buffer, process_state, is_interactive_session))
+        fd_thread = Thread(
+            target=push_output,
+            args=(
+                process, primary_fd,
+                out_buffer, process_state,
+                is_interactive_session,
+                lambda: clean_up_on_process_exit(old_tty, process_state, is_interactive_session,
+                                                 primary_fd, replica_fd, process)
+            )
+        )
+
         fd_thread.daemon = True
         fd_thread.start()
 
         exit_code = process.wait()
     finally:
-        process_state.has_exited = True
+        clean_up_on_process_exit(old_tty, process_state, is_interactive_session, primary_fd, replica_fd, process)
 
-        if is_interactive_session:
-            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_tty)
-
-        try:
-            for fd in [primary_fd, replica_fd]:
-                os.close(fd)
-        except NameError:
-            pass
+    if process_state.exception:
+        raise process_state.exception
 
     if exit_code > 0:
         raise subprocess.CalledProcessError(
             exit_code, script_to_show if script_to_show else command,
-            stderr=out_buffer.get_value(),
-            output=out_buffer.get_value()
+            stderr=out_buffer.get_value() if out_buffer else '',
+            output=out_buffer.get_value() if out_buffer else ''
         )
 
 
-def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: ProcessState, is_interactive_session: bool):
+def clean_up_on_process_exit(old_tty, process_state: ProcessState, is_interactive_session: bool,
+                             primary_fd, replica_fd, process: Optional[subprocess.Popen]):
+
+    """
+    Clean up on process end
+
+    :param old_tty:
+    :param process_state:
+    :param is_interactive_session:
+    :param primary_fd:
+    :param replica_fd:
+    :param process:
+    :return:
+    """
+
+    # make sure the process is terminated. Case: Exception was raised during interaction with process, but process is
+    #                                            still alive
+    if process:
+        process.terminate()
+
+    process_state.has_exited = True
+
+    if is_interactive_session:
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_tty)
+
+    try:
+        for fd in [primary_fd, replica_fd]:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+    except NameError:
+        pass
+
+
+def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: ProcessState,
+                is_interactive_session: bool, on_error: callable):
+
+    """
+    Receive output from running process and forward to streams, capture
+
+    :param process:
+    :param primary_fd:
+    :param out_buffer:
+    :param process_state:
+    :param is_interactive_session:
+    :param on_error:
+    :return:
+    """
+
     poller = select.epoll()
     poller.register(primary_fd, select.EPOLLIN)
 
@@ -162,28 +225,36 @@ def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: Proc
 
     while process.poll() is None:
         for r, flags in poller.poll(timeout=0.01):
-            if sys.stdin.fileno() is r:
-                d = os.read(r, 10240)
-                os.write(primary_fd, d)
+            try:
+                if sys.stdin.fileno() is r:
+                    d = os.read(r, 10240)
+                    os.write(primary_fd, d)
 
-            elif primary_fd is r:
-                o = os.read(primary_fd, 10240)
+                elif primary_fd is r:
+                    o = os.read(primary_fd, 10240)
 
-                # terminal window size updating
-                if should_update_terminal_size and time() - last_terminal_update >= terminal_update_time:
-                    copy_terminal_size(sys.stdout, primary_fd)
-                    last_terminal_update = time()
+                    # terminal window size updating
+                    if should_update_terminal_size and time() - last_terminal_update >= terminal_update_time:
+                        copy_terminal_size(sys.stdout, primary_fd)
+                        last_terminal_update = time()
 
-                # propagate to stdout
-                if o:
-                    decoded = carefully_decode(o, 'utf-8')
+                    # propagate to stdout
+                    if o:
+                        decoded = carefully_decode(o, 'utf-8')
 
-                    sys.stdout.write(decoded)
-                    sys.stdout.flush()
-                    out_buffer.write(decoded)
+                        sys.stdout.write(decoded)
+                        sys.stdout.flush()
+                        out_buffer.write(decoded)
 
-            if process_state.has_exited:
-                return True
+                if process_state.has_exited:
+                    return True
+
+            except Exception as exc:
+                process_state.exception = exc
+                process_state.has_exited = True
+                on_error()
+
+                return
 
 
 def carefully_decode(txt_as_bytes: bytes, enc: str) -> str:
