@@ -194,8 +194,8 @@ for i in range(0, 1024 * 128):
                     task.sh('python3 -m rkd -rl debug :sh -c "exit 5"')
 
                 except subprocess.CalledProcessError as e:
-                    self.assertIn("Command '#!/bin/bash -eopipefail \r\nset -euo pipefail; export " +
-                                  "PYTHONUNBUFFERED=1; exit 5' returned non-zero exit status 5.", e.output)
+                    self.assertIn("Command '#!/bin/bash -eopipefail \r\nset -euo pipefail;" +
+                                  " exit 5' returned non-zero exit status 5.", e.output)
 
     def test_dollar_symbols_are_escaped_in_shell_commands(self):
         """Check that in envrionment variable there can be defined a value that contains dollar symbols"""
