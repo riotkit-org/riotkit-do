@@ -71,8 +71,6 @@ class TaskUtilities(AbstractClass):
         # cmd without environment variables
         original_cmd = deepcopy(cmd)
 
-        cmd = 'export PYTHONUNBUFFERED=1; ' + cmd
-
         # set strict mode, it can be disabled manually
         if strict:
             cmd = 'set -euo pipefail; ' + cmd
