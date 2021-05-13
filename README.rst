@@ -39,8 +39,8 @@ RKD - RiotKit-Do
 	:alt: Issues open
 
 
-Task executor - balance between Makefile and Gradle [see documentation_], designed with :heart:   by RiotKit for DevOps.
-------------------------------------------------------------------------------------------------------------------------
+Task executor - balance between Makefile and Gradle [see documentation_], designed with :heart:  by RiotKit for DevOps.
+-----------------------------------------------------------------------------------------------------------------------
 
 *Easiest and cleanest way to write management scripts and share them between projects, teams and even organizations*
 
