@@ -52,3 +52,10 @@ tasks:
           print(this)
 
           return True
+
+  :examples:with-other-workdir:
+      description: "This task runs in /tmp"
+      workdir: "/tmp"
+      steps: |
+          echo "I run in"
+          pwd

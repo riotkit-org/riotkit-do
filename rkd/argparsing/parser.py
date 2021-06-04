@@ -170,7 +170,7 @@ class CommandlineParsingHelper(object):
         return new_blocks
 
     @classmethod
-    def parse(cls, task: TaskDeclarationInterface, args: list) -> Tuple[dict, dict]:
+    def parse(cls, declaration: TaskDeclarationInterface, args: list) -> Tuple[dict, dict]:
         """Parses ArgumentParser arguments defined by tasks
 
         Behavior:
@@ -182,7 +182,7 @@ class CommandlineParsingHelper(object):
           Tuple of two dicts. First dict: arguments key=>value, Second dict: arguments definitions for advanced usae
         """
 
-        argparse = TraceableArgumentParser(task.to_full_name(), formatter_class=RawTextHelpFormatter)
+        argparse = TraceableArgumentParser(declaration.to_full_name(), formatter_class=RawTextHelpFormatter)
 
         argparse.add_argument('--log-to-file', '-rf', help='Capture stdout and stderr to file')
         argparse.add_argument('--log-level', '-rl', help='Log level: debug,info,warning,error,fatal')
@@ -190,9 +190,10 @@ class CommandlineParsingHelper(object):
                               action='store_true')
         argparse.add_argument('--silent', '-rs', help='Do not print logs, just task output', action='store_true')
         argparse.add_argument('--become', '-rb', help='Execute task as given user (requires sudo)', default='')
+        argparse.add_argument('--task-workdir', '-rw', help='Set a working directory for this task', default='')
 
-        task.get_task_to_execute().configure_argparse(argparse)
-        cls.add_env_variables_to_argparse_description(argparse, task)
+        declaration.get_task_to_execute().configure_argparse(argparse)
+        cls.add_env_variables_to_argparse_description(argparse, declaration)
 
         return vars(argparse.parse_args(args)), argparse.traced_arguments
 

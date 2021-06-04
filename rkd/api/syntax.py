@@ -7,7 +7,7 @@ Classes used in a declaration syntax in makefile.py
 
 """
 
-from typing import List, Dict
+from typing import List, Dict, Optional
 from copy import deepcopy
 from .contract import TaskDeclarationInterface
 from .contract import GroupDeclarationInterface
@@ -25,8 +25,9 @@ class TaskDeclaration(TaskDeclarationInterface):
     _args: List[str]
     _block: ArgumentBlock = None
     _unique_id: str
+    _workdir: Optional[str]
 
-    def __init__(self, task: TaskInterface, env: Dict[str, str] = None, args: List[str] = None):
+    def __init__(self, task: TaskInterface, env: Dict[str, str] = None, args: List[str] = None, workdir: str = None):
         if env is None:
             env = {}
 
@@ -40,6 +41,7 @@ class TaskDeclaration(TaskDeclarationInterface):
         self._task = task
         self._env = merge_env(env)
         self._args = args
+        self._workdir = workdir
         self._user_defined_env = list(env.keys())
 
     def to_full_name(self):
@@ -155,6 +157,13 @@ class TaskDeclaration(TaskDeclarationInterface):
         Unique ID of a declaration is a TEMPORARY ID created during runtime to distinct even very similar declarations
         """
         return self._unique_id
+
+    @property
+    def workdir(self) -> str:
+        if not self._workdir:
+            return '.'
+
+        return self._workdir
 
     def __str__(self):
         return 'TaskDeclaration<%s>' % self.get_task_to_execute().get_full_name()
