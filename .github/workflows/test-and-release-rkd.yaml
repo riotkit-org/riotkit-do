@@ -30,6 +30,14 @@ jobs:
             - name: Run RKD tests on Python ${{ matrix.python-version }}
               run: "make tests"
 
+            - name: Archive RKD tests results
+              uses: dorny/test-reporter@v1
+              if: always()
+              with:
+                  name: "[${{ matrix.python-version }}] RKD tests"
+                  path: build/tests.xml
+                  reporter: java-junit
+
             - name: Run rkd_python tests on Python ${{ matrix.python-version }}
               run: "cd subpackages/rkd_python && make tests"
 

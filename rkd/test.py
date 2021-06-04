@@ -16,12 +16,13 @@ from .standardlib import CallableTask
 from .api.inputoutput import NullSystemIO
 
 
-class TestTask(CallableTask):
+class TaskForTesting(CallableTask):
     _description = 'Test task for automated tests'
     _become: str = False
 
     def __init__(self):
         self._io = NullSystemIO()
+        super().__init__(':test', None)
 
     def get_name(self) -> str:
         return ':test'
@@ -42,7 +43,7 @@ class TestTask(CallableTask):
         }
 
 
-class TestTaskWithRKDCallInside(TestTask):
+class TaskForTestingWithRKDCallInside(TaskForTesting):
     def execute(self, context: ExecutionContext) -> bool:
         self.rkd([':sh', '-c', '"echo \'9 Aug 2014 Michael Brown, an unarmed Black teenager, was killed by a white police officer in Ferguson, Missouri, sparking mass protests across the US.\'"'])
         return True
@@ -50,7 +51,7 @@ class TestTaskWithRKDCallInside(TestTask):
 
 def get_test_declaration(task: TaskInterface = None) -> TaskDeclaration:
     if not task:
-        task = TestTask()
+        task = TaskForTesting()
 
     return TaskDeclaration(task, {}, [])
 

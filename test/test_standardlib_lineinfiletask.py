@@ -148,7 +148,7 @@ class LineInFileTaskTest(BasicTestingCase):
             producirá la revolución.
             Nuestro pendón uno ha de ser:
             sólo en la unión está el vencer.'''.split("\n"),
-            after_line_regexp='(.*)Read\ more(.*)',
+            after_line_regexp='(.*)Read more(.*)',
             only_first_occurrence=True,
             regexp='.*Trabajador.*'
         )
