@@ -41,7 +41,7 @@ class YamlSyntaxInterpreter:
         if 'version' not in pre_parsed:
             raise YamlParsingException('"version" is not specified in YAML file')
 
-        parsed = self.loader.load(content, pre_parsed['version'])
+        parsed = self.loader.load(content, str(pre_parsed.get('version')))
 
         imports = []
         global_envs = self.parse_env(parsed, file_path)
