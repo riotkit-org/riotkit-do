@@ -35,7 +35,7 @@ jobs:
               if: always()
               with:
                   name: "[${{ matrix.python-version }}] RKD tests"
-                  path: build/tests.xml
+                  path: src/*/tests.xml
                   reporter: java-junit
 
             - name: Run rkd_python tests on Python ${{ matrix.python-version }}
