@@ -6,6 +6,7 @@ TEST_OPTS=
 
 ## Installs dependencies for all packages
 deps:
+	pip install -r ./requirements-dev.txt
 	BASE_PATH=$$(pwd); \
 	for package_directory in $$(ls ./src); do \
 	  	echo ">> $${package_directory}"; \
