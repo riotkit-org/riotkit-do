@@ -43,11 +43,15 @@ package: refresh_git
 
 ## Publish to PyPI
 publish:
-	twine upload --disable-progress-bar --verbose \
-		--username=__token__ \
-		--password=${PYPI_TOKEN} \
-		--skip-existing \
-		dist/*
+	BASE_PATH=$$(pwd); \
+	for package_directory in $$(ls ./src); do \
+	  	cd "$$BASE_PATH/src/$$package_directory"; \
+		twine upload --disable-progress-bar --verbose \
+			--username=__token__ \
+			--password=${PYPI_TOKEN} \
+			--skip-existing \
+			dist/*; \
+	done
 
 ## Build SPHINX docs
 documentation:
