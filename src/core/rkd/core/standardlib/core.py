@@ -252,7 +252,7 @@ class VersionTask(TaskInterface):
         pass
 
     def execute(self, context: ExecutionContext) -> bool:
-        self._io.outln('RKD version %s' % pkg_resources.get_distribution("rkd").version)
+        self._io.outln('RKD version %s' % pkg_resources.get_distribution("rkd.core").version)
         self._io.print_opt_line()
 
         table_body = []
