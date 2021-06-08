@@ -1,5 +1,5 @@
 
-from subpackages.rkd_python import imports as PythonImports
+from rkd.pythonic import imports as PythonImports
 
 IMPORTS = [] + PythonImports()
 

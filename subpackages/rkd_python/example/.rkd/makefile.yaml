@@ -1,4 +1,0 @@
-version: org.riotkit.rkd/yaml/v1
-imports:
-    - rkd_python
-tasks: {}

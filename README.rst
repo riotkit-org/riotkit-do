@@ -5,38 +5,38 @@ RKD - RiotKit-Do
 
 
 .. image:: http://www.repostatus.org/badges/latest/active.svg
-	:alt: Project Status: Active – The project has reached a stable, usable state and is being actively developed.
-	:target: http://www.repostatus.org/#active
+    :alt: Project Status: Active – The project has reached a stable, usable state and is being actively developed.
+    :target: http://www.repostatus.org/#active
 
 .. PyPI version — https://badge.fury.io/py/
 
 .. image:: https://img.shields.io/github/v/release/riotkit-org/riotkit-do?include_prereleases
-	:target: https://img.shields.io/github/v/release/riotkit-org/riotkit-do?include_prereleases
-	:alt: Github Release
+    :target: https://img.shields.io/github/v/release/riotkit-org/riotkit-do?include_prereleases
+    :alt: Github Release
 
 .. image:: https://img.shields.io/badge/Made%20with-Python-1f425f.svg
-	:target: https://img.shields.io/badge/Made%20with-Python-1f425f.svg
-	:alt: Made with Python
+    :target: https://img.shields.io/badge/Made%20with-Python-1f425f.svg
+    :alt: Made with Python
     
 .. image:: https://img.shields.io/pypi/l/rkd.svg
-	:target: https://img.shields.io/pypi/l/rkd.svg
-	:alt: License
+    :target: https://img.shields.io/pypi/l/rkd.svg
+    :alt: License
 
 .. image:: https://github.com/riotkit-org/riotkit-do/workflows/Test%20and%20release%20a%20package/badge.svg
-	:target: https://github.com/riotkit-org/riotkit-do/actions?query=workflow%3A%22Test+and+release+a+package%22
-	:alt: Test and release a package
+    :target: https://github.com/riotkit-org/riotkit-do/actions?query=workflow%3A%22Test+and+release+a+package%22
+    :alt: Test and release a package
     
 .. image:: https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square
-	:target: https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square
-	:alt: PRs welcome
+    :target: https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square
+    :alt: PRs welcome
     
 .. image:: https://img.shields.io/github/issues-pr/riotkit-org/riotkit-do.svg
-	:target: https://img.shields.io/github/issues-pr/riotkit-org/riotkit-do.svg
-	:alt: PRs open
+    :target: https://img.shields.io/github/issues-pr/riotkit-org/riotkit-do.svg
+    :alt: PRs open
 
 .. image:: https://img.shields.io/github/issues/riotkit-org/riotkit-do.svg
-	:target: https://img.shields.io/github/issues/riotkit-org/riotkit-do.svg
-	:alt: Issues open
+    :target: https://img.shields.io/github/issues/riotkit-org/riotkit-do.svg
+    :alt: Issues open
 
 
 Task executor - balance between Makefile and Gradle [see documentation_], designed with :heart:  by RiotKit for DevOps.

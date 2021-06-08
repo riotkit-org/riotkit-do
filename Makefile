@@ -5,8 +5,16 @@ SHELL=/bin/bash
 TEST_OPTS=
 
 ## Run tests
-tests: refresh_git
-	RKD_BIN="python -m rkd" PYTHONPATH="$$(pwd):$$(pwd)/subpackages/rkd_python" pytest ./test --junitxml=build/tests.xml
+tests:
+	set +e; \
+	export RKD_BIN="python -m rkd" PYTHONPATH="$$(pwd)/src/core:$$(pwd)/src/process:$$(pwd)/src/pythonic"; \
+	BASE_PATH=$$(pwd); \
+	for package_directory in $$(ls ./src); do \
+	  	echo ">> $${package_directory}"; \
+	  	mkdir -p $$BASE_PATH/src/$$package_directory/build; \
+	  	set -x; \
+		cd "$$BASE_PATH/src/$$package_directory"; pytest ./tests --junitxml=build/tests.xml;\
+	done
 
 ## Release
 release: package publish
@@ -37,8 +45,3 @@ documentation:
 ## Properly tag project
 tag:
 	git tag -am "Version ${NUM}" ${NUM}
-
-uninstall:
-	sudo pip uninstall rkd || true
-	pip uninstall rkd || true
-	sudo rm -rf /usr/lib/rkd /usr/share/rkd

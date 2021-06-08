@@ -1,0 +1,2 @@
+recursive-include rkd/core/misc *
+recursive-exclude tests *
