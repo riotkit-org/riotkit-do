@@ -37,7 +37,7 @@ refresh_git:
 package: refresh_git
 	BASE_PATH=$$(pwd); \
 	for package_directory in $$(ls ./src); do \
-		cd "$$BASE_PATH/src/$$package_directory"; ./setup.py build ./setup.py sdist; \
+		cd "$$BASE_PATH/src/$$package_directory"; ./setup.py build; ./setup.py sdist; \
 	done
 
 ## Publish to PyPI
