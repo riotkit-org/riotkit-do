@@ -4,6 +4,14 @@
 SHELL=/bin/bash
 TEST_OPTS=
 
+## Installs dependencies for all packages
+deps:
+	BASE_PATH=$$(pwd); \
+	for package_directory in $$(ls ./src); do \
+	  	echo ">> $${package_directory}"; \
+	  	pip install -r $$BASE_PATH/src/$$package_directory/requirements.txt; \
+	done
+
 ## Run tests
 tests:
 	set +e; \
@@ -27,8 +35,10 @@ refresh_git:
 
 ## Build local package
 package: refresh_git
-	./setup.py build
-	./setup.py sdist
+	BASE_PATH=$$(pwd); \
+	for package_directory in $$(ls ./src); do \
+		cd "$$BASE_PATH/src/$$package_directory"; ./setup.py build ./setup.py sdist; \
+	done
 
 ## Publish to PyPI
 publish:
