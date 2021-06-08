@@ -16,7 +16,7 @@ deps:
 ## Run tests
 tests:
 	set +e; \
-	export RKD_BIN="python -m rkd" PYTHONPATH="$$(pwd)/src/core:$$(pwd)/src/process:$$(pwd)/src/pythonic"; \
+	export RKD_BIN="python -m rkd.core" PYTHONPATH="$$(pwd)/src/core:$$(pwd)/src/process:$$(pwd)/src/pythonic"; \
 	BASE_PATH=$$(pwd); \
 	for package_directory in $$(ls ./src); do \
 	  	echo ">> $${package_directory}"; \

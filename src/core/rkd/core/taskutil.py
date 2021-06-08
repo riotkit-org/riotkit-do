@@ -52,7 +52,7 @@ class TaskUtilities(AbstractClass):
         if binary.endswith('/pytest') or binary.endswith('/py.test'):
             return sys_executable_basename + ' -m rkd.core'
 
-        # as a Python module: "python -m rkd" for example
+        # as a Python module: "python -m rkd.core" for example
         if binary[:-3] == '.py':
             return '%s -m %s' % (sys.executable, os.path.basename(os.path.dirname(binary)))
 
