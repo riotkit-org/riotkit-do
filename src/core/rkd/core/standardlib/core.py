@@ -502,7 +502,7 @@ This task is designed to be extended, see methods marked as "interface methods".
 
     def _setup_venv(self, use_pipenv: bool, template_structure_path: str):
         if use_pipenv:
-            self.sh('pipenv install rkd%s' % self.get_rkd_version_selector())
+            self.sh('pipenv install rkd.core%s' % self.get_rkd_version_selector())
             return
 
         self.sh('cp %s/setup-venv.sh ./' % template_structure_path)
@@ -511,7 +511,7 @@ This task is designed to be extended, see methods marked as "interface methods".
 
     @staticmethod
     def get_rkd_version_selector():
-        rkd_version = pkg_resources.get_distribution("rkd").version
+        rkd_version = pkg_resources.get_distribution("rkd.core").version
         return '==%s' % rkd_version
 
     def on_requirements_txt_write(self, ctx: ExecutionContext) -> None:
