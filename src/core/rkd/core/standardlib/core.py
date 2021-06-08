@@ -495,8 +495,8 @@ This task is designed to be extended, see methods marked as "interface methods".
         self.sh('touch requirements.txt')
         self.rkd([':file:line-in-file',
                   'requirements.txt',
-                  '--regexp="rkd(.*)"',
-                  '--insert="rkd%s"' % self.get_rkd_version_selector()
+                  '--regexp="rkd.core(.*)"',
+                  '--insert="rkd.core%s"' % self.get_rkd_version_selector()
                   ])
         self.on_requirements_txt_write(ctx)
 
