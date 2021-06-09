@@ -34,7 +34,7 @@ def calculate_requirements():
 
 
 setup(
-    setup_requires=['pbr'],
+    setup_requires=['pbr', 'setuptools_scm'],
     pbr=True,
     packages=find_namespace_packages(include='rkd.*', exclude=('tests',)),
     include_package_data=True,
