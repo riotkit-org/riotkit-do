@@ -6,7 +6,8 @@ from setuptools import setup, find_namespace_packages
 from setuptools_scm import get_version
 
 
-current_version = get_version(root=os.path.dirname(os.path.realpath(__file__)) + '/../../')
+ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
+current_version = get_version(root=ROOT_DIR + '/../../')
 parts = current_version.split('.')
 next_minor_version = '.'.join([parts[0], str(int(parts[1]) + 1)])
 
@@ -14,7 +15,7 @@ next_minor_version = '.'.join([parts[0], str(int(parts[1]) + 1)])
 def calculate_requirements():
     requirements = []
 
-    with open('requirements.txt') as f:
+    with open(ROOT_DIR + '/requirements.txt') as f:
         for requirement in parse_requirements(f.read()):
             requirements.append(str(requirement))
 
