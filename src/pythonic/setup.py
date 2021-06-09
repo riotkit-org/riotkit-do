@@ -15,7 +15,7 @@ next_minor_version = '.'.join([parts[0], str(int(parts[1]) + 1)])
 def calculate_requirements():
     requirements = []
 
-    with open(ROOT_DIR + '/requirements.txt') as f:
+    with open(ROOT_DIR + '/requirements-prod.txt') as f:
         for requirement in parse_requirements(f.read()):
             requirements.append(str(requirement))
 
