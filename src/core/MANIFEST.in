@@ -1,2 +1,5 @@
 recursive-include rkd/core/misc *
 recursive-exclude tests *
+include requirements.txt
+include requirements-subpackages.txt
+include setup.cfg
