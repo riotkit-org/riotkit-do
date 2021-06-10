@@ -55,7 +55,9 @@ setup(
         ]
     },
 
-    use_scm_version=True,
+    use_scm_version={
+        "root": ROOT_DIR + '/../../'
+    },
     setup_requires=['setuptools_scm'],
     packages=find_namespace_packages(include='rkd.*', exclude=('tests',)),
     include_package_data=True,
