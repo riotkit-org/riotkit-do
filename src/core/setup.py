@@ -34,6 +34,10 @@ def calculate_requirements():
     return requirements
 
 
+def local_scheme(version):
+    return ""
+
+
 setup(
     name='rkd.core',
     description='Task executor, handy for DevOps and not only - balance between Makefile and Gradle.',
@@ -56,7 +60,8 @@ setup(
     },
 
     use_scm_version={
-        "root": ROOT_DIR + '/../../'
+        "root": ROOT_DIR + '/../../',
+        "local_scheme": local_scheme
     },
     setup_requires=['setuptools_scm'],
     packages=find_namespace_packages(include='rkd.*', exclude=('tests',)),
