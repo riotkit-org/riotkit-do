@@ -1,5 +1,5 @@
 recursive-exclude tests/*
 recursive-exclude example *
-include requirements.txt
+include requirements-prod.txt
 include requirements-subpackages.txt
 include setup.cfg
