@@ -35,8 +35,22 @@ def calculate_requirements():
 
 
 setup(
-    setup_requires=['pbr', 'setuptools_scm'],
-    pbr=True,
+    name='rkd.core',
+    description='Task executor, handy for DevOps and not only - balance between Makefile and Gradle.',
+    home_page='https://github.com/riotkit-org',
+    license='Apache-2',
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'Intended Audience :: System Administrators',
+        'Intended Audience :: Information Technology',
+        'License :: OSI Approved :: Apache Software License',
+        'Operating System :: POSIX',
+        'Programming Language :: Python :: 3 :: Only'
+    ],
+
+    setup_requires=['setuptools_scm'],
     packages=find_namespace_packages(include='rkd.*', exclude=('tests',)),
     include_package_data=True,
 
