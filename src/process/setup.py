@@ -20,8 +20,20 @@ current_version = get_version(root=ROOT_DIR + '/../../')
 parts = current_version.split('.')
 next_minor_version = '.'.join([parts[0], str(int(parts[1]) + 1)])
 
+# loads metadata from config.json
 with open(ROOT_DIR + '/setup.json') as f:
     setup_attributes = json_load(f)
+
+# sets long description
+if os.path.isfile(ROOT_DIR + '/README.md'):
+    with open(ROOT_DIR + '/README.md', 'r') as f:
+        setup_attributes['long_description'] = f.read()
+        setup_attributes['long_description_content_type'] = 'text/markdown'
+
+elif os.path.isfile(ROOT_DIR + '/README.rst'):
+    with open(ROOT_DIR + '/README.rst', 'r') as f:
+        setup_attributes['long_description'] = f.read()
+        setup_attributes['long_description_content_type'] = 'text/x-rst; charset=UTF-8'
 
 
 def calculate_requirements():

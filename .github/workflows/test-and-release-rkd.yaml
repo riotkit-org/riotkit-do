@@ -42,7 +42,7 @@ jobs:
 #              run: "cd subpackages/rkd_python && make tests"
 
     release:
-        needs: [test]
+#        needs: [test]
         runs-on: ubuntu-20.04
         if: always()
         steps:

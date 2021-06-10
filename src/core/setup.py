@@ -9,8 +9,6 @@
 # =================================================================
 
 import os
-from typing import Tuple
-
 from pkg_resources import parse_requirements
 from setuptools import setup, find_namespace_packages
 from setuptools_scm import get_version
