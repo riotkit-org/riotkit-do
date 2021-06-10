@@ -10,7 +10,7 @@ deps:
 	BASE_PATH=$$(pwd); \
 	for package_directory in $$(ls ./src); do \
 	  	echo ">> $${package_directory}"; \
-	  	pip install -r $$BASE_PATH/src/$$package_directory/requirements-prod.txt; \
+	  	pip install -r $$BASE_PATH/src/$$package_directory/requirements-external.txt; \
 	done
 
 ## Run tests
