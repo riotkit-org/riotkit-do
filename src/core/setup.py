@@ -55,6 +55,7 @@ setup(
         ]
     },
 
+    use_scm_version=True,
     setup_requires=['setuptools_scm'],
     packages=find_namespace_packages(include='rkd.*', exclude=('tests',)),
     include_package_data=True,
