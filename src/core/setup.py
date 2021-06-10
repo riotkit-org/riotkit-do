@@ -49,6 +49,11 @@ setup(
         'Operating System :: POSIX',
         'Programming Language :: Python :: 3 :: Only'
     ],
+    entry_points={
+        'console_scripts': [
+            'rkd=rkd.core.bootstrap:main'
+        ]
+    },
 
     setup_requires=['setuptools_scm'],
     packages=find_namespace_packages(include='rkd.*', exclude=('tests',)),
