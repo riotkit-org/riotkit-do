@@ -3,7 +3,7 @@
     "author": "RiotKit non-profit organization",
     "author_email": "riotkit@riseup.net",
     "description": "Task executor, handy for DevOps and not only - balance between Makefile and Gradle.",
-    "home_page": "https://github.com/riotkit-org",
+    "url": "https://github.com/riotkit-org",
     "license": "Apache-2",
     "classifiers": [
         "Development Status :: 5 - Production/Stable",

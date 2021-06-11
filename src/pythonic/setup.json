@@ -3,7 +3,7 @@
     "author": "RiotKit non-profit organization",
     "author_email": "riotkit@riseup.net",
     "description": "Python-related tasks for RKD, including building, testing and releasing packages",
-    "home_page": "https://riotkit-do.readthedocs.io/en/latest/standardlib/python.html",
+    "url": "https://riotkit-do.readthedocs.io/en/latest/standardlib/python.html",
     "license": "Apache-2",
     "classifiers": [
         "Development Status :: 4 - Beta",
