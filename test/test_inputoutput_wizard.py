@@ -4,13 +4,13 @@ from unittest.mock import mock_open, patch
 from rkd.api.testing import BasicTestingCase
 from rkd.api.inputoutput import Wizard
 from rkd.api.inputoutput import BufferedSystemIO
-from rkd.test import TestTask
+from rkd.test import TaskForTesting
 from rkd.exception import InterruptExecution
 
 
 class TestWizard(BasicTestingCase):
     def test_regexp_validation(self):
-        wizard = Wizard(TestTask())
+        wizard = Wizard(TaskForTesting())
         wizard.sleep_time = 0
         wizard.io = BufferedSystemIO()
 
@@ -24,7 +24,7 @@ class TestWizard(BasicTestingCase):
             self.assertRaises(InterruptExecution, lambda: wizard.ask('What\'s your name?', 'name', regexp='([A-Za-z]+)'))
 
     def test_input_is_retried_when_validation_fails(self):
-        wizard = Wizard(TestTask())
+        wizard = Wizard(TaskForTesting())
         wizard.sleep_time = 0
         wizard.io = BufferedSystemIO()
         self.retry_num = 0
@@ -42,7 +42,7 @@ class TestWizard(BasicTestingCase):
     def test_must_select_between_regexp_and_choice_validation(self):
         """Verify that the 'regexp' and 'choices' cannot be specified at one time in ask()"""
 
-        wizard = Wizard(TestTask())
+        wizard = Wizard(TaskForTesting())
         wizard.io = BufferedSystemIO()
 
         self.assertRaises(Exception, lambda:
@@ -53,7 +53,7 @@ class TestWizard(BasicTestingCase):
         )
 
     def test_is_question_pretty_formatted_for_choice_validation(self):
-        wizard = Wizard(TestTask())
+        wizard = Wizard(TaskForTesting())
         wizard.io = BufferedSystemIO()
         wizard.input = lambda secret: '1936'
 
@@ -64,7 +64,7 @@ class TestWizard(BasicTestingCase):
         self.assertIn('In which year the Spanish social revolution has begun? [1936, 1910]:', wizard.io.get_value())
 
     def test_is_question_pretty_formatted_for_regexp_validation(self):
-        wizard = Wizard(TestTask())
+        wizard = Wizard(TaskForTesting())
         wizard.io = BufferedSystemIO()
         wizard.input = lambda secret: '1936'
 
@@ -75,7 +75,7 @@ class TestWizard(BasicTestingCase):
         self.assertIn('In which year the Spanish social revolution has begun? [([0-9]{4})]:', wizard.io.get_value())
 
     def test_is_question_pretty_formatted_for_default_value_and_choice(self):
-        wizard = Wizard(TestTask())
+        wizard = Wizard(TaskForTesting())
         wizard.io = BufferedSystemIO()
         wizard.input = lambda secret: '1936'
 
@@ -91,7 +91,7 @@ class TestWizard(BasicTestingCase):
         rkd_shell_calls = []
 
         with patch('rkd.api.inputoutput.open', tmp_wizard_file, create=True):
-            task = TestTask()
+            task = TaskForTesting()
             task.rkd = lambda *args, **kwargs: rkd_shell_calls.append(args)
 
             wizard = Wizard(task)
@@ -114,7 +114,7 @@ class TestWizard(BasicTestingCase):
     def test_getpass_is_used_when_secret_switch_is_used(self):
         """Test a secret=True switch in wizard.input() which is used by ask()"""
 
-        wizard = Wizard(TestTask())
+        wizard = Wizard(TaskForTesting())
         wizard.io = BufferedSystemIO()
 
         with patch('rkd.api.inputoutput.getpass') as getpass:

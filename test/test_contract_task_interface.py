@@ -4,7 +4,7 @@ import unittest
 import os
 
 from rkd.api.testing import BasicTestingCase
-from rkd.test import TestTask
+from rkd.test import TaskForTesting
 from rkd.contract import ArgumentEnv
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -16,7 +16,7 @@ class TestTaskInterface(BasicTestingCase):
         will be tested already, but we need to check there if the interface matches
         """
 
-        task = TestTask()
+        task = TaskForTesting()
         out = task.table(
             header=['Activist', 'Born date'],
             body=[
@@ -34,7 +34,7 @@ class TestTaskInterface(BasicTestingCase):
         self.assertIn('Born date', out)
 
     def test_should_fork(self):
-        task = TestTask()
+        task = TaskForTesting()
 
         with self.subTest('Will fork'):
             task.get_become_as = lambda: 'root'
@@ -45,7 +45,7 @@ class TestTaskInterface(BasicTestingCase):
             self.assertFalse(task.should_fork())
 
     def test_internal_normalized_get_declared_envs_maps_primitive_types_into_class_instances(self):
-        task = TestTask()
+        task = TaskForTesting()
         task.get_declared_envs = lambda: {
             'SOME_ENV': 'primitive',
             'SOME_OTHER_ENV': ArgumentEnv(name='SOME_OTHER_ENV', switch='--cmd', default='not primitive')
@@ -63,7 +63,7 @@ class TestTaskInterface(BasicTestingCase):
             self.assertTrue(isinstance(normalized['SOME_OTHER_ENV'], ArgumentEnv))
 
     def test_internal_getenv_finds_mapped_environment_variable_by_switch_name(self):
-        task = TestTask()
+        task = TaskForTesting()
         task.get_declared_envs = lambda: {
             'SOME_OTHER_ENV': ArgumentEnv(name='SOME_OTHER_ENV', switch='--cmd', default='not primitive')
         }
@@ -71,7 +71,7 @@ class TestTaskInterface(BasicTestingCase):
         self.assertEqual('not primitive', task.internal_getenv('', envs={}, switch='--cmd'))
 
     def test_internal_getenv_finds_envronment_variable_by_its_not_mapped_name(self):
-        task = TestTask()
+        task = TaskForTesting()
         task.get_declared_envs = lambda: {
             'SOME_ENV': 'primitive'
         }

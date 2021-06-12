@@ -14,7 +14,7 @@ from rkd.api.syntax import TaskDeclaration
 from rkd.api.syntax import TaskAliasDeclaration
 from rkd.api.syntax import GroupDeclaration
 from rkd.api.testing import BasicTestingCase
-from rkd.test import TestTask
+from rkd.test import TaskForTesting
 from rkd.standardlib import InitTask
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -149,7 +149,7 @@ class ContextTest(BasicTestingCase):
         """A successful case for distinct_imports()"""
 
         imports, aliases = distinct_imports('hello', [
-            TaskDeclaration(TestTask()),
+            TaskDeclaration(TaskForTesting()),
             TaskAliasDeclaration(':hello', [':test'])
         ])
 

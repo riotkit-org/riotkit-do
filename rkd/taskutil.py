@@ -46,7 +46,7 @@ class TaskUtilities(AbstractClass):
         binary = sys.argv[0]
         sys_executable_basename = os.path.basename(sys.executable)
 
-        if "-m unittest" in binary:
+        if "-m unittest" in binary or "pytest" in binary:
             return binary.split(' ')[0] + ' -m rkd'
 
         # as a Python module: "python -m rkd" for example

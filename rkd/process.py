@@ -9,7 +9,7 @@ By default standard "subprocess" library writes directly to descriptors, bypassi
 making it impossible to capture the text for logging.
 
 """
-
+import io
 import os
 import sys
 import subprocess
@@ -108,6 +108,13 @@ def check_call(command: str, script_to_show: Optional[str] = '',
     try:
         old_tty = termios.tcgetattr(sys.stdin)
     except termios.error:
+        old_tty = None
+    except io.UnsupportedOperation:
+        old_tty = None
+
+    try:
+        sys.stdin.fileno()
+    except io.UnsupportedOperation:
         old_tty = None
 
     # merge system environment with environment from parameters
@@ -238,7 +245,7 @@ def push_output(process, primary_fd, out_buffer: TextBuffer, process_state: Proc
     while process.poll() is None:
         for r, flags in poller.poll(timeout=0.01):
             try:
-                if sys.stdin.fileno() is r:
+                if is_interactive_session and sys.stdin.fileno() is r:
                     d = os.read(r, 10240)
                     os.write(primary_fd, d)
 

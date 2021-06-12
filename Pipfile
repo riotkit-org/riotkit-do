@@ -1,0 +1,17 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+jsonschema = ">=3.2.0"
+pbr = ">=5.4.5"
+python-dotenv = "==0.13.0"
+tabulate = "==0.8.7"
+Jinja2 = ">=2.11"
+PyYAML = ">=5.3.1"
+
+[dev-packages]
+pytest = "*"
+psutil = "*"
+

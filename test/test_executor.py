@@ -16,8 +16,8 @@ from rkd.api.inputoutput import IO
 from rkd.api.contract import ExecutionContext
 from rkd.api.testing import BasicTestingCase
 from rkd.contract import TaskInterface
-from rkd.test import TestTask
-from rkd.test import TestTaskWithRKDCallInside
+from rkd.test import TaskForTesting
+from rkd.test import TaskForTestingWithRKDCallInside
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -26,7 +26,7 @@ class TestOneByOneExecutor(BasicTestingCase):
     @staticmethod
     def _prepare_test_for_forking_process(task: TaskInterface = None):
         if not task:
-            task = TestTask()
+            task = TaskForTesting()
 
         io = IO()
         string_io = StringIO()
@@ -105,7 +105,7 @@ class TestOneByOneExecutor(BasicTestingCase):
         with io.capture_descriptors(stream=string_io, enable_standard_out=False):
             executor._execute_as_forked_process('', task, temp, ctx)
 
-        self.assertIn('Pickle trace: ["[val type=TestTask].should_fork', string_io.getvalue())
+        self.assertIn('Pickle trace: ["[val type=TaskForTesting].should_fork', string_io.getvalue())
         self.assertIn('Cannot fork, serialization failed. Hint: Tasks that are using internally' +
                       ' inner-methods and lambdas cannot be used with become/fork', string_io.getvalue())
 
@@ -116,7 +116,7 @@ class TestOneByOneExecutor(BasicTestingCase):
         # TestTaskWithRKDCallInside() contains a rkd() call inside execute(), that's what we are testing
         # it is invisible in our test. We cannot use lambda to define this in test, because lambdas are not serializable
         #
-        string_io, task, executor, io, ctx, temp = self._prepare_test_for_forking_process(TestTaskWithRKDCallInside())
+        string_io, task, executor, io, ctx, temp = self._prepare_test_for_forking_process(TaskForTestingWithRKDCallInside())
         task.should_fork = ret_true
 
         with io.capture_descriptors(stream=string_io, enable_standard_out=False):

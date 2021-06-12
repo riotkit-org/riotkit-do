@@ -13,4 +13,4 @@ class TestIOEnv(BasicTestingCase):
         # get result
         copy = get_environment_copy()
 
-        self.assertEqual('\$SECOND', copy['FIRST'])
+        self.assertEqual("\\$SECOND", copy['FIRST'])

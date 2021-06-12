@@ -4,6 +4,7 @@ import unittest.mock
 import os
 import psutil
 import subprocess
+import warnings
 from tempfile import NamedTemporaryFile
 from collections import OrderedDict
 from io import StringIO
@@ -207,7 +208,7 @@ for i in range(0, 1024 * 128):
 
         with io.capture_descriptors(stream=out, enable_standard_out=False):
             task.sh('env | grep TEST_ENV', env={
-                'TEST_ENV': 'Mikhail\$1Bakunin\$PATHtest',
+                'TEST_ENV': "Mikhail\\$1Bakunin\\$PATHtest",
                 'TEST_ENV_NOT_ESCAPED': 'Hello $TEST_ENV'
             })
 

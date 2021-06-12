@@ -16,9 +16,9 @@ from ..api.contract import ArgparseArgument
 from ..api.syntax import TaskDeclaration
 from ..inputoutput import clear_formatting
 from ..aliasgroups import parse_alias_groups_from_env, AliasGroup
-from .shell import ShellCommandTask
 from ..packaging import find_resource_directory
-from rkd import env
+from .. import env
+from .shell import ShellCommandTask
 
 
 class InitTask(TaskInterface):

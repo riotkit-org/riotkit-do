@@ -6,8 +6,7 @@ TEST_OPTS=
 
 ## Run tests
 tests: refresh_git
-	export PYTHONPATH="$$(pwd):$$(pwd)/subpackages/rkd_python"; \
-	python3 -m unittest discover -s ./test ${TEST_OPTS}
+	RKD_BIN="python -m rkd" PYTHONPATH="$$(pwd):$$(pwd)/subpackages/rkd_python" pytest ./test --junitxml=build/tests.xml
 
 ## Release
 release: package publish

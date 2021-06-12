@@ -263,7 +263,7 @@ class TestFunctional(FunctionalTestingCase):
                 FIRST: "First"
                 SECOND: "Second"
                 THIRD: "Escaped one"
-                ALL: ${FIRST} ${SECOND} \${THIRD}
+                ALL: ${FIRST} ${SECOND} ${THIRD}
             steps: |
                 echo "!!! ${ALL}"
         """
