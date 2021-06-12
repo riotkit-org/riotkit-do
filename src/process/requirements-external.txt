@@ -1,1 +1,1 @@
-riotkit.pbs
+riotkit.pbs >= 1.0
