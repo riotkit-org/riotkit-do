@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "3a6151e73e5db50ad5eecf5fbd6b44c1949e7e81dc88a52b360fb50475a9178f"
+            "sha256": "1a041fb572873828fa7061a7c67b5ff57c49fe5840c822f331ed83ab015b1b87"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -78,14 +78,6 @@
             "markers": "python_version >= '3.6'",
             "version": "==2.0.1"
         },
-        "pbr": {
-            "hashes": [
-                "sha256:42df03e7797b796625b1029c0400279c7c34fd7df24a7d7818a1abb5b38710dd",
-                "sha256:c68c661ac5cc81058ac94247278eeda6d2e6aecb3e227b0387c30d277e7ef8d4"
-            ],
-            "index": "pypi",
-            "version": "==5.6.0"
-        },
         "pyrsistent": {
             "hashes": [
                 "sha256:2e636185d9eb976a18a8a8e96efce62f2905fea90041958d8cc2a189756ebf3e"
@@ -138,10 +130,10 @@
         },
         "riotkit.pbs": {
             "hashes": [
-                "sha256:47e0a00536b2913f26fddced3c1d877bacddc9c652e882a23a7eeabbac47bd37"
+                "sha256:82aa299302c2c44aad07f0ac76dfc78577b0a1235f5dd1cf8ce534cd883efc41"
             ],
             "index": "pypi",
-            "version": "==1.0rc2.dev4"
+            "version": "==1.0rc2.dev9"
         },
         "setuptools-scm": {
             "hashes": [
