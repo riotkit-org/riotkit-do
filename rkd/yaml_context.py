@@ -41,7 +41,7 @@ class YamlSyntaxInterpreter:
         if 'version' not in pre_parsed:
             raise YamlParsingException('"version" is not specified in YAML file')
 
-        parsed = self.loader.load(content, pre_parsed['version'])
+        parsed = self.loader.load(content, str(pre_parsed.get('version')))
 
         imports = []
         global_envs = self.parse_env(parsed, file_path)
@@ -136,6 +136,7 @@ class YamlSyntaxInterpreter:
         description = yaml_declaration['description'] if 'description' in yaml_declaration else ''
         arguments = yaml_declaration['arguments'] if 'arguments' in yaml_declaration else {}
         become = yaml_declaration['become'] if 'become' in yaml_declaration else ''
+        workdir = yaml_declaration.get('workdir', '')
 
         # important: order of environment variables loading
         envs = deepcopy(global_env)
@@ -162,7 +163,8 @@ class YamlSyntaxInterpreter:
                 argparse_options=self.parse_argparse_arguments(arguments),
                 callback=self.create_execution_callback_from_steps(steps, name, rkd_path, envs),
                 become=become
-            )
+            ),
+            workdir=workdir
         )
 
     @staticmethod

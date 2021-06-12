@@ -40,6 +40,21 @@ class TestFunctional(FunctionalTestingCase):
         self.assertIn('--become', full_output)
         self.assertEqual(0, exit_code)
 
+    def test_workdir_switch(self):
+        """
+        --task-workdir, -rw  - executing a given task in a specified working directory
+
+        Test checks if two tasks can have separate working directory
+        """
+
+        full_output, exit_code = self.run_and_capture_output([
+            ':sh', '-c', 'pwd', '-rw', '/tmp',
+            ':sh', '-c', 'pwd', '-rw', '/var'
+        ])
+
+        self.assertIn('/tmp', full_output)
+        self.assertIn('/var', full_output)
+
     def test_silent_switch_makes_tasks_task_to_not_show_headers(self):
         full_output, exit_code = self.run_and_capture_output([':tasks', '--silent'])
 

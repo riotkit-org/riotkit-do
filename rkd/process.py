@@ -23,11 +23,23 @@ from typing import Tuple, Callable
 from typing import Optional
 from typing import Union
 from threading import Thread
+from contextlib import contextmanager
 from time import time
 from rkd import env as rkd_env
 
 ON_POSIX = 'posix' in sys.builtin_module_names
 TEXT_BUFFER_CALLBACK_DEFINITION = Optional[Callable[[str], None]]
+
+
+@contextmanager
+def switched_workdir(workdir: str):
+    old_cwd = os.getcwd()
+    os.chdir(workdir)
+
+    try:
+        yield
+    finally:
+        os.chdir(old_cwd)
 
 
 class TextBuffer(object):

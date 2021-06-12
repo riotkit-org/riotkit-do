@@ -13,11 +13,12 @@ from ..context import ApplicationContext
 from ..inputoutput import IO
 from ..inputoutput import SystemIO
 from ..inputoutput import output_formatted_exception
-from .results import ProgressObserver
+from ..process import switched_workdir
 from ..exception import InterruptExecution, \
     ExecutionRetryException, \
     ExecutionRescueException, \
     ExecutionErrorActionException
+from .results import ProgressObserver
 from ..audit import decide_about_target_log_files
 from ..api.temp import TempManager
 from .serialization import FORKED_EXECUTOR_TEMPLATE
@@ -56,6 +57,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
         is_silent: bool = parsed_args['silent']
         keep_going: bool = parsed_args['keep_going']
         cmdline_become: str = parsed_args['become']
+        workdir = parsed_args.get('task_workdir') if parsed_args.get('task_workdir') else declaration.workdir
 
         # 3. execute
         temp = TempManager()
@@ -76,13 +78,14 @@ class OneByOneTaskExecutor(ExecutorInterface):
                 task = declaration.get_task_to_execute()
                 task.internal_inject_dependencies(io, self._ctx, self, temp)
 
-                result = self._execute_directly_or_forked(cmdline_become, task, temp, ExecutionContext(
-                        declaration=declaration,
-                        parent=parent,
-                        args=parsed_args,
-                        env=declaration.get_env(),
-                        defined_args=defined_args
-                    ))
+                with switched_workdir(workdir):
+                    result = self._execute_directly_or_forked(cmdline_become, task, temp, ExecutionContext(
+                            declaration=declaration,
+                            parent=parent,
+                            args=parsed_args,
+                            env=declaration.get_env(),
+                            defined_args=defined_args
+                        ))
 
         # 4. capture result
         except Exception as e:

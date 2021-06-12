@@ -25,9 +25,10 @@ Definitely the simplest way to define a task is to use YAML syntax, it is recomm
 1. "arguments" is an optional dict of arguments, key is the argument name, subkeys are passed directly to argparse
 2. "steps" is a mandatory list or text with step definition in Bash or Python language
 3. "description" is an optional text field that puts a description visible in ":tasks" task
-4. "environment" is a dict of environment variables that can be defined
-5. "env_files" is a list of paths to .env files that should be included
-6. "imports" imports a Python package that contains tasks to be used in the makefile and in shell usage
+4. "workdir" allows to optionally specify a working directory for a task
+5. "environment" is a dict of environment variables that can be defined
+6. "env_files" is a list of paths to .env files that should be included
+7. "imports" imports a Python package that contains tasks to be used in the makefile and in shell usage
 
 Option 2) For Python developers - task as a class
 -------------------------------------------------
@@ -77,7 +78,7 @@ Let's define then a task in Python in a simplest method.
 
     IMPORTS = [
         # just declare a task with a name + code as function! Yay, simple!
-        TaskDeclaration(CallableTask(':create-union', union_method))
+        TaskDeclaration(CallableTask(':create-union', union_method), workdir='/var')
     ]
 
     TASKS = []
