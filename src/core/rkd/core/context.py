@@ -4,12 +4,14 @@
 
 import os
 import sys
+import time
 from datetime import datetime
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Union, Tuple, Optional
 from importlib.machinery import SourceFileLoader
 from traceback import print_exc
+from uuid import uuid4
 from . import env
-from .api.syntax import TaskDeclaration
+from .api.syntax import TaskDeclaration, parse_path_into_subproject_prefix
 from .api.syntax import TaskAliasDeclaration
 from .api.syntax import GroupDeclaration
 from .api.contract import ContextInterface
@@ -29,6 +31,10 @@ from .yaml_parser import YamlFileLoader
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
+def generate_id() -> str:
+    return str(time.time_ns()) + '-' + str(uuid4())
+
+
 class ApplicationContext(ContextInterface):
     """
     Application context - collects all tasks together
@@ -45,47 +51,66 @@ class ApplicationContext(ContextInterface):
     _compiled: Dict[str, Union[TaskDeclaration, GroupDeclaration]]
     _created_at: datetime
     _directory: str
+    _subprojects: List[str]
+    workdir: Optional[str]
+    project_prefix: Optional[str]
     directories: []
     io: SystemIO
+    id: str
 
-    def __init__(self, tasks: List[TaskDeclaration], aliases: List[TaskAliasDeclaration], directory: str):
+    def __init__(self, tasks: List[TaskDeclaration],
+                 aliases: List[TaskAliasDeclaration],
+                 directory: str,
+                 subprojects: List[str],
+                 workdir: str,
+                 project_prefix: str):
+
         self._imported_tasks = {}
         self._task_aliases = {}
         self._created_at = datetime.now()
         self._directory = directory
         self.directories = [directory] if directory else []
+        self.workdir = workdir
+        self.project_prefix = project_prefix
+        self._subprojects = subprojects
+        self.id = generate_id()
+
+        for name in subprojects:
+            if name != name.strip('./ '):
+                raise Exception(f'Subproject "{name}" name is invalid')
 
         for task in tasks:
-            self._add_component(task)
+            self._add_task(task)
 
         for alias in aliases:
-            self._add_task(alias)
+            self._add_pipeline(alias)
 
     @classmethod
-    def merge(cls, first, second):
+    def merge(cls, primary: 'ApplicationContext', subctx: 'ApplicationContext') -> 'ApplicationContext':
         """ Add one context to other context. Produces immutable new context. """
 
-        new_ctx = cls([], [], '')
+        context: ApplicationContext
 
-        for context in [first, second]:
-            context: ApplicationContext
+        for name, component in subctx._imported_tasks.items():
+            primary._add_task(component, parent_ctx=subctx)
 
-            for name, component in context._imported_tasks.items():
-                new_ctx._add_component(component)
+        for name, task in subctx._task_aliases.items():
+            primary._add_pipeline(task)
 
-            for name, task in context._task_aliases.items():
-                new_ctx._add_task(task)
+        primary.directories += subctx.directories
 
-            new_ctx.directories += context.directories
-
-        return new_ctx
+        return primary
 
     def compile(self) -> None:
         """ Resolve all objects in the context. Should be called only, when all contexts were merged """
 
         self._compiled = self._imported_tasks
 
+        for task in self._compiled:
+            self.io.internal(f'Defined task {task} by context compilation')
+
         for name, details in self._task_aliases.items():
+            self.io.internal(f'Defined task alias {name}')
             self._compiled[name] = self._resolve_pipeline(name, details)
 
     def find_task_by_name(self, name: str) -> Union[TaskDeclaration, GroupDeclaration]:
@@ -101,13 +126,35 @@ class ApplicationContext(ContextInterface):
     def get_creation_date(self) -> datetime:
         return self._created_at
 
-    def _add_component(self, component: TaskDeclaration) -> None:
-        self._imported_tasks[component.to_full_name()] = component
+    @property
+    def subprojects(self) -> List[str]:
+        return self._subprojects
 
-    def _add_task(self, task: TaskAliasDeclaration) -> None:
-        self._task_aliases[task.get_name()] = task
+    def _add_task(self, task: TaskDeclaration, parent_ctx: Optional['ApplicationContext'] = None) -> None:
+        """
+        :param task:
+        :param parent_ctx: Task could be imported from an inherited subproject context
+        :return:
+        """
 
-    def _resolve_pipeline(self, name: str, alias: TaskAliasDeclaration) -> GroupDeclaration:
+        if not parent_ctx:
+            parent_ctx = self
+
+        if parent_ctx.workdir and parent_ctx.project_prefix:
+            task = task.as_part_of_subproject(parent_ctx.workdir, subproject_name=parent_ctx.project_prefix)
+
+        self._imported_tasks[task.to_full_name()] = task
+
+    def _add_pipeline(self, pipeline: TaskAliasDeclaration, parent_ctx: Optional['ApplicationContext'] = None) -> None:
+        if not parent_ctx:
+            parent_ctx = self
+
+        if parent_ctx.workdir and parent_ctx.project_prefix:
+            pipeline = pipeline.as_part_of_subproject(parent_ctx.workdir, subproject_name=parent_ctx.project_prefix)
+
+        self._task_aliases[pipeline.get_name()] = pipeline
+
+    def _resolve_pipeline(self, name: str, pipeline: TaskAliasDeclaration) -> GroupDeclaration:
         """
         Parse commandline args to fetch list of tasks to join into a group
 
@@ -120,7 +167,7 @@ class ApplicationContext(ContextInterface):
         """
 
         cmdline_parser = CommandlineParsingHelper(self.io)
-        args = cmdline_parser.create_grouped_arguments(alias.get_arguments())
+        args = cmdline_parser.create_grouped_arguments(pipeline.get_arguments())
         resolved_tasks = []
 
         for block in args:
@@ -137,19 +184,25 @@ class ApplicationContext(ContextInterface):
 
                     # preserve original task env, and append alias env in priority
                     merged_env = resolved_declaration.get_env()
-                    merged_env.update(alias.get_env())
+                    merged_env.update(pipeline.get_env())
 
                     new_task = resolved_declaration \
                         .with_env(merged_env) \
                         .with_args(argument_group.args() + resolved_declaration.get_args()) \
                         .with_user_overridden_env(
-                            alias.get_user_overridden_envs() + resolved_declaration.get_user_overridden_envs()
+                            pipeline.get_user_overridden_envs() + resolved_declaration.get_user_overridden_envs()
                         ) \
                         .with_connected_block(block)
 
+                    if pipeline.is_part_of_subproject():
+                        new_task = new_task.as_part_of_subproject(
+                            workdir=pipeline.workdir,
+                            subproject_name=pipeline.project_name
+                        )
+
                     resolved_tasks.append(new_task)
 
-        return GroupDeclaration(name, resolved_tasks, alias.get_description())
+        return GroupDeclaration(name, resolved_tasks, pipeline.get_description())
 
     def _resolve_recursively(self, group: GroupDeclaration) -> List[TaskDeclaration]:
         """
@@ -168,8 +221,15 @@ class ApplicationContext(ContextInterface):
 
         return tasks
 
+    def __str__(self):
+        return 'ApplicationContext<id={id}, workdir={workdir},prefix={prefix}>'.format(
+            id=self.id,
+            workdir=self.workdir,
+            prefix=self.project_prefix
+        )
 
-class ContextFactory:
+
+class ContextFactory(object):
     """
     Takes responsibility of loading all tasks defined in USER PROJECT, USER HOME and GLOBALLY
     """
@@ -177,45 +237,94 @@ class ContextFactory:
     def __init__(self, io: SystemIO):
         self._io = io
 
-    def _load_context_from_directory(self, path: str) -> ApplicationContext:
+    def _load_context_from_directory(self, path: str, workdir: Optional[str] = None,
+                                     subproject: str = None) -> List[ApplicationContext]:
+
         if not os.path.isdir(path):
             raise Exception('Path "%s" not found' % path)
 
-        ctx = ApplicationContext([], [], path)
         contexts = []
 
         if os.path.isfile(path + '/makefile.py'):
-            contexts.append(self._load_from_py(path))
+            contexts += self._expand_contexts(self._load_from_py(path,
+                                                                 workdir=workdir,
+                                                                 prefix=subproject))
 
         if os.path.isfile(path + '/makefile.yaml'):
-            contexts.append(self._load_from_yaml(path, 'makefile.yaml'))
+            contexts += self._expand_contexts(self._load_from_yaml(path, 'makefile.yaml',
+                                                                   workdir=workdir,
+                                                                   prefix=subproject))
 
         if os.path.isfile(path + '/makefile.yml'):
-            contexts.append(self._load_from_yaml(path, 'makefile.yml'))
-
+            contexts += self._expand_contexts(self._load_from_yaml(path, 'makefile.yml',
+                                                                   workdir=workdir,
+                                                                   prefix=subproject))
         if not contexts:
             raise ContextFileNotFoundException(path)
 
-        for subctx in contexts:
-            ctx = ApplicationContext.merge(ctx, subctx)
+        return contexts
 
-        return ctx
+    def _expand_contexts(self, ctx: ApplicationContext) -> List[ApplicationContext]:
+        """
+        Expands a single ApplicationContext into multiple contexts, when an input context
+        contains **subprojects**
 
-    def _load_from_yaml(self, path: str, filename: str) -> ApplicationContext:
+        :param ctx:
+        :return:
+        """
+
+        contexts = [ctx]
+
+        self._io.internal(f'Expanding contexts for {ctx}')
+
+        if ctx.subprojects:
+            for subdir_path in ctx.subprojects:
+                workdir_path = subdir_path
+
+                if ctx.workdir:
+                    workdir_path = ctx.workdir + '/' + workdir_path
+
+                rkd_path = workdir_path + '/.rkd'
+
+                self._io.internal('Trying subproject at {path}'.format(path=rkd_path))
+
+                if not os.path.isdir(rkd_path):
+                    raise Exception(
+                        f'Subproject directory {rkd_path} does not exist or does not contain ".rkd" directory'
+                    )
+
+                project_prefix = parse_path_into_subproject_prefix(subdir_path)
+
+                if ctx.project_prefix:
+                    project_prefix = ctx.project_prefix + project_prefix
+
+                contexts += self._load_context_from_directory(
+                    path=rkd_path,
+                    workdir=workdir_path,
+                    subproject=project_prefix
+                )
+
+        return contexts
+
+    def _load_from_yaml(self, path: str, filename: str, workdir: str, prefix: str) -> ApplicationContext:
         makefile_path = path + '/' + filename
 
         with open(makefile_path, 'rb') as handle:
-            imported, tasks = YamlSyntaxInterpreter(self._io, YamlFileLoader([])).parse(
+            imported, tasks, subprojects = YamlSyntaxInterpreter(self._io, YamlFileLoader([])).parse(
                 handle.read().decode('utf-8'), path, makefile_path
             )
 
             # Issue 33: Support mixed declarations in imports()
             imports, aliases = distinct_imports(makefile_path, imported)
 
-            return ApplicationContext(tasks=imports, aliases=tasks + aliases, directory=path)
+            self._io.internal(
+                f'Building context from YAML workdir={workdir}, project_prefix={prefix}, directory={path}'
+            )
 
-    @staticmethod
-    def _load_from_py(path: str):
+            return ApplicationContext(tasks=imports, aliases=tasks + aliases, directory=path,
+                                      subprojects=subprojects, workdir=workdir, project_prefix=prefix)
+
+    def _load_from_py(self, path: str, workdir: str, prefix: str):
         makefile_path = path + '/makefile.py'
 
         if not os.path.isfile(makefile_path):
@@ -223,6 +332,7 @@ class ContextFactory:
 
         try:
             sys.path.append(path)
+            # noinspection PyArgumentList
             makefile = SourceFileLoader("makefile", makefile_path).load_module()
 
         except ImportError as e:
@@ -230,12 +340,30 @@ class ContextFactory:
             raise NotImportedClassException(e)
 
         # Issue 33: Support mixed declarations in imports()
+        # noinspection PyUnresolvedReferences
         imports, aliases = distinct_imports(makefile_path, makefile.IMPORTS if "IMPORTS" in dir(makefile) else [])
+        # noinspection PyUnresolvedReferences
+        subprojects = makefile.SUBPROJECTS if "SUBPROJECTS" in dir(makefile) else []
+
+        if "TASKS" in dir(makefile):
+            # noinspection PyUnresolvedReferences
+            aliases += makefile.TASKS
+
+        if "PIPELINES" in dir(makefile):
+            # noinspection PyUnresolvedReferences
+            aliases += makefile.PIPELINES
+
+        self._io.internal(
+            f'Building context from PY workdir={workdir}, project_prefix={prefix}, directory={path}, path={makefile_path}'
+        )
 
         return ApplicationContext(
             tasks=imports,
-            aliases=(makefile.TASKS if "TASKS" in dir(makefile) else []) + aliases,
-            directory=path
+            aliases=aliases,
+            directory=path,
+            subprojects=subprojects,
+            workdir=workdir,
+            project_prefix=prefix
         )
 
     def _load_context_from_list_of_imports(self, additional_imports: List[str]) -> ApplicationContext:
@@ -246,8 +374,12 @@ class ContextFactory:
         :return:
         """
 
+        self._io.internal(
+            f'Building context from shell --imports={additional_imports}'
+        )
+
         declarations = SyntaxParsing.parse_imports_by_list_of_classes(additional_imports)
-        ctx = ApplicationContext(declarations, [], '')
+        ctx = ApplicationContext(declarations, [], '', subprojects=[], workdir='', project_prefix='')
 
         return ctx
 
@@ -278,7 +410,7 @@ class ContextFactory:
         # export for usage inside in makefiles
         os.environ['RKD_PATH'] = ":".join(paths)
 
-        ctx = ApplicationContext([], [], '')
+        ctx = ApplicationContext([], [], '', subprojects=[], workdir='', project_prefix='')
         ctx.io = self._io
 
         for path in paths:
@@ -287,9 +419,16 @@ class ContextFactory:
                 continue
 
             try:
-                ctx = ApplicationContext.merge(ctx, self._load_context_from_directory(path))
+                contexts = self._load_context_from_directory(path)
             except ContextFileNotFoundException:
-                pass
+                continue
+
+            for second_ctx in contexts:
+                try:
+                    self._io.internal(f'Context.merge({ctx}, {second_ctx}')
+                    ctx = ApplicationContext.merge(ctx, second_ctx)
+                except ContextFileNotFoundException:
+                    pass
 
         # imports added by eg. environment variable
         if additional_imports:

@@ -1,0 +1,7 @@
+version: org.riotkit.rkd/yaml/v1
+imports: []
+subprojects: ['testsubproject1']
+tasks:
+    :root:
+        steps: |
+            pwd

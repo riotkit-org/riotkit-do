@@ -1,0 +1,8 @@
+version: org.riotkit.rkd/yaml/v1
+imports: []
+subprojects: ['docs', 'infrastructure']
+tasks:
+    :hello:
+        description: Hello world task
+        steps: |
+            pwd

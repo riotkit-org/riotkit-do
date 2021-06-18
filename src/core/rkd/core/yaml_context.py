@@ -1,6 +1,6 @@
 import yaml
 import os
-from typing import List, Tuple, Union, Callable
+from typing import List, Tuple, Union, Callable, Dict
 from dotenv import dotenv_values
 from copy import deepcopy
 from collections import OrderedDict
@@ -32,11 +32,12 @@ class YamlSyntaxInterpreter:
         self.loader = loader
 
     def parse(self, content: str, rkd_path: str, file_path: str) \
-            -> Tuple[List[TaskDeclaration], List[TaskAliasDeclaration]]:
+            -> Tuple[List[TaskDeclaration], List[TaskAliasDeclaration], List[str]]:
 
         """ Parses whole YAML into entities same as in makefile.py - IMPORTS, TASKS """
 
         pre_parsed = yaml.load(content, yaml.Loader)
+        subprojects = {}
 
         if 'version' not in pre_parsed:
             raise YamlParsingException('"version" is not specified in YAML file')
@@ -56,7 +57,21 @@ class YamlSyntaxInterpreter:
             global_envs
         )
 
-        return imports + tasks, []
+        if "subprojects" in parsed:
+            subprojects = self.parse_subprojects(parsed['subprojects'])
+
+        return imports + tasks, [], subprojects
+
+    @staticmethod
+    def parse_subprojects(subprojects: List[str]) -> List[str]:
+        if not isinstance(subprojects, list):
+            raise YamlParsingException.from_subproject_not_a_list()
+
+        for value in subprojects:
+            if not isinstance(value, str):
+                raise YamlParsingException.from_not_a_string(str(value))
+
+        return subprojects
 
     def parse_tasks(self, tasks: dict, rkd_path: str, makefile_path, global_envs: OrderedDict) -> List[TaskDeclaration]:
         """ Parse tasks section of YAML and creates rkd.core.standardlib.CallableTask type tasks
