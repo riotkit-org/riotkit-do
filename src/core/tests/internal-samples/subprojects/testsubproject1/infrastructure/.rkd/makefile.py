@@ -2,7 +2,7 @@
 
 from rkd.core.api.syntax import TaskAliasDeclaration as TaskAlias
 
-# SUBPROJECTS = ['terraform']
+SUBPROJECTS = ['terraform']
 
 IMPORTS = []
 
