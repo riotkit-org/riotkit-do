@@ -3,6 +3,7 @@
 import os
 import yaml
 from io import StringIO
+from rkd.core.exception import YamlParsingException
 from rkd.core.yaml_context import YamlSyntaxInterpreter
 from rkd.core.yaml_parser import YamlFileLoader
 from rkd.core.api.inputoutput import IO
@@ -149,3 +150,28 @@ environment:
                 names_in_order.append(env_name)
 
             self.assertEqual(expected_order, list(envs.values()))
+
+    def test_parse_subprojects_checks_typing_is_list(self):
+        io = IO()
+        factory = YamlSyntaxInterpreter(io, YamlFileLoader([]))
+
+        with self.assertRaises(YamlParsingException):
+            # noinspection PyTypeChecker
+            factory.parse_subprojects('')  # typo for purpose, should be a list
+
+    def test_parse_subprojects_checks_typing_each_element(self):
+        io = IO()
+        factory = YamlSyntaxInterpreter(io, YamlFileLoader([]))
+
+        with self.assertRaises(YamlParsingException):
+            # noinspection PyTypeChecker
+            factory.parse_subprojects(['subproject1', True, None])
+
+    def test_parse_subprojects(self):
+        io = IO()
+        factory = YamlSyntaxInterpreter(io, YamlFileLoader([]))
+
+        sample = ['subproject1', 'subproject2']
+
+        # noinspection PyTypeChecker
+        self.assertEqual(sample, factory.parse_subprojects(sample))
