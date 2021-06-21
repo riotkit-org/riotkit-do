@@ -8,7 +8,8 @@ IMPORTS = []
 
 PIPELINES = [
     TaskAlias(':list', [':sh', '-c', 'pwd', ':sh', '-c', 'ls -la'],
-              description='Should be in testsubproject1->infrastructure')
+              description='Should be in testsubproject1->infrastructure'),
+    TaskAlias(':pwd', [':sh', '-c', 'pwd; echo "from infrastructure"'], description='Shows current working directory')
 ]
 
 TASKS = []
