@@ -234,3 +234,37 @@ class CreateStructureTaskTest(BasicTestingCase):
 
             finally:
                 os.chdir(cwd)
+
+    def test_local_directory_install(self):
+        """
+        Checks if with pipenv RKD is installed as local package in "editable" mode
+        :return:
+        """
+
+        with TemporaryDirectory() as tempdir:
+            cwd = os.getcwd()
+
+            try:
+                os.chdir(tempdir)
+
+                # action
+                self._execute_mocked_task(
+                    params={
+                        '--commit': False,
+                        '--no-venv': False,
+                        '--pipenv': True,
+                        '--latest': True,
+                        '--rkd-dev': NAMESPACE_DIR
+                    },
+                    envs={}
+                )
+
+                # assertions
+                with open(tempdir + '/Pipfile', 'r') as f:
+                    pipfile = f.read()
+
+                self.assertIn('"rkd.process" = {editable = true, path = "', pipfile)
+                self.assertIn('"rkd.core" = {editable = true, path = "', pipfile)
+
+            finally:
+                os.chdir(cwd)

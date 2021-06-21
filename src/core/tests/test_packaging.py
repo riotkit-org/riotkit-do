@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-import glob
 import os
 import subprocess
 import tempfile
 from unittest import mock
 from rkd.core.api.testing import BasicTestingCase
-from rkd.process import check_call
 import rkd.core.packaging
 
 TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
