@@ -121,7 +121,7 @@ class BasicTestingCase(TestCase):
         if io is None:
             io = NullSystemIO()
 
-        ctx = ApplicationContext([], [], '')
+        ctx = ApplicationContext([], [], '', subprojects=[], workdir='', project_prefix='')
         ctx.io = io
 
         task.internal_inject_dependencies(

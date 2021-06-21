@@ -3,15 +3,20 @@
 import os
 import subprocess
 from tempfile import TemporaryDirectory
-
 from rkd.core.api.testing import BasicTestingCase
 from rkd.core.standardlib import CreateStructureTask
 from rkd.core.api.inputoutput import BufferedSystemIO
 
+TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
+NAMESPACE_DIR = TESTS_DIR + '/../../'
+
 
 class CreateStructureTaskTest(BasicTestingCase):
     @staticmethod
-    def _execute_mocked_task(params: dict, envs: dict = {}, task: CreateStructureTask = None) -> BufferedSystemIO:
+    def _execute_mocked_task(params: dict, envs: dict = None, task: CreateStructureTask = None) -> BufferedSystemIO:
+        if envs is None:
+            envs = {}
+
         io = BufferedSystemIO()
 
         if not task:
@@ -31,12 +36,14 @@ class CreateStructureTaskTest(BasicTestingCase):
             try:
                 os.chdir(tempdir)
                 task = CreateStructureTask()
-                task.get_rkd_version_selector = lambda: ''
+                task.get_rkd_version_selector = lambda use_latest: ''
 
                 self._execute_mocked_task({
                     '--commit': False,
                     '--no-venv': False,
-                    '--pipenv': False
+                    '--pipenv': False,
+                    '--latest': False,
+                    '--rkd-dev': False
                 }, {}, task=task)
 
                 self.assertTrue(os.path.isdir(tempdir + '/.rkd'),
@@ -72,11 +79,17 @@ class CreateStructureTaskTest(BasicTestingCase):
 
                 task = CreateStructureTask()
                 task.get_rkd_version_selector = lambda: ''
-                io = self._execute_mocked_task({
-                    '--commit': True,
-                    '--no-venv': False,
-                    '--pipenv': False
-                }, {}, task=task)
+                io = self._execute_mocked_task(
+                    params={
+                        '--commit': True,
+                        '--no-venv': False,
+                        '--pipenv': False,
+                        '--latest': False,
+                        '--rkd-dev': False
+                    },
+                    envs={},
+                    task=task
+                )
 
                 self.assertIn('Current working directory is dirty', io.get_value())
             finally:
@@ -92,7 +105,16 @@ class CreateStructureTaskTest(BasicTestingCase):
                 os.chdir(tempdir)
 
                 # action
-                self._execute_mocked_task({'--commit': False, '--no-venv': True, '--pipenv': False}, {})
+                self._execute_mocked_task(
+                    params={
+                        '--commit': False,
+                        '--no-venv': True,
+                        '--pipenv': False,
+                        '--latest': False,
+                        '--rkd-dev': False
+                    },
+                    envs={}
+                )
 
                 # assertions
                 self.assertTrue(os.path.isfile(tempdir + '/requirements.txt'),
@@ -118,7 +140,7 @@ class CreateStructureTaskTest(BasicTestingCase):
                 # mock
                 task = CreateStructureTask()
                 # do not set fixed version, as on local environment it could be some dev version not released yet
-                task.get_rkd_version_selector = lambda: ''
+                task.get_rkd_version_selector = lambda use_latest: ''
 
                 task.on_startup = lambda ctx: call_history.append('on_startup')
                 task.on_files_copy = lambda ctx: call_history.append('on_files_copy')
@@ -131,7 +153,17 @@ class CreateStructureTaskTest(BasicTestingCase):
                 ]
 
                 # action
-                self._execute_mocked_task({'--commit': True, '--no-venv': False, '--pipenv': False}, {}, task=task)
+                self._execute_mocked_task(
+                    envs={},
+                    task=task,
+                    params={
+                        '--commit': True,
+                        '--no-venv': False,
+                        '--pipenv': False,
+                        '--latest': False,
+                        '--rkd-dev': True
+                    }
+                )
 
                 # assert that actions will be called in order
 
@@ -147,7 +179,17 @@ class CreateStructureTaskTest(BasicTestingCase):
                 call_history = []
                 subprocess.check_call('echo "new" > new-file.txt; git add new-file.txt', shell=True)
 
-                self._execute_mocked_task({'--commit': True, '--no-venv': False, '--pipenv': False}, {}, task=task)
+                self._execute_mocked_task(
+                    params={
+                        '--commit': True,
+                        '--no-venv': False,
+                        '--pipenv': False,
+                        '--latest': False,
+                        '--rkd-dev': True
+                    },
+                    envs={},
+                    task=task
+                )
 
                 with self.subTest('Any next time should not copy files over and over again'):
                     self.assertEqual(
@@ -167,12 +209,14 @@ class CreateStructureTaskTest(BasicTestingCase):
             try:
                 os.chdir(tempdir)
                 task = CreateStructureTask()
-                task.get_rkd_version_selector = lambda: ''
+                task.get_rkd_version_selector = lambda use_latest: ''
 
                 io = self._execute_mocked_task({
                     '--commit': False,
                     '--no-venv': False,
-                    '--pipenv': True
+                    '--pipenv': True,
+                    '--latest': True,
+                    '--rkd-dev': NAMESPACE_DIR
                 }, {}, task=task)
 
                 self.assertTrue(os.path.isdir(tempdir + '/.rkd'),
@@ -180,11 +224,11 @@ class CreateStructureTaskTest(BasicTestingCase):
                 self.assertTrue(os.path.isfile(tempdir + '/requirements.txt'),
                                 msg='Expected requirements.txt file to be present')
                 self.assertFalse(os.path.isfile(tempdir + '/.venv/bin/activate'),
-                                msg='Expected that a normal virtual env will not be created')
-                self.assertTrue(os.path.isfile(tempdir + '/Pipfile'), msg='Expected a Pipfile created by pipenv')
-
-                self.assertTrue(os.path.isfile(tempdir + '/Pipfile.lock'), msg='Expected a Pipfile.lock created by pipenv')
-
+                                 msg='Expected that a normal virtual env will not be created')
+                self.assertTrue(os.path.isfile(tempdir + '/Pipfile'),
+                                msg='Expected a Pipfile created by pipenv')
+                self.assertTrue(os.path.isfile(tempdir + '/Pipfile.lock'),
+                                msg='Expected a Pipfile.lock created by pipenv')
                 self.assertIn('Structure created, use "pipenv shell" to enter project environment', io.get_value(),
                               msg='Expected a welcome message / instruction')
 

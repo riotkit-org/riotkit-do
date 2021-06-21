@@ -3,6 +3,7 @@
 #
 SHELL=/bin/bash
 TEST_OPTS=
+TESTS_ARGS=
 
 ## Installs dependencies for all packages
 deps:
@@ -22,7 +23,7 @@ tests:
 	  	echo ">> $${package_directory}"; \
 	  	mkdir -p $$BASE_PATH/src/$$package_directory/build; \
 	  	set -x; \
-		cd "$$BASE_PATH/src/$$package_directory"; pytest ./tests --junitxml=build/tests.xml;\
+		cd "$$BASE_PATH/src/$$package_directory"; pytest ./tests --junitxml=build/tests.xml ${TESTS_ARGS};\
 	done
 
 ## Release

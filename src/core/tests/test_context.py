@@ -4,7 +4,6 @@ import unittest
 import unittest.mock
 import os
 from tempfile import NamedTemporaryFile
-
 from rkd.core.context import ContextFactory
 from rkd.core.context import ApplicationContext
 from rkd.core.context import distinct_imports
@@ -27,7 +26,8 @@ class ContextTest(BasicTestingCase):
         discovery = ContextFactory(NullSystemIO())
         ctx = discovery._load_context_from_directory(CURRENT_SCRIPT_PATH + '/../rkd/core/misc/internal')
 
-        self.assertTrue(isinstance(ctx, ApplicationContext))
+        self.assertEqual(1, len(ctx))
+        self.assertTrue(isinstance(ctx[0], ApplicationContext))
 
     def test_loads_internal_context_in_unified_context(self) -> None:
         """Check if application loads context including paths from RKD_PATH
@@ -74,8 +74,14 @@ class ContextTest(BasicTestingCase):
     def test_context_remembers_directories_from_which_it_was_loaded(self):
         """Verify that whenever we merge contexts, the 'directories' attribute is also merged"""
 
-        ctx1 = ApplicationContext([], [], '/home/iwa-ait')
-        ctx2 = ApplicationContext([], [], '/home/black-lives-matters')
+        ctx1 = ApplicationContext([], [], '/home/iwa-ait',
+                                  subprojects=[],
+                                  workdir='',
+                                  project_prefix='')
+        ctx2 = ApplicationContext([], [], '/home/black-lives-matters',
+                                  subprojects=[],
+                                  workdir='',
+                                  project_prefix='')
 
         ctx_merged = ApplicationContext.merge(ctx1, ctx2)
 
@@ -85,7 +91,7 @@ class ContextTest(BasicTestingCase):
     def test_context_empty_path_is_not_applied_to_directories(self):
         """Test that '' path will not be added to directories list"""
 
-        ctx = ApplicationContext([], [], '')
+        ctx = ApplicationContext([], [], '', workdir='', project_prefix='', subprojects=[])
 
         self.assertEqual([], ctx.directories)
         self.assertEqual(0, len(ctx.directories))
@@ -114,7 +120,7 @@ class ContextTest(BasicTestingCase):
                     src_loader_method.return_value.TASKS = []
 
                     ctx_factory = ContextFactory(NullSystemIO())
-                    ctx = ctx_factory._load_from_py(tmp_file.name)
+                    ctx = ctx_factory._load_from_py(tmp_file.name, prefix='', workdir='')
 
                     self.assertIn(':hello', ctx._task_aliases)
 
@@ -131,10 +137,11 @@ class ContextTest(BasicTestingCase):
             ''')
 
             with unittest.mock.patch('rkd.core.context.YamlSyntaxInterpreter.parse') as parse_method:
-                parse_method.return_value = ([TaskAliasDeclaration(':hello', [':test'])], [])
+                parse_method.return_value = ([TaskAliasDeclaration(':hello', [':test'])], [], [])
 
                 ctx_factory = ContextFactory(NullSystemIO())
-                ctx = ctx_factory._load_from_yaml(os.path.dirname(tmp_file.name), os.path.basename(tmp_file.name))
+                ctx = ctx_factory._load_from_yaml(os.path.dirname(tmp_file.name), os.path.basename(tmp_file.name),
+                                                  workdir='', prefix='')
 
                 self.assertIn(':hello', ctx._task_aliases)
 
@@ -177,7 +184,10 @@ class ContextTest(BasicTestingCase):
         ], [
             TaskAliasDeclaration(':deeper', [':init', ':init']),
             TaskAliasDeclaration(':deep', [':init', ':deeper'])
-        ], directory='')
+        ], directory='',
+           subprojects=[],
+           workdir='',
+           project_prefix='')
 
         ctx.io = IO()
         ctx.compile()

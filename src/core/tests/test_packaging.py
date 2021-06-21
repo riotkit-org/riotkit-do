@@ -5,7 +5,11 @@ import subprocess
 import tempfile
 from unittest import mock
 from rkd.core.api.testing import BasicTestingCase
+from rkd.process import check_call
 import rkd.core.packaging
+
+TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
+NAMESPACE_DIR = TESTS_DIR + '/../../'
 
 
 class TestPackaging(BasicTestingCase):
@@ -65,21 +69,28 @@ class TestPackaging(BasicTestingCase):
 
         with tempfile.TemporaryDirectory() as tempdir:
             subprocess.check_output(['python', '-m', 'venv', tempdir])
-            subprocess.check_output(
+            out = subprocess.check_output(
                 '''
                     bash --init-file {tempdir}/bin/activate -c "source {tempdir}/bin/activate; 
-                    pip install -r ../../requirements-dev.txt; 
-                    ./setup.py install"
-                '''.format(tempdir=tempdir),
+                        set -xe;
+                        pip install riotkit.pbs;
+                        
+                        cd {namespace_dir}/process;
+                            rm -rf build/ dist/;
+                            ./setup.py install;
+                        
+                        cd {namespace_dir}/core;
+                            rm -rf build/ dist/;
+                            ./setup.py install;
+                    "
+                '''.format(tempdir=tempdir, namespace_dir=NAMESPACE_DIR),
                 shell=True,
-                stderr=subprocess.STDOUT
+                cwd='/tmp'
             )
 
-            for file in scantree('rkd/core/misc'):
-                file: os.DirEntry
+            self.assertIn('copying build/lib/rkd/core/misc/internal/schema/org.riotkit.rkd-yaml-v1.json', out.decode('utf-8'))
+            self.assertIn('copying build/lib/rkd/core/misc/initial-structure/.rkd/logs/.gitkeep', out.decode('utf-8'))
 
-                self.assertTrue(len(glob.glob(tempdir + '/lib/python*/site-packages/' + file.path)) == 1,
-                                msg='Expected {} file to be present'.format(tempdir + '/lib/python*/site-packages/' + file.path))
 
 
 def scantree(path):

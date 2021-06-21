@@ -60,7 +60,7 @@ class YamlSyntaxInterpreter:
         if "subprojects" in parsed:
             subprojects = self.parse_subprojects(parsed['subprojects'])
 
-        return imports + tasks, [], subprojects
+        return (imports + tasks), [], subprojects
 
     @staticmethod
     def parse_subprojects(subprojects: List[str]) -> List[str]:

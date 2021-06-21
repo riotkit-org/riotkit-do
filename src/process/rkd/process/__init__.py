@@ -82,7 +82,7 @@ class ProcessState(object):
 
 def check_call(command: str, script_to_show: Optional[str] = '',
                use_subprocess: bool = False,
-               cwd: Union[dict, None] = None,
+               cwd: Union[str, None] = None,
                env: dict = None,
                output_capture_callback: TEXT_BUFFER_CALLBACK_DEFINITION = None):
     """

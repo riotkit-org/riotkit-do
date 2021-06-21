@@ -435,14 +435,18 @@ This task is designed to be extended, see methods marked as "interface methods".
                             action='store_true')
         parser.add_argument('--no-venv', help='Do not create virtual env automatically', action='store_true')
         parser.add_argument('--pipenv', help='Generate files for Pipenv', action='store_true')
+        parser.add_argument('--latest', help='Always use latest RKD (not recommended)', action='store_true')
+        parser.add_argument('--rkd-dev', help='Development mode. Use RKD components from specified local directory')
 
     def execute(self, ctx: ExecutionContext) -> bool:
         commit_to_git = ctx.get_arg('--commit')
         without_venv = ctx.get_arg('--no-venv')
         use_pipenv = bool(ctx.get_arg('--pipenv'))
+        latest = bool(ctx.get_arg('--latest'))
+        dev = ctx.get_arg('--rkd-dev')
 
         if commit_to_git and not self.check_git_is_clean():
-            self.io().error_msg('Current working directory is dirty, you have working changes, ' +
+            self.io().error_msg('Current working directory is dirty, you have WIP changes, ' +
                                 'please commit them or stash first')
             return False
 
@@ -470,13 +474,13 @@ This task is designed to be extended, see methods marked as "interface methods".
 
         # 3) Add RKD to requirements
         self.io().info('Adding RKD to requirements.txt')
-        self._write_requirements(ctx)
+        self._write_requirements(ctx, use_latest=latest)
 
         # 4) Create virtual env
         if not without_venv:
             self.io().info('Setting up virtual environment')
             self.on_creating_venv(ctx)
-            self._setup_venv(use_pipenv, template_structure_path)
+            self._setup_venv(use_pipenv, template_structure_path, use_latest=latest, dev_dir=dev)
 
         if commit_to_git:
             self.on_git_add(ctx)
@@ -491,18 +495,34 @@ This task is designed to be extended, see methods marked as "interface methods".
 
         return True
 
-    def _write_requirements(self, ctx: ExecutionContext):
+    def _write_requirements(self, ctx: ExecutionContext, use_latest: bool):
         self.sh('touch requirements.txt')
-        self.rkd([':file:line-in-file',
-                  'requirements.txt',
-                  '--regexp="rkd.core(.*)"',
-                  '--insert="rkd.core%s"' % self.get_rkd_version_selector()
-                  ])
+        self.rkd([
+            ':file:line-in-file',
+            'requirements.txt',
+            '--regexp="{package}(.*)"'.format(package=self.get_package_name()),
+            '--insert="{package}{selector}"'.format(
+                package=self.get_package_name(),
+                selector=self.get_rkd_version_selector(use_latest=use_latest)
+            )
+        ])
         self.on_requirements_txt_write(ctx)
 
-    def _setup_venv(self, use_pipenv: bool, template_structure_path: str):
+    @staticmethod
+    def get_package_name() -> str:
+        return 'rkd.core'
+
+    def _setup_venv(self, use_pipenv: bool, template_structure_path: str, use_latest: bool, dev_dir: str):
         if use_pipenv:
-            self.sh('pipenv install rkd.core%s' % self.get_rkd_version_selector())
+            install_str = '{package_name}{selector}'.format(
+                package_name=self.get_package_name(),
+                selector=self.get_rkd_version_selector(use_latest=use_latest)
+            )
+
+            if dev_dir:
+                install_str = self._get_development_pipenv_install_str(dev_dir)
+
+            self.sh(f'pipenv install {install_str}')
             return
 
         self.sh('cp %s/setup-venv.sh ./' % template_structure_path)
@@ -510,8 +530,14 @@ This task is designed to be extended, see methods marked as "interface methods".
         self.sh('./setup-venv.sh')
 
     @staticmethod
-    def get_rkd_version_selector():
-        rkd_version = pkg_resources.get_distribution("rkd.core").version
+    def _get_development_pipenv_install_str(dev_dir: str):
+        return f'-e {dev_dir}/process -e {dev_dir}/core'
+
+    def get_rkd_version_selector(self, use_latest: bool):
+        if use_latest:
+            return ''
+
+        rkd_version = pkg_resources.get_distribution(self.get_package_name()).version
         return '==%s' % rkd_version
 
     def on_requirements_txt_write(self, ctx: ExecutionContext) -> None:
@@ -528,7 +554,8 @@ This task is designed to be extended, see methods marked as "interface methods".
         Interface method: to be overridden
         """
 
-        return ['.rkd/logs', '*.pyc', '*__pycache__*', '/.venv', '.venv-setup.log']
+        return ['.rkd/logs', '*.pyc', '*__pycache__*', '/.venv',
+                '.venv-setup.log', '/*.egg-info/*', '.eggs', 'dist', 'build']
 
     def on_startup(self, ctx: ExecutionContext) -> None:
         """When the command is triggered, and the git is not dirty
@@ -583,7 +610,7 @@ This task is designed to be extended, see methods marked as "interface methods".
             return
 
         try:
-            self.sh('git commit -m "Create RKD structure"')
+            self.sh('LANG=C git commit -m "Create RKD structure"')
         except CalledProcessError as e:
             if 'nothing to commit, working tree clean' in e.output:
                 return
@@ -600,7 +627,7 @@ This task is designed to be extended, see methods marked as "interface methods".
         return self.sh('git diff --stat || true', capture=True).strip() == ''
 
 
-def imports() -> list:
+def imports() -> List[TaskDeclaration]:
     return [
         TaskDeclaration(InitTask()),
         TaskDeclaration(TasksListingTask()),

@@ -5,6 +5,7 @@
 import os
 import sys
 import time
+from copy import deepcopy
 from datetime import datetime
 from typing import Dict, List, Union, Tuple, Optional
 from importlib.machinery import SourceFileLoader
@@ -90,6 +91,7 @@ class ApplicationContext(ContextInterface):
         """ Add one context to other context. Produces immutable new context. """
 
         context: ApplicationContext
+        primary = deepcopy(primary)
 
         for name, component in subctx._imported_tasks.items():
             primary._add_task(component, parent_ctx=subctx)
