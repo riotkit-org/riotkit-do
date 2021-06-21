@@ -39,9 +39,6 @@ jobs:
                   path: src/*/build/tests.xml
                   reporter: java-junit
 
-            - name: Run rkd_python tests on Python ${{ matrix.python-version }}
-              run: "cd subpackages/rkd_python && make tests"
-
     release:
         needs: [test]
         runs-on: ubuntu-20.04
