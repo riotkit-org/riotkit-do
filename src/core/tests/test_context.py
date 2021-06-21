@@ -201,7 +201,7 @@ class ContextTest(BasicTestingCase):
         self.assertEqual(':init', task.get_declarations()[1].to_full_name())
         self.assertEqual(':init', task.get_declarations()[2].to_full_name())
 
-    def test_expand_contexts(self) -> None:
+    def test_expand_contexts_expands_one_context(self) -> None:
         # MAIN PROJECT context
         ctx = ApplicationContext(
             tasks=[
@@ -243,3 +243,20 @@ class ContextTest(BasicTestingCase):
             self.assertIn('tests/internal-samples/subprojects/testsubproject1/.rkd', call['path'])
             self.assertIn('internal-samples/subprojects/testsubproject1', call['workdir'])
             self.assertEqual(':testsubproject1', call['subproject'])
+
+    def test_expand_contexts_ignores_subprojects_if_no_any(self):
+        ctx = ApplicationContext(
+            tasks=[
+                TaskDeclaration(InitTask())
+            ],
+            aliases=[
+                TaskAliasDeclaration(':malatesta', [':init', ':init']),
+            ],
+            directory='',
+            subprojects=[],  # there are no any subprojects
+            workdir=f'{TESTS_DIR}/internal-samples/subprojects',
+            project_prefix=''
+        )
+        factory = ContextFactory(io=SystemIO())
+
+        self.assertEqual([ctx], factory._expand_contexts(ctx))
