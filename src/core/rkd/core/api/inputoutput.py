@@ -568,7 +568,7 @@ class Wizard(object):
 
 
 def clear_formatting(text: str) -> str:
-    text = re.sub("\\x1B\[([0-9]+)m", '', text)
+    text = re.sub('\x1B\\[([0-9]+)m', '', text)
 
     return text
 
@@ -649,7 +649,7 @@ def get_environment_copy() -> dict:
 
     return dict(
         map(
-            lambda kv: (kv[0], str(kv[1]).replace('$', '\$')),
+            lambda kv: (kv[0], str(kv[1]).replace('$', '\\$')),
             dict(deepcopy(os.environ)).items()
         )
     )
