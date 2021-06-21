@@ -4,10 +4,11 @@ import unittest
 import unittest.mock
 import os
 from tempfile import NamedTemporaryFile
+from unittest import mock
 from rkd.core.context import ContextFactory
 from rkd.core.context import ApplicationContext
 from rkd.core.context import distinct_imports
-from rkd.core.api.inputoutput import NullSystemIO, IO
+from rkd.core.api.inputoutput import NullSystemIO, IO, SystemIO
 from rkd.core.exception import ContextException
 from rkd.core.api.syntax import TaskDeclaration
 from rkd.core.api.syntax import TaskAliasDeclaration
@@ -16,7 +17,7 @@ from rkd.core.api.testing import BasicTestingCase
 from rkd.core.test import TaskForTesting
 from rkd.core.standardlib import InitTask
 
-CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
+TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 class ContextTest(BasicTestingCase):
@@ -24,7 +25,7 @@ class ContextTest(BasicTestingCase):
         """Test if internal context (RKD by default has internal context) is loaded properly
         """
         discovery = ContextFactory(NullSystemIO())
-        ctx = discovery._load_context_from_directory(CURRENT_SCRIPT_PATH + '/../rkd/core/misc/internal')
+        ctx = discovery._load_context_from_directory(TESTS_DIR + '/../rkd/core/misc/internal')
 
         self.assertEqual(1, len(ctx))
         self.assertTrue(isinstance(ctx[0], ApplicationContext))
@@ -33,7 +34,7 @@ class ContextTest(BasicTestingCase):
         """Check if application loads context including paths from RKD_PATH
         """
 
-        os.environ['RKD_PATH'] = CURRENT_SCRIPT_PATH + '/../../../docs/examples/makefile-like/.rkd'
+        os.environ['RKD_PATH'] = TESTS_DIR + '/../../../docs/examples/makefile-like/.rkd'
         ctx = None
 
         try:
@@ -56,7 +57,7 @@ class ContextTest(BasicTestingCase):
         """
 
         self._common_test_loads_task_from_file(
-            path=CURRENT_SCRIPT_PATH + '/../../../docs/examples/yaml-only/.rkd',
+            path=TESTS_DIR + '/../../../docs/examples/yaml-only/.rkd',
             task=':hello',
             filename='makefile.yaml'
         )
@@ -66,7 +67,7 @@ class ContextTest(BasicTestingCase):
         """
 
         self._common_test_loads_task_from_file(
-            path=CURRENT_SCRIPT_PATH + '/../../../docs/examples/python-only/.rkd',
+            path=TESTS_DIR + '/../../../docs/examples/python-only/.rkd',
             task=':hello-python',
             filename='makefile.py'
         )
@@ -185,9 +186,9 @@ class ContextTest(BasicTestingCase):
             TaskAliasDeclaration(':deeper', [':init', ':init']),
             TaskAliasDeclaration(':deep', [':init', ':deeper'])
         ], directory='',
-           subprojects=[],
-           workdir='',
-           project_prefix='')
+            subprojects=[],
+            workdir='',
+            project_prefix='')
 
         ctx.io = IO()
         ctx.compile()
@@ -199,3 +200,46 @@ class ContextTest(BasicTestingCase):
         self.assertEqual(':init', task.get_declarations()[0].to_full_name())
         self.assertEqual(':init', task.get_declarations()[1].to_full_name())
         self.assertEqual(':init', task.get_declarations()[2].to_full_name())
+
+    def test_expand_contexts(self) -> None:
+        # MAIN PROJECT context
+        ctx = ApplicationContext(
+            tasks=[
+                TaskDeclaration(InitTask())
+            ],
+            aliases=[
+                TaskAliasDeclaration(':kropotkin', [':init', ':init']),
+            ],
+            directory='',
+            subprojects=['testsubproject1'],
+            workdir=f'{TESTS_DIR}/internal-samples/subprojects',
+            project_prefix=''
+        )
+
+        # SUBPROJECT context
+        subproject_1_ctx = ApplicationContext(
+            tasks=[
+                TaskDeclaration(InitTask())
+            ],
+            aliases=[
+                TaskAliasDeclaration(':book', [':init', ':init']),
+            ],
+            directory='',
+            subprojects=[],  # no deeper subprojects, we do not test deeper as we mock recursion
+            workdir='testsubproject1',
+            project_prefix=':testsubproject1'
+        )
+
+        with mock.patch('rkd.core.context.ContextFactory._load_context_from_directory') as _load_context_from_directory:
+            factory = ContextFactory(io=SystemIO())
+            _load_context_from_directory.return_value = [subproject_1_ctx]
+
+            # ACTION
+            factory._expand_contexts(ctx)
+
+            # assertions
+            call = _load_context_from_directory.call_args_list[0].kwargs
+
+            self.assertIn('tests/internal-samples/subprojects/testsubproject1/.rkd', call['path'])
+            self.assertIn('internal-samples/subprojects/testsubproject1', call['workdir'])
+            self.assertEqual(':testsubproject1', call['subproject'])
