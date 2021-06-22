@@ -17,13 +17,16 @@ deps:
 ## Run tests
 tests:
 	set +e; \
-	export RKD_BIN="python -m rkd.core" PYTHONPATH="$$(pwd)/src/core:$$(pwd)/src/process:$$(pwd)/src/pythonic"; \
+	export PYTHONPATH="$$(pwd)/src/core:$$(pwd)/src/process:$$(pwd)/src/pythonic"; \
 	BASE_PATH=$$(pwd); \
 	for package_directory in $$(ls ./src); do \
+	  	if [[ ! -d $$BASE_PATH/src/$$package_directory/tests ]]; then \
+	  	    continue; \
+	  	fi; \
 	  	echo ">> $${package_directory}"; \
 	  	mkdir -p $$BASE_PATH/src/$$package_directory/build; \
 	  	set -x; \
-		cd "$$BASE_PATH/src/$$package_directory"; pytest ./tests --junitxml=build/tests.xml ${TESTS_ARGS};\
+		cd "$$BASE_PATH/src/$$package_directory"; pytest --junitxml=build/tests.xml ${TESTS_ARGS};\
 	done
 
 ## Release
