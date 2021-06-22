@@ -17,7 +17,7 @@ deps:
 ## Run tests
 tests:
 	set +e; \
-	export PYTHONPATH="$$(pwd)/src/core:$$(pwd)/src/process:$$(pwd)/src/pythonic"; \
+	\
 	BASE_PATH=$$(pwd); \
 	for package_directory in $$(ls ./src); do \
 	  	if [[ ! -d $$BASE_PATH/src/$$package_directory/tests ]]; then \
