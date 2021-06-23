@@ -56,7 +56,7 @@ class TestFunctional(FunctionalTestingCase):
         self.assertIn('/var', full_output)
 
     def test_silent_switch_makes_tasks_task_to_not_show_headers(self):
-        full_output, exit_code = self.run_and_capture_output([':tasks', '--silent'])
+        full_output, exit_code = self.run_and_capture_output([':tasks', '--silent', '--all'])
 
         # this is a global header
         self.assertIn(' >> Executing :tasks', full_output)
@@ -68,7 +68,7 @@ class TestFunctional(FunctionalTestingCase):
         self.assertIn(':exec', full_output)
 
     def test_global_silent_switch_is_making_silent_all_fancy_output(self):
-        full_output, exit_code = self.run_and_capture_output(['--silent', ':tasks'])
+        full_output, exit_code = self.run_and_capture_output(['--silent', ':tasks', '--all'])
 
         # content is there
         self.assertIn(':exec', full_output)
@@ -76,6 +76,13 @@ class TestFunctional(FunctionalTestingCase):
         # global formatting and per task - :tasks formatting is not there
         self.assertNotIn('>> Executing :tasks', full_output)   # global (SystemIO)
         self.assertNotIn('[global]', full_output)              # per-task (IO)
+
+    def test_tasks_are_not_showing_internal_tasks(self):
+        full_output_all, exit_code_all = self.run_and_capture_output([':tasks', '--all'])
+        full_output_not_all, exit_code_not_all = self.run_and_capture_output([':tasks'])
+
+        self.assertIn(':exec', full_output_all)
+        self.assertNotIn(':exec', full_output_not_all)
 
     def test_is_a_tty(self):
         """Checks if RKD is spawning an interactive session"""

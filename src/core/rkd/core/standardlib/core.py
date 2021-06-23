@@ -84,6 +84,10 @@ class InitTask(TaskInterface):
     def is_silent_in_observer(self) -> bool:
         return True
 
+    @property
+    def is_internal(self) -> bool:
+        return True
+
 
 class TasksListingTask(TaskInterface):
     """Lists all enabled tasks
@@ -99,7 +103,7 @@ class TasksListingTask(TaskInterface):
         return ''
 
     def configure_argparse(self, parser: ArgumentParser):
-        pass
+        parser.add_argument('--all', '-a', help='Show all tasks, including internal tasks', action='store_true')
 
     def get_declared_envs(self) -> Dict[str, str]:
         return {
@@ -111,6 +115,7 @@ class TasksListingTask(TaskInterface):
         io = self._io
         groups = {}
         aliases = parse_alias_groups_from_env(context.get_env('RKD_ALIAS_GROUPS'))
+        show_all_tasks = bool(context.get_arg('--all'))
 
         # fancy stuff
         whitelisted_groups = context.get_env('RKD_WHITELIST_GROUPS').replace(' ', '').split(',') \
@@ -130,12 +135,20 @@ class TasksListingTask(TaskInterface):
             if group_name not in groups:
                 groups[group_name] = {}
 
+            # do not display tasks that are considered internal (eg. to be called only inside pipeline)
+            if declaration.is_internal and not show_all_tasks:
+                continue
+
             groups[group_name][self.translate_alias(declaration.to_full_name(), aliases)] = declaration
 
         # iterate over groups and list tasks under groups
         for group_name, tasks in groups.items():
             if not group_name:
                 group_name = 'global'
+
+            # skip empty group
+            if not tasks:
+                continue
 
             io.print_group(group_name)
 
@@ -629,10 +642,10 @@ This task is designed to be extended, see methods marked as "interface methods".
 
 def imports() -> List[TaskDeclaration]:
     return [
-        TaskDeclaration(InitTask()),
+        TaskDeclaration(InitTask(), internal=True),
         TaskDeclaration(TasksListingTask()),
         TaskDeclaration(VersionTask()),
-        TaskDeclaration(ShellCommandTask()),
-        TaskDeclaration(LineInFileTask()),
+        TaskDeclaration(ShellCommandTask(), internal=True),
+        TaskDeclaration(LineInFileTask(), internal=True),
         TaskDeclaration(CreateStructureTask())
     ]
