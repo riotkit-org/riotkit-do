@@ -1,5 +1,3 @@
-
-
 [[source]]
 url = "https://pypi.org/simple"
 verify_ssl = true
@@ -17,6 +15,7 @@ setuptools-scm = "*"
 [dev-packages]
 pytest = "*"
 psutil = "*"
+importlib-metadata = {version = ">=0.12", markers = "python_version<'3.8'"}
 
 [pipenv]
 name = "rkd.core"
