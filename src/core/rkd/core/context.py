@@ -29,7 +29,7 @@ from .yaml_context import YamlSyntaxInterpreter
 from .yaml_parser import YamlFileLoader
 
 
-CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
+RKD_CORE_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 def generate_id() -> str:
@@ -334,6 +334,11 @@ class ContextFactory(object):
 
         try:
             sys.path.append(path)
+
+            # extra SourceFileLoader usage is due to Python bug: https://bugs.python.org/issue20178
+            # noinspection PyArgumentList
+            SourceFileLoader("makefile", RKD_CORE_PATH + '/misc/internal/empty/makefile.py').load_module()
+
             # noinspection PyArgumentList
             makefile = SourceFileLoader("makefile", makefile_path).load_module()
 
@@ -396,7 +401,7 @@ class ContextFactory(object):
         """
 
         paths = [
-            CURRENT_SCRIPT_PATH + '/misc/internal',
+            RKD_CORE_PATH + '/misc/internal',
             '/usr/lib/rkd',
             '/usr/share/rkd/internal',
             get_user_site_packages() + '/usr/share/rkd/internal',
