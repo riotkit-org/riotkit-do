@@ -78,6 +78,10 @@ class TestFunctional(FunctionalTestingCase):
         self.assertNotIn('[global]', full_output)              # per-task (IO)
 
     def test_tasks_are_not_showing_internal_tasks(self):
+        """
+        Assumptions: ":exec" task is an internal task that has `internal=True` set
+        """
+
         full_output_all, exit_code_all = self.run_and_capture_output([':tasks', '--all'])
         full_output_not_all, exit_code_not_all = self.run_and_capture_output([':tasks'])
 
