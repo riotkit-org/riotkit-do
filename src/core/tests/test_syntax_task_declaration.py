@@ -71,8 +71,7 @@ class TestTaskDeclaration(BasicTestingCase):
         self.assertTrue(declaration.is_internal)
 
     def test_is_internal_is_not_inherited_from_task_when_defined_in_taskdeclaration(self) -> None:
-        declaration = get_test_declaration()
+        declaration = get_test_declaration(internal=True)  # this one is overridden
         declaration._is_internal = False       # this one overrides the second one
-        declaration._task._is_internal = True  # this one is overridden
 
         self.assertFalse(declaration.is_internal)
