@@ -238,11 +238,11 @@ class ContextTest(BasicTestingCase):
             factory._expand_contexts(ctx)
 
             # assertions
-            call = _load_context_from_directory.call_args_list[0].kwargs
+            args, kwargs = _load_context_from_directory.call_args_list[0]
 
-            self.assertIn('tests/internal-samples/subprojects/testsubproject1/.rkd', call['path'])
-            self.assertIn('internal-samples/subprojects/testsubproject1', call['workdir'])
-            self.assertEqual(':testsubproject1', call['subproject'])
+            self.assertIn('tests/internal-samples/subprojects/testsubproject1/.rkd', kwargs['path'])
+            self.assertIn('internal-samples/subprojects/testsubproject1', kwargs['workdir'])
+            self.assertEqual(':testsubproject1', kwargs['subproject'])
 
     def test_expand_contexts_ignores_subprojects_if_no_any(self):
         ctx = ApplicationContext(
