@@ -276,6 +276,10 @@ class GroupDeclaration(GroupDeclarationInterface):
     def format_task_name(self, name: str) -> str:
         return name
 
+    @property
+    def is_internal(self) -> bool:
+        return False
+
 
 class TaskAliasDeclaration(object):
     """ Allows to define a custom task name that triggers other tasks in proper order """
