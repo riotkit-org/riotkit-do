@@ -152,6 +152,7 @@ class YamlSyntaxInterpreter:
         arguments = yaml_declaration['arguments'] if 'arguments' in yaml_declaration else {}
         become = yaml_declaration['become'] if 'become' in yaml_declaration else ''
         workdir = yaml_declaration.get('workdir', '')
+        internal = bool(yaml_declaration['internal']) if 'internal' in yaml_declaration else None
 
         # important: order of environment variables loading
         envs = deepcopy(global_env)
@@ -179,7 +180,8 @@ class YamlSyntaxInterpreter:
                 callback=self.create_execution_callback_from_steps(steps, name, rkd_path, envs),
                 become=become
             ),
-            workdir=workdir
+            workdir=workdir,
+            internal=internal
         )
 
     @staticmethod
