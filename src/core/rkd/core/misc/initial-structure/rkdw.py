@@ -28,8 +28,8 @@ Food Not Bombs.
 
 import os
 import sys
-from glob import glob
 import subprocess
+from glob import glob
 from time import time
 
 ENVIRONMENT_TYPE = os.getenv('RKD_ENV_TYPE', 'auto')  # venv, pipenv, auto
