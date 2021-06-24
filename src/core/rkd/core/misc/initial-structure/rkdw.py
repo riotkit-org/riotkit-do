@@ -7,11 +7,22 @@ RKD Wrapper
 
 Bootstraps a virtual environment transparently and starts RKD.
 
-
-
+Environment:
+    ENVIRONMENT_TYPE: venv, pipenv or auto
+    VENV_CREATION_ARGS: Additional arguments for pipenv or virtualenv
+    WRAPPER_MODULE: Name of the python module to proxy (defaults to 'rkd.core')
+    PYTHON_BIN: Python binary path or command name (defaults to 'python')
+    LOCK_CACHE_TIME: How long to cache the .venv-lock (defaults to '3600'), when expired will again calculate checksums.
+                     If checksums will differ then virtualenv will be recreated
+    IS_DEBUG: Debug mode, set to "1" to enable
 </docs>
 
+Designed and developed by Riotkit, an anarchist tech-collective supporting various grassroot movements, including
+anarchosyndicalist workers unions like IWA-AIT, tenants rights organizations, anti-repression Anarchist Black Cross and
+Food Not Bombs.
+
 :url: https://github.com/riotkit-org/riotkit-do
+:license: Apache-2
 :author:
 """
 
@@ -26,6 +37,7 @@ VENV_CREATION_ARGS = os.getenv('RKD_ENV_CREATION_ARGS', '')
 WRAPPER_MODULE = os.getenv('RKD_ENV_WRAPPER_MODULE', 'rkd.core')
 PYTHON_BIN = os.getenv('RKD_ENV_PYTHON_BIN', 'python')
 LOCK_CACHE_TIME = int(os.getenv('RKD_ENV_LOCK_TIME', 3600))
+IS_DEBUG = os.getenv('RKD_ENV_DEBUG') == '1'
 
 CALL_ARGS = [PYTHON_BIN, '-m', WRAPPER_MODULE] + sys.argv[1:]
 VENV_PATH = '.venv'
@@ -115,14 +127,18 @@ class VenvSupport(PluggableEnvironmentSupport):
         for requirement_file in requirements:
             args += f" -r {requirement_file} "
 
+        subprocess.check_call(f'{PYTHON_BIN} -m virtualenv {VENV_CREATION_ARGS} {VENV_PATH}', shell=True)
         subprocess.check_call(f'''
-            source "{VENV_PATH}/bin/activate";
-            pip install {args}
-        ''')
+            /bin/bash -c 'set -e; pwd; find ./; source "{VENV_PATH}/bin/activate"; pip install {args}'
+        ''', shell=True)
 
     @staticmethod
     def get_name() -> str:
         return 'venv'
+
+
+def debug(msg: str) -> None:
+    print(f'DEBUG >> {msg}')
 
 
 def lock_exists() -> bool:
@@ -176,17 +192,21 @@ def main():
         os.putenv('PYTHONPATH', os.getenv('PYTHONPATH', '') + f':{cwd}/../process:{cwd}/../pythonic')
 
     if lock_cache_is_outdated():
+        debug('Lock file outdated')
         checksum = environment.calculate_checksum()
-        write_lock(checksum)
 
         if should_create_virtualenv(checksum):
+            debug('Creating virtual environment')
             environment.create()
 
-    try:
-        environment.wrap()
-    except subprocess.CalledProcessError as err:
-        sys.exit(err.returncode)
+        write_lock(checksum)
+
+    debug('Running command')
+    environment.wrap()
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except subprocess.CalledProcessError as err:
+        sys.exit(err.returncode)

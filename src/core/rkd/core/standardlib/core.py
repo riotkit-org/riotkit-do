@@ -540,7 +540,7 @@ This task is designed to be extended, see methods marked as "interface methods".
 
         self.sh('cp %s/rkdw.py ./rkdw' % template_structure_path)
         self.sh('chmod +x ./rkdw')
-        self.sh('./rkdw')
+        self.sh('./rkdw :init', env={'ENVIRONMENT_TYPE': 'pipenv' if use_pipenv else 'venv'})
 
     @staticmethod
     def _get_development_pipenv_install_str(dev_dir: str):
