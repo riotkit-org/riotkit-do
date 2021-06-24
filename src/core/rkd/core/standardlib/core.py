@@ -498,7 +498,7 @@ This task is designed to be extended, see methods marked as "interface methods".
         if commit_to_git:
             self.on_git_add(ctx)
             self.git_add('.gitignore')
-            self.git_add('setup-venv.sh')
+            self.git_add('rkdw')
             self.git_add('requirements.txt')
             self.git_add('.rkd')
 
@@ -538,9 +538,9 @@ This task is designed to be extended, see methods marked as "interface methods".
             self.sh(f'pipenv install {install_str}')
             return
 
-        self.sh('cp %s/setup-venv.sh ./' % template_structure_path)
-        self.sh('chmod +x setup-venv.sh')
-        self.sh('./setup-venv.sh')
+        self.sh('cp %s/rkdw.py ./rkdw' % template_structure_path)
+        self.sh('chmod +x ./rkdw')
+        self.sh('./rkdw')
 
     @staticmethod
     def _get_development_pipenv_install_str(dev_dir: str):
@@ -610,13 +610,13 @@ This task is designed to be extended, see methods marked as "interface methods".
 
         if use_pipenv:
             self.io().success_msg("Structure created, use \"pipenv shell\" to enter project environment\n" +
-                                  "Add libraries, task providers, tools to the environment using \"pipenv install\"")
+                                  "Add libraries, task providers, tools to the environment using \"pipenv install\"\n" +
+                                  "Use RKD with 'rkd' command inside pipenv environment")
             return
 
-        self.io().success_msg("Structure created, use eval $(./setup-venv.sh) to enter Python\'s " +
-                              "virtual environment with installed desired RKD version from requirements.txt\n" +
-                              "Add libraries, task providers, tools to the requirements.txt " +
-                              "for reproducible environments")
+        self.io().success_msg("Structure created, use RKD through ./rkdw wrapper. To activate environment manually"
+                              "type 'source .venv/bin/activate', inside virtual environment you don't need wrapper, "
+                              "just type 'rkd'")
 
     def commit_to_git(self):
         if not os.path.isdir('.git'):
