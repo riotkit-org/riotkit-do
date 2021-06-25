@@ -67,7 +67,7 @@ class TaskDeclaration(TaskDeclarationInterface):
     _enforced_task_full_name: Optional[str]
 
     def __init__(self, task: TaskInterface, env: Dict[str, str] = None, args: List[str] = None,
-                 workdir: str = None, internal: Optional[bool] = None):
+                 workdir: Optional[str] = None, internal: Optional[bool] = None, name: Optional[str] = None):
 
         if env is None:
             env = {}
@@ -87,7 +87,7 @@ class TaskDeclaration(TaskDeclarationInterface):
         self._user_defined_env = list(env.keys())
         self._project_name = ''
         self._is_internal = internal
-        self._enforced_task_full_name = None
+        self._enforced_task_full_name = name
 
     def to_full_name(self):
         full_name = self._enforced_task_full_name if self._enforced_task_full_name else self._task.get_full_name()

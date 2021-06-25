@@ -100,8 +100,8 @@ class ComposerIntegrationTask(TaskInterface, CompilationLifecycleEventAware):
         for task_name in self.find_composer_tasks(event.io):
             tasks.append(
                 TaskDeclaration(ComposerScriptTask(
-                    group_name=self.get_group_name(),
-                    task_name=self.get_name() + ':' + task_name,
+                    group_name='',
+                    task_name=event.get_current_declaration().to_full_name() + ':' + task_name,
                     composer_task_name=task_name
                 ))
             )

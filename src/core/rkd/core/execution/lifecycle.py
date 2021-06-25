@@ -37,6 +37,9 @@ class CompilationLifecycleEvent(object):
         self._compiled = compiled
         self.io = io
 
+    def get_current_declaration(self) -> TaskDeclaration:
+        return self._current_task
+
     def expand_into_group(self, tasks: List[TaskDeclaration], pipeline: bool = True,
                           source_first: bool = False, source_last: bool = False) -> None:
         """
