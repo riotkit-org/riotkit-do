@@ -145,7 +145,7 @@ class ExecutorInterface(AbstractClass):
         pass
 
 
-class ExecutionContext:
+class ExecutionContext(object):
     """
     Defines which objects could be accessed by Task. It's a scope of a single task execution.
     """
@@ -318,6 +318,8 @@ class TaskInterface(TaskUtilities):
     def get_description(self) -> str:
         return ''
 
+    # ====== LIFECYCLE METHODS
+
     @abstractmethod
     def execute(self, context: ExecutionContext) -> bool:
         """ Executes a task. True/False should be returned as return """
@@ -328,6 +330,8 @@ class TaskInterface(TaskUtilities):
         """ Allows a task to configure ArgumentParser (argparse) """
 
         pass
+
+    # ====== LIFECYCLE METHODS ENDS
 
     def get_full_name(self):
         """ Returns task full name, including group name """

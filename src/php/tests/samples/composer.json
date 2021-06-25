@@ -1,0 +1,6 @@
+{
+    "scripts": {
+        "test": "echo 'running tests';",
+        "migrate": "echo 'migrating...';"
+    }
+}

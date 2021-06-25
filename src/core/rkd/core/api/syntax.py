@@ -64,6 +64,7 @@ class TaskDeclaration(TaskDeclarationInterface):
     _task_workdir: Optional[str]   # original task working directory as defined in task
     _project_name: str
     _is_internal: Optional[bool]             # task is not listed on :tasks
+    _enforced_task_full_name: Optional[str]
 
     def __init__(self, task: TaskInterface, env: Dict[str, str] = None, args: List[str] = None,
                  workdir: str = None, internal: Optional[bool] = None):
@@ -86,12 +87,27 @@ class TaskDeclaration(TaskDeclarationInterface):
         self._user_defined_env = list(env.keys())
         self._project_name = ''
         self._is_internal = internal
+        self._enforced_task_full_name = None
 
     def to_full_name(self):
-        if self._project_name:
-            return self._project_name + self._task.get_full_name()
+        full_name = self._enforced_task_full_name if self._enforced_task_full_name else self._task.get_full_name()
 
-        return self._task.get_full_name()
+        if self._project_name:
+            return self._project_name + full_name
+
+        return full_name
+
+    def with_new_name(self, task_name: str, group_name: str) -> 'TaskDeclaration':
+        copy = self._clone()
+        copy._enforced_task_full_name = task_name + ':' + group_name
+
+        return copy
+
+    def as_internal_task(self) -> 'TaskDeclaration':
+        copy = self._clone()
+        copy._is_internal = True
+
+        return copy
 
     def with_env(self, envs: Dict[str, str]):
         """ Immutable environment setter. Produces new object each time. """

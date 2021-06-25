@@ -24,6 +24,7 @@ from .exception import ContextFileNotFoundException
 from .exception import PythonContextFileNotFoundException
 from .exception import NotImportedClassException
 from .exception import ContextException
+from .execution.lifecycle import CompilationLifecycleEvent
 from .packaging import get_user_site_packages
 from .yaml_context import YamlSyntaxInterpreter
 from .yaml_parser import YamlFileLoader
@@ -114,6 +115,8 @@ class ApplicationContext(ContextInterface):
         for name, details in self._task_aliases.items():
             self.io.internal(f'Defined task alias {name}')
             self._compiled[name] = self._resolve_pipeline(name, details)
+
+        CompilationLifecycleEvent.run_event(self.io, self._compiled)
 
     def find_task_by_name(self, name: str) -> Union[TaskDeclaration, GroupDeclaration]:
         try:
