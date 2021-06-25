@@ -99,7 +99,10 @@ class TaskDeclaration(TaskDeclarationInterface):
 
     def with_new_name(self, task_name: str, group_name: str) -> 'TaskDeclaration':
         copy = self._clone()
-        copy._enforced_task_full_name = task_name + ':' + group_name
+        copy._enforced_task_full_name = task_name
+
+        if group_name:
+            copy._enforced_task_full_name += ':' + group_name
 
         return copy
 

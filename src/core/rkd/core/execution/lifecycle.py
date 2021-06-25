@@ -22,7 +22,8 @@ from rkd.core.api.syntax import TaskDeclaration, GroupDeclaration
 
 class CompilationLifecycleEvent(object):
     """
-    When all of the contexts are compiled, then manipulate the list of tasks
+    When all of the contexts are compiled, then give possibility to manipulate the list of tasks
+    EXECUTES FOR ALL TASKS that are implementing CompilationLifecycleEventAware interface
 
     Context = single makefile (a build file)
     """
@@ -41,7 +42,8 @@ class CompilationLifecycleEvent(object):
         return self._current_task
 
     def expand_into_group(self, tasks: List[TaskDeclaration], pipeline: bool = True,
-                          source_first: bool = False, source_last: bool = False) -> None:
+                          source_first: bool = False, source_last: bool = False,
+                          rename_to: str = ':exec-group') -> None:
         """
         Make a single task to expand itself into a group of tasks
 
@@ -58,7 +60,7 @@ class CompilationLifecycleEvent(object):
 
         # rename original task, make internal
         renamed = self._current_task.with_new_name(
-                task_name=':' + self._current_task.get_task_name() + ':exec-group',
+                task_name=':' + self._current_task.get_task_name() + rename_to,
                 group_name=self._current_task.get_group_name()) \
             .as_internal_task()
 
