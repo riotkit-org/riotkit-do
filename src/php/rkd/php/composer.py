@@ -9,7 +9,7 @@ from rkd.core.api.syntax import TaskDeclaration
 from rkd.core.execution.lifecycle import CompilationLifecycleEvent
 
 
-class ComposerTask(TaskInterface):
+class ComposerScriptTask(TaskInterface):
     group_name: str
     task_name: str
     composer_task_name: str
@@ -99,7 +99,7 @@ class ComposerIntegrationTask(TaskInterface, CompilationLifecycleEventAware):
 
         for task_name in self.find_composer_tasks(event.io):
             tasks.append(
-                TaskDeclaration(ComposerTask(
+                TaskDeclaration(ComposerScriptTask(
                     group_name=self.get_group_name(),
                     task_name=self.get_name() + ':' + task_name,
                     composer_task_name=task_name
