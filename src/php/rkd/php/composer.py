@@ -29,8 +29,11 @@ class ComposerTask(TaskInterface):
         return 'Composer task'
 
     def execute(self, context: ExecutionContext) -> bool:
-        if not os.path.isdir('vendor'):
-            install_args = ''
+        if context.get_arg('--clear'):
+            self.sh('rm -rf vendor')
+
+        if not os.path.isdir('vendor') or context.get_arg('--install'):
+            install_args = ' --no-progress '
 
             if context.get_arg('--no-dev'):
                 install_args += ' --no-dev '
@@ -52,6 +55,8 @@ class ComposerTask(TaskInterface):
         parser.add_argument('--no-dev', help='Disables installation of require-dev packages', action='store_true')
         parser.add_argument('--no-scripts', help='Skips the execution of all scripts defined in composer.json file',
                             action='store_true')
+        parser.add_argument('--install', help='Enforce `composer install`', action='store_true')
+        parser.add_argument('--clear', help='Force remove `vendor` directory first', action='store_true')
 
 
 class ComposerIntegrationTask(TaskInterface, CompilationLifecycleEventAware):
@@ -66,7 +71,8 @@ class ComposerIntegrationTask(TaskInterface, CompilationLifecycleEventAware):
     def configure_argparse(self, parser: ArgumentParser):
         pass
 
-    def find_composer_tasks(self, io: IO) -> List[str]:
+    @staticmethod
+    def find_composer_tasks(io: IO) -> List[str]:
         if not os.path.isfile('composer.json'):
             io.debug('composer.json not found')
             return []
