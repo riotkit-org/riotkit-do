@@ -11,13 +11,16 @@ Only this layer can use sys.exit() call to pass exit code to the operating syste
 import sys
 import os
 from dotenv import load_dotenv
+
+from rkd.core.execution.lifecycle import ConfigurationResolver
 from .execution.results import ProgressObserver
 from .argparsing.parser import CommandlineParsingHelper
 from .context import ContextFactory, ApplicationContext
 from .resolver import TaskResolver
 from .validator import TaskDeclarationValidator
 from .execution.executor import OneByOneTaskExecutor
-from .exception import TaskNotFoundException, ParsingException, YamlParsingException, CommandlineParsingError
+from .exception import TaskNotFoundException, ParsingException, YamlParsingException, CommandlineParsingError, \
+    HandledExitException
 from .api.inputoutput import SystemIO
 from .api.inputoutput import UnbufferedStdout
 from .aliasgroups import parse_alias_groups_from_env
@@ -81,6 +84,7 @@ class RiotKitDoApplication(object):
         observer = ProgressObserver(io)
         task_resolver = TaskResolver(self._ctx, parse_alias_groups_from_env(os.getenv('RKD_ALIAS_GROUPS', '')))
         executor = OneByOneTaskExecutor(self._ctx, observer)
+        config_resolver = ConfigurationResolver(io)
 
         # iterate over each task, parse commandline arguments
         try:
@@ -89,11 +93,17 @@ class RiotKitDoApplication(object):
             io.error_msg(str(err))
             sys.exit(1)
 
-        # validate all tasks
-        task_resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
+        try:
+            # validate all tasks
+            task_resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
 
-        # execute all tasks
-        task_resolver.resolve(requested_tasks, executor.execute)
+            # resolve configuration
+            task_resolver.resolve(requested_tasks, config_resolver.run_event)
+
+            # execute all tasks
+            task_resolver.resolve(requested_tasks, executor.execute)
+        except HandledExitException:
+            sys.exit(1)
 
         executor.get_observer().execution_finished()
 

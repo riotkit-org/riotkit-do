@@ -3,7 +3,17 @@ from jsonschema import ValidationError
 from .argparsing.model import TaskArguments
 
 
-class ContextException(Exception):
+class RiotKitDoException(Exception):
+    pass
+
+
+class HandledExitException(Exception):
+    """
+    Signal to exit RKD without any message, as the error was already handled
+    """
+
+
+class ContextException(RiotKitDoException):
     pass
 
 
@@ -11,7 +21,10 @@ class TaskNotFoundException(ContextException):
     pass
 
 
-class TaskExecutionException(Exception):
+# +=====================
+# + EXECUTOR EXCEPTIONS
+# +=====================
+class TaskExecutionException(RiotKitDoException):
     pass
 
 
@@ -31,6 +44,9 @@ class ExecutionRetryException(TaskExecutionException):
         self.args = args
 
 
+# +==================================================
+# + EXECUTOR EXCEPTIONS -> Task rescheduling signals
+# +==================================================
 class ExecutionRescheduleException(TaskExecutionException):
     """Internal signal to put extra task into resolve/schedule queue of TaskResolver"""
 
@@ -48,29 +64,42 @@ class ExecutionErrorActionException(ExecutionRescheduleException):
     """Internal signal to call an error notification in case when given task fails"""
 
 
-class TaskException(ContextException):
+# +=============================
+# + TASK DECLARATION EXCEPTIONS
+# -----------------------------
+#   When inputs are invalid
+# +=============================
+class TaskDeclarationException(ContextException):
     pass
 
 
-class UndefinedEnvironmentVariableUsageError(TaskException):
+class LifecycleConfigurationException(TaskDeclarationException):
+    @classmethod
+    def from_invalid_method_used(cls, task_full_name: str, method_name: str) -> 'LifecycleConfigurationException':
+        return cls(f'Attribute or method "{method_name}" is not allowed ' +
+                   f'to be used in configure() of "{task_full_name}" task. Make sure you are not trying to do ' +
+                   'anything tricky')
+
+
+class UndefinedEnvironmentVariableUsageError(TaskDeclarationException):
     pass
 
 
-class EnvironmentVariableNotUsed(TaskException):
+class EnvironmentVariableNotUsed(TaskDeclarationException):
     pass
 
 
-class EnvironmentVariableNameNotAllowed(TaskException):
+class EnvironmentVariableNameNotAllowed(TaskDeclarationException):
     def __init__(self, var_name: str):
         super().__init__('Environment variable with this name "' + var_name + '" cannot be declared, it probably a' +
                          ' commonly reserved name by operating systems')
 
 
-class UserInputException(Exception):
+class UserInputException(RiotKitDoException):
     pass
 
 
-class BlockDefinitionLogicError(Exception):
+class BlockDefinitionLogicError(RiotKitDoException):
     @staticmethod
     def from_both_rescue_and_error_defined():
         return BlockDefinitionLogicError('Block "{0:s}" cannot define both @rescue and @error'.format(task.block().body))
@@ -161,7 +190,7 @@ class EnvironmentVariablesFileNotFound(ContextException):
         )
 
 
-class RuntimeException(Exception):
+class RuntimeException(RiotKitDoException):
     pass
 
 
