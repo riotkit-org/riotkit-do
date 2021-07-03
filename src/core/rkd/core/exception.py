@@ -21,9 +21,9 @@ class TaskNotFoundException(ContextException):
     pass
 
 
-# +=====================
-# + EXECUTOR EXCEPTIONS
-# +=====================
+# +=================================
+# + EXECUTOR and RESOLVER EXCEPTIONS
+# +=================================
 class TaskExecutionException(RiotKitDoException):
     pass
 
@@ -42,6 +42,15 @@ class ExecutionRetryException(TaskExecutionException):
             args = []
 
         self.args = args
+
+
+class TaskResolvingException(TaskExecutionException):
+    pass
+
+
+class AggregatedResolvingFailure(TaskExecutionException):
+    def __init__(self, exceptions: List[Exception]):
+        self.exceptions = exceptions
 
 
 # +==================================================
@@ -75,10 +84,11 @@ class TaskDeclarationException(ContextException):
 
 class LifecycleConfigurationException(TaskDeclarationException):
     @classmethod
-    def from_invalid_method_used(cls, task_full_name: str, method_name: str) -> 'LifecycleConfigurationException':
-        return cls(f'Attribute or method "{method_name}" is not allowed ' +
+    def from_invalid_method_used(cls, task_full_name: str, method_names: str) -> 'LifecycleConfigurationException':
+        return cls(f'Attributes or methods: {method_names} are not allowed ' +
                    f'to be used in configure() of "{task_full_name}" task. Make sure you are not trying to do ' +
-                   'anything tricky')
+                   'anything tricky. configure() method purpose is to use exposed methods by authors of base task ' +
+                   'to customize extended task with custom configuration based on specific logic')
 
 
 class UndefinedEnvironmentVariableUsageError(TaskDeclarationException):
@@ -194,9 +204,13 @@ class RuntimeException(RiotKitDoException):
     pass
 
 
-class MissingInputException(RuntimeException):
+class MissingInputException(RuntimeException, KeyError):
     def __init__(self, arg_name: str, env_name: str):
-        super().__init__('Either "%s" switch not used, either "%s" was not defined in environment' % (
+        if not env_name:
+            super().__init__('"%s" switch not defined' % (arg_name))
+            return
+
+        super().__init__('Either "%s" switch not defined, either "%s" was not defined in environment' % (
             arg_name, env_name
         ))
 

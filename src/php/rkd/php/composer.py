@@ -84,6 +84,7 @@ class ComposerIntegrationTask(TaskInterface, CompilationLifecycleEventAware):
                 data = json.loads(f.read())
 
             return data['scripts'].keys()
+
         except Exception as exc:
             # todo specific exception class
             raise Exception('Cannot load composer.json') from exc
@@ -113,3 +114,5 @@ class ComposerIntegrationTask(TaskInterface, CompilationLifecycleEventAware):
             self.io().outln(task_name)
 
         return True
+
+

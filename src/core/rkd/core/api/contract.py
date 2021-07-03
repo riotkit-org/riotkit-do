@@ -17,7 +17,7 @@ from ..exception import MissingInputException
 from ..exception import EnvironmentVariableNameNotAllowed
 from ..taskutil import TaskUtilities
 from .temp import TempManager
-from .inputoutput import SystemIO
+from .inputoutput import SystemIO, ReadableStreamType
 
 
 def env_to_switch(env_name: str) -> str:
@@ -92,6 +92,10 @@ class TaskDeclarationInterface(AbstractClass):
     def is_internal(self) -> bool:
         return False
 
+    @abstractmethod
+    def get_input(self) -> ReadableStreamType:
+        pass
+
 
 class GroupDeclarationInterface(AbstractClass):
     @abstractmethod
@@ -150,7 +154,7 @@ class ExecutionContext(object):
     Defines which objects could be accessed by Task. It's a scope of a single task execution.
     """
 
-    declaration: TaskDeclarationInterface
+    __declaration: TaskDeclarationInterface
     parent: Union[GroupDeclarationInterface, None]
     args: Dict[str, str]
     env: Dict[str, str]
@@ -165,7 +169,7 @@ class ExecutionContext(object):
                  parent: Union[GroupDeclarationInterface, None] = None, args: Dict[str, str] = {},
                  env: Dict[str, str] = {},
                  defined_args: Dict[str, dict] = {}):
-        self.declaration = declaration
+        self.__declaration = declaration
         self.parent = parent
         self.args = args
         self.env = env
@@ -173,8 +177,8 @@ class ExecutionContext(object):
 
     def get_env(self, name: str, switch: str = '', error_on_not_used: bool = False):
         """Get environment variable value"""
-        return self.declaration.get_task_to_execute().internal_getenv(name, self.env, switch=switch,
-                                                                      error_on_not_used=error_on_not_used)
+        return self.__declaration.get_task_to_execute().internal_getenv(name, self.env, switch=switch,
+                                                                        error_on_not_used=error_on_not_used)
 
     def get_arg_or_env(self, name: str) -> Union[str, None]:
         """Provides value of user input
@@ -266,7 +270,13 @@ class ExecutionContext(object):
 
             return self.args[arg_name]
         except KeyError:
-            return self.args[name]
+            try:
+                return self.args[name]
+            except KeyError:
+                raise MissingInputException(name, '')
+
+    def get_input(self) -> ReadableStreamType:
+        return self.__declaration.get_input()
 
 
 class TaskInterface(TaskUtilities):
@@ -458,7 +468,7 @@ class TaskInterface(TaskUtilities):
         return super().silent_sh(cmd=cmd, verbose=verbose, strict=strict, env=env)
 
     def __str__(self):
-        return 'Task<' + self.get_full_name() + '>'
+        return 'Task<{name}, object_id={id}>'.format(name=self.get_full_name(), id=id(self))
 
     @staticmethod
     def table(header: list, body: list, tablefmt: str = "simple",
@@ -495,6 +505,22 @@ class TaskInterface(TaskUtilities):
     @property
     def is_internal(self) -> bool:
         return False
+
+    def __deepcopy__(self, memodict={}):
+        """
+        Do not allow copy.deepcopy() to copy this object. Declaration can be doubled, TaskInterface implementation not.
+
+        :param memodict:
+        :return:
+        """
+
+        return self
+
+
+class AbstractExtendableTask(TaskInterface):
+    @abstractmethod
+    def inner_execute(self, ctx: ExecutionContext) -> bool:
+        pass
 
 
 class ArgparseArgument(object):

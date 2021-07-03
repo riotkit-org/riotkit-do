@@ -8,7 +8,7 @@ from .context import ApplicationContext
 from .exception import InterruptExecution, \
     ExecutionRetryException, \
     ExecutionErrorActionException, \
-    TaskNotFoundException, ExecutionRescueException, ExecutionRescheduleException
+    TaskNotFoundException, ExecutionRescueException, ExecutionRescheduleException, AggregatedResolvingFailure
 from .aliasgroups import AliasGroup
 
 
@@ -30,16 +30,19 @@ class TaskResolver(object):
         self._ctx = ctx
         self._alias_groups = alias_groups
 
-    def resolve(self, requested_blocks: List[ArgumentBlock], callback: CALLBACK_DEF):
+    def resolve(self, requested_blocks: List[ArgumentBlock], callback: CALLBACK_DEF, fail_fast: bool = True):
         """
         Iterate over flatten list of tasks, one by one and call a callback for each task
 
         :param requested_blocks:
         :param callback:
+        :param fail_fast: Fail immediately - throw exception? Or throw an aggregated exception later?
+
         :return:
         """
 
         task_num = 0
+        aggregated_exceptions = []
 
         for block in requested_blocks:
             for task_request in block.tasks():
@@ -49,6 +52,14 @@ class TaskResolver(object):
                     self._resolve_element(task_request, callback, task_num, block)
                 except InterruptExecution:
                     return
+                except Exception as err:
+                    if fail_fast is False:
+                        aggregated_exceptions.append(err)
+                    else:
+                        raise err
+
+        if aggregated_exceptions:
+            raise AggregatedResolvingFailure(aggregated_exceptions)
 
     def _resolve_name_from_alias(self, task_name: str) -> Optional[str]:
         """Resolves task group's shortcuts eg. :hb -> :harbor"""

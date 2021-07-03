@@ -10,8 +10,8 @@ Only this layer can use sys.exit() call to pass exit code to the operating syste
 
 import sys
 import os
+import traceback
 from dotenv import load_dotenv
-
 from rkd.core.execution.lifecycle import ConfigurationResolver
 from .execution.results import ProgressObserver
 from .argparsing.parser import CommandlineParsingHelper
@@ -20,8 +20,8 @@ from .resolver import TaskResolver
 from .validator import TaskDeclarationValidator
 from .execution.executor import OneByOneTaskExecutor
 from .exception import TaskNotFoundException, ParsingException, YamlParsingException, CommandlineParsingError, \
-    HandledExitException
-from .api.inputoutput import SystemIO
+    HandledExitException, AggregatedResolvingFailure
+from .api.inputoutput import SystemIO, LEVEL_DEBUG
 from .api.inputoutput import UnbufferedStdout
 from .aliasgroups import parse_alias_groups_from_env
 from .packaging import find_resource_file
@@ -98,11 +98,24 @@ class RiotKitDoApplication(object):
             task_resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
 
             # resolve configuration
-            task_resolver.resolve(requested_tasks, config_resolver.run_event)
+            task_resolver.resolve(requested_tasks, config_resolver.run_event, fail_fast=False)
 
             # execute all tasks
             task_resolver.resolve(requested_tasks, executor.execute)
-        except HandledExitException:
+
+        except AggregatedResolvingFailure as aggregated:
+            io.print_opt_line()
+            io.error_msg('Cannot resolve tasks, at least one task has invalid initialization or configuration')
+
+            for err in aggregated.exceptions:
+                self.print_err(io, err)
+
+            sys.exit(1)
+
+        except HandledExitException as err:
+            if io.is_log_level_at_least(LEVEL_DEBUG):
+                self.print_err(io, err)
+
             sys.exit(1)
 
         executor.get_observer().execution_finished()
@@ -115,6 +128,11 @@ class RiotKitDoApplication(object):
             print(banner_file.read().replace(b'\\x1B', b'\x1B').decode('utf-8'))
 
         sys.exit(0)
+
+    @staticmethod
+    def print_err(io: SystemIO, err: Exception):
+        io.error("HandledExitException occurred, original traceback:\n" +
+                 "\n".join(traceback.format_tb(err.__cause__.__traceback__)))
 
 
 def main():
