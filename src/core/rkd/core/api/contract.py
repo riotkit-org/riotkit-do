@@ -158,7 +158,7 @@ class ExecutionContext(object):
     parent: Union[GroupDeclarationInterface, None]
     args: Dict[str, str]
     env: Dict[str, str]
-    ctx: ContextInterface
+    __ctx: ContextInterface
     executor: ExecutorInterface
 
     # List of arguments definitions populated by Argparse (with limited parameters supported)
@@ -276,6 +276,8 @@ class ExecutionContext(object):
                 raise MissingInputException(name, '')
 
     def get_input(self) -> ReadableStreamType:
+        # todo: Support for loading input from file and from other tasks, dynamically resolving variables
+
         return self.__declaration.get_input()
 
 

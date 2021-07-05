@@ -3,6 +3,7 @@ import re
 import sys
 import os
 import subprocess
+from io import StringIO
 from traceback import format_exc as py_format_exception
 from json import dumps as json_encode
 from json import loads as json_decode
@@ -55,9 +56,12 @@ OUTPUT_PROCESSOR_CALLABLE_DEF = Callable[[Union[str, bytes], str], Union[str, by
 
 class ReadableStreamType(object):
     def __init__(self, handle):
+        if isinstance(handle, str):
+            self.__handle = StringIO(handle)
+
         self.__handle = handle
 
-    def read(self, n: int):
+    def read(self, n: int = None):
         return self.__handle.read(n)
 
 
