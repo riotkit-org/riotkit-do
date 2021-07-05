@@ -286,8 +286,8 @@ class TaskInterface(TaskUtilities):
     temp: TempManager
     _internal: bool
 
-    def internal_inject_dependencies(self, io: IO, ctx: ContextInterface,
-                                     executor: ExecutorInterface, temp_manager: TempManager):
+    def internal_inject_dependencies(self, io: IO, ctx: ContextInterface = None,
+                                     executor: ExecutorInterface = None, temp_manager: TempManager = None):
         """"""  # sphinx: skip
 
         self._io = io

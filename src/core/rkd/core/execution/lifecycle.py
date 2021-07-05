@@ -155,6 +155,7 @@ class ConfigurationResolver(object):
                 )
 
             # call configuration
+            task.internal_inject_dependencies(self.io)
             task.configure(ConfigurationLifecycleEvent(ctx=self._create_ctx(declaration, parent, args)))
 
         except Exception as err:
