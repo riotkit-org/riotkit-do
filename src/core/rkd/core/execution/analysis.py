@@ -43,13 +43,15 @@ class FindCalls(ast.NodeVisitor):
         :return:
         """
 
-        attribute: Union[ast.Attribute, any]  = node.func
-        called_attribute_name = attribute.attr
+        attribute: Union[ast.Attribute, any, ast.Name] = node.func
 
-        value = attribute.value
+        if isinstance(attribute, ast.Attribute):
+            called_attribute_name = attribute.attr
 
-        if isinstance(value, ast.Name) and value.id == 'self':
-            self.__self_calls[called_attribute_name] = True
+            value = attribute.value
+
+            if isinstance(value, ast.Name) and value.id == 'self':
+                self.__self_calls[called_attribute_name] = True
 
         # visit the children
         self.generic_visit(node)
