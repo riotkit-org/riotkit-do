@@ -7,15 +7,18 @@ Classes used in a declaration syntax in makefile.py
 
 """
 import sys
-from typing import List, Dict, Optional
+from types import FunctionType
+from typing import List, Dict, Optional, Union
 from copy import deepcopy
+from uuid import uuid4
+
 from .contract import TaskDeclarationInterface
 from .contract import GroupDeclarationInterface
 from .contract import TaskInterface
 from .inputoutput import get_environment_copy, ReadableStreamType
 from ..argparsing.model import ArgumentBlock
 from ..exception import DeclarationException
-from uuid import uuid4
+from ..task_factory import TaskFactory
 
 
 def parse_path_into_subproject_prefix(path: str) -> str:
@@ -76,7 +79,13 @@ class TaskDeclaration(TaskDeclarationInterface):
             args = []
 
         if not isinstance(task, TaskInterface):
-            raise DeclarationException('Invalid class: TaskDeclaration needs to take TaskInterface as task argument')
+            has_taskinterface_subclass = list(filter(lambda cls: issubclass(cls, TaskInterface), task.__bases__))
+
+            if not has_taskinterface_subclass:
+                raise DeclarationException(
+                    'Invalid class: TaskDeclaration needs to take TaskInterface as task argument. '
+                    f'Got {type(task).__name__}'
+                )
 
         self._unique_id = uuid4().hex
         self._task = task
@@ -256,8 +265,33 @@ class TaskDeclaration(TaskDeclarationInterface):
         return 'TaskDeclaration<%s>' % self.get_task_to_execute().get_full_name()
 
 
+class ExtendedTaskDeclaration(TaskDeclaration):
+    """
+    Declaration for a task that extends other task using a function-like syntax
+    """
+
+    def __init__(self, task: Union[FunctionType, any], env: Dict[str, str] = None, args: List[str] = None,
+                 workdir: Optional[str] = None, internal: Optional[bool] = None, name: Optional[str] = None):
+
+        task, stdin = TaskFactory.create_task_from_func(task)
+
+        super().__init__(
+            task=task,
+            env=env,
+            args=args,
+            workdir=workdir,
+            internal=internal,
+            name=name
+        )
+
+        if stdin:
+            self.get_input = stdin
+
+
 class GroupDeclaration(GroupDeclarationInterface):
-    """ Internal DTO: Processed definition of TaskAliasDeclaration into TaskDeclaration """
+    """
+    Internal DTO: Processed definition of TaskAliasDeclaration into TaskDeclaration
+    """
 
     _name: str
     _declarations: List[TaskDeclaration]

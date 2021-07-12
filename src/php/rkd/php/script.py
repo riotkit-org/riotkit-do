@@ -2,7 +2,7 @@ import os
 import subprocess
 import tempfile
 from argparse import ArgumentParser
-from typing import Dict, Union, Optional
+from typing import Dict, Union, Optional, List
 
 from rkd.core.api.contract import ExecutionContext, ArgumentEnv
 from rkd.core.api.syntax import TaskDeclaration
@@ -19,10 +19,12 @@ class PhpScriptTask(RunInContainerBaseTask):
 
     Configuration:
         script: Path to script to load instead of stdin (could be a relative path)
+        version: PHP version. Leave None to use default 8.0-alpine version
 
     """
 
     script: Optional[str]
+    version: Optional[str]
 
     def __init__(self):
         super().__init__()
@@ -30,6 +32,7 @@ class PhpScriptTask(RunInContainerBaseTask):
         self.entrypoint = 'sleep'
         self.command = '9999999'
         self.script = None
+        self.version = None
 
     def get_name(self) -> str:
         return ':php'
@@ -48,8 +51,9 @@ class PhpScriptTask(RunInContainerBaseTask):
 
         self.docker_image = '{image}:{version}'.format(
             image=event.ctx.get_arg_or_env('--image'),
-            version=event.ctx.get_arg_or_env('--php')
+            version=self.version if self.version else event.ctx.get_arg_or_env('--php')
         )
+
         self.mount(local=os.getcwd(), remote=os.getcwd())
 
     def inner_execute(self, context: ExecutionContext) -> bool:
@@ -86,7 +90,7 @@ class PhpScriptTask(RunInContainerBaseTask):
         parser.add_argument('--image', help='Docker image name', default='php')
 
 
-def imports() -> list:
+def imports() -> List[TaskDeclaration]:
     return [
         TaskDeclaration(PhpScriptTask(), internal=True)
     ]

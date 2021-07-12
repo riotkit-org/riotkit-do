@@ -29,6 +29,10 @@ class FindCalls(ast.NodeVisitor):
 
         for target in node.targets:
             target: ast.Attribute
+
+            if not isinstance(target, ast.Attribute):
+                continue
+
             value: Union[ast.Name, any] = target.value
 
             if value.id == 'self':

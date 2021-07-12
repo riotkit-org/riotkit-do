@@ -105,6 +105,20 @@ class EnvironmentVariableNameNotAllowed(TaskDeclarationException):
                          ' commonly reserved name by operating systems')
 
 
+class TaskFactoryException(TaskDeclarationException):
+    @classmethod
+    def from_missing_extends(cls, func):
+        raise cls(f'{func} needs to have "extends" parameter defined with an annotation')
+
+    @classmethod
+    def from_method_not_allowed_to_be_inherited(cls, method):
+        raise cls(f'Method {method} is not allowed to be inherited')
+
+    @classmethod
+    def from_method_not_allowed_to_be_defined_for_inheritance(cls, method):
+        raise cls(f'Method {method} is not allowed to be defined for inheritance')
+
+
 class UserInputException(RiotKitDoException):
     pass
 

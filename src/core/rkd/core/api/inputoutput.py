@@ -57,7 +57,7 @@ OUTPUT_PROCESSOR_CALLABLE_DEF = Callable[[Union[str, bytes], str], Union[str, by
 class ReadableStreamType(object):
     def __init__(self, handle):
         if isinstance(handle, str):
-            self.__handle = StringIO(handle)
+            handle = StringIO(handle)
 
         self.__handle = handle
 

@@ -4,6 +4,7 @@ import docker
 from typing import List, Dict, Optional
 from docker.models.containers import Container
 from docker.types import Mount
+from docker.errors import ImageNotFound
 from rkd.core.api.contract import ExecutionContext, AbstractExtendableTask
 from rkd.core.api.lifecycle import ConfigurationLifecycleEventAware
 
@@ -129,7 +130,14 @@ class RunInContainerBaseTask(AbstractExtendableTask, ConfigurationLifecycleEvent
         }
 
         self.io().debug(f'Running docker image with args: {container_kwargs}')
-        self.container = client.containers.create(**container_kwargs)
+
+        try:
+            self.container = client.containers.create(**container_kwargs)
+
+        # pull image on-demand
+        except ImageNotFound:
+            client.images.pull(self.docker_image)
+            self.container = client.containers.create(**container_kwargs)
 
         for remote, local in self.to_copy.items():
             self.copy_to_container(local=local, remote=remote)
