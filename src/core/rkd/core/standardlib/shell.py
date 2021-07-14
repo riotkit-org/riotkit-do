@@ -1,15 +1,21 @@
 
 from argparse import ArgumentParser
 from subprocess import CalledProcessError
-from typing import Callable
+from typing import Callable, List
 from ..api.syntax import TaskDeclaration
-from ..api.contract import TaskInterface
+from ..api.contract import TaskInterface, ExtendableTaskInterface
 from ..api.contract import ExecutionContext
 
 
 # <sphinx=shell-command>
-class ShellCommandTask(TaskInterface):
-    """Executes shell scripts"""
+class ShellCommandTask(ExtendableTaskInterface):
+    """Executes shell commands and scripts"""
+
+    # to be overridden in compile()
+    is_cmd_required: bool
+
+    def __init__(self):
+        self.is_cmd_required = True
 
     def get_name(self) -> str:
         return ':sh'
@@ -17,14 +23,27 @@ class ShellCommandTask(TaskInterface):
     def get_group_name(self) -> str:
         return ''
 
+    def get_configuration_attributes(self) -> List[str]:
+        return ['is_cmd_required']
+
     def configure_argparse(self, parser: ArgumentParser):
-        parser.add_argument('--cmd', '-c', help='Shell command', required=True)
+        parser.add_argument('--cmd', '-c', help='Shell command', required=self.is_cmd_required)
 
     def execute(self, context: ExecutionContext) -> bool:
-        # self.sh() and self.io() are part of TaskUtilities via TaskInterface
+        cmd = ''
+
+        if context.get_input():
+            cmd = context.get_input().read()
+
+        if context.get_arg('cmd'):
+            cmd = context.get_arg('cmd')
 
         try:
-            self.sh(context.get_arg('cmd'), capture=False)
+            # self.sh() and self.io() are part of the base class
+            if cmd:
+                self.sh(cmd, capture=False)
+            self.inner_execute(context)
+
         except CalledProcessError as e:
             self.io().error_msg(str(e))
             return False
