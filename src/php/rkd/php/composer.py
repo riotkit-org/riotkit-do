@@ -2,9 +2,8 @@ import json
 import os
 from argparse import ArgumentParser
 from typing import List
-from rkd.core.api.contract import TaskInterface, ExecutionContext
+from rkd.core.api.contract import TaskInterface, ExecutionContext, ExtendableTaskInterface
 from rkd.core.api.inputoutput import IO
-from rkd.core.api.lifecycle import CompilationLifecycleEventAware
 from rkd.core.api.syntax import TaskDeclaration
 from rkd.core.execution.lifecycle import CompilationLifecycleEvent
 
@@ -59,7 +58,7 @@ class ComposerScriptTask(TaskInterface):
         parser.add_argument('--clear', help='Force remove `vendor` directory first', action='store_true')
 
 
-class ComposerIntegrationTask(TaskInterface, CompilationLifecycleEventAware):
+class ComposerIntegrationTask(ExtendableTaskInterface):
     """Runs tasks from composer.json"""
 
     def get_name(self) -> str:

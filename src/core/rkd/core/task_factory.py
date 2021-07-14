@@ -1,7 +1,7 @@
 from inspect import signature as get_signature
 from types import FunctionType
 from typing import Dict, Type, Tuple, Optional, List
-from rkd.core.api.contract import TaskInterface
+from rkd.core.api.contract import TaskInterface, ExtendableTaskInterface
 from rkd.core.api.inputoutput import ReadableStreamType
 from rkd.core.exception import TaskFactoryException
 
