@@ -7,9 +7,10 @@ Core interfaces that should be changed WITH CAREFUL as those are parts of API.
 Any breaking change there requires to bump RKD major version (see: Semantic Versioning)
 """
 from tabulate import tabulate
-from abc import abstractmethod, ABC as AbstractClass
+from abc import abstractmethod, ABC as AbstractClass, ABC
 from typing import Dict, List, Union, Optional
 from argparse import ArgumentParser
+
 from ..inputoutput import IO
 from ..exception import UndefinedEnvironmentVariableUsageError
 from ..exception import EnvironmentVariableNotUsed
@@ -275,7 +276,7 @@ class ExecutionContext(object):
             except KeyError:
                 raise MissingInputException(name, '')
 
-    def get_input(self) -> ReadableStreamType:
+    def get_input(self) -> Optional[ReadableStreamType]:
         # todo: Support for loading input from file and from other tasks, dynamically resolving variables
 
         return self.__declaration.get_input()
@@ -519,9 +520,23 @@ class TaskInterface(TaskUtilities):
         return self
 
 
-class AbstractExtendableTask(TaskInterface):
-    @abstractmethod
+class ExtendableTaskInterface(TaskInterface, ABC):
     def inner_execute(self, ctx: ExecutionContext) -> bool:
+        pass
+
+    def get_configuration_attributes(self) -> List[str]:
+        return []
+
+    def configure(self, event: 'ConfigurationLifecycleEvent') -> None:
+        """
+        Executes before all tasks are executed. ORDER DOES NOT MATTER, can be executed in parallel.
+        """
+        pass
+
+    def compile(self, event: 'CompilationLifecycleEvent') -> None:
+        """
+        Execute code after all tasks were collected into a single context
+        """
         pass
 
 

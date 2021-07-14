@@ -6,13 +6,12 @@ SYNTAX (part of API)
 Classes used in a declaration syntax in makefile.py
 
 """
-import sys
 from types import FunctionType
 from typing import List, Dict, Optional, Union
 from copy import deepcopy
 from uuid import uuid4
 
-from .contract import TaskDeclarationInterface
+from .contract import TaskDeclarationInterface, ExtendableTaskInterface
 from .contract import GroupDeclarationInterface
 from .contract import TaskInterface
 from .inputoutput import get_environment_copy, ReadableStreamType
@@ -175,7 +174,7 @@ class TaskDeclaration(TaskDeclarationInterface):
     def get_args(self) -> List[str]:
         return self._args
 
-    def get_task_to_execute(self) -> TaskInterface:
+    def get_task_to_execute(self) -> Union[TaskInterface, ExtendableTaskInterface]:
         return self._task
 
     def to_list(self) -> list:
@@ -258,8 +257,8 @@ class TaskDeclaration(TaskDeclarationInterface):
 
         return self._task.is_internal
 
-    def get_input(self) -> ReadableStreamType:
-        return ReadableStreamType(sys.stdin)
+    def get_input(self) -> Optional[ReadableStreamType]:
+        return None
 
     def __str__(self):
         return 'TaskDeclaration<%s>' % self.get_task_to_execute().get_full_name()
