@@ -1,15 +1,13 @@
-from abc import ABC
-
 import docker
+from abc import ABC
 from typing import List, Dict, Optional
 from docker.models.containers import Container
 from docker.types import Mount
 from docker.errors import ImageNotFound
-from rkd.core.api.contract import ExecutionContext, AbstractExtendableTask
-from rkd.core.api.lifecycle import ConfigurationLifecycleEventAware
+from rkd.core.api.contract import ExecutionContext, ExtendableTaskInterface
 
 
-class RunInContainerBaseTask(AbstractExtendableTask, ConfigurationLifecycleEventAware, ABC):
+class RunInContainerBaseTask(ExtendableTaskInterface, ABC):
     """
     RunInContainerBaseTask
     ----------------------
