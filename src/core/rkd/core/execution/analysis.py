@@ -35,7 +35,7 @@ class FindCalls(ast.NodeVisitor):
 
             value: Union[ast.Name, any] = target.value
 
-            if value.id == 'self':
+            if value.id in ['self', 'task']:
                 self.__self_attributes[target.attr] = True
 
         self.generic_visit(node)
@@ -54,7 +54,7 @@ class FindCalls(ast.NodeVisitor):
 
             value = attribute.value
 
-            if isinstance(value, ast.Name) and value.id == 'self':
+            if isinstance(value, ast.Name) and value.id in ['self', 'task']:
                 self.__self_calls[called_attribute_name] = True
 
         # visit the children
