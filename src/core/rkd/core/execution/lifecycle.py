@@ -14,8 +14,7 @@ only allowed methods can be executed.
 
 from copy import copy
 from typing import Dict, Union, List
-from rkd.core.api.contract import TaskInterface, ExecutionContext
-from rkd.core.api.lifecycle import CompilationLifecycleEventAware, ConfigurationLifecycleEventAware
+from rkd.core.api.contract import ExecutionContext, ExtendableTaskInterface
 from rkd.core.api.inputoutput import IO
 from rkd.core.api.syntax import TaskDeclaration, GroupDeclaration
 from rkd.core.argparsing.parser import CommandlineParsingHelper
@@ -100,11 +99,11 @@ class CompilationLifecycleEvent(object):
                 io.internal('compilation skipped, not a TaskDeclaration')
                 continue
 
-            if not isinstance(declaration.get_task_to_execute(), CompilationLifecycleEventAware):
-                io.internal('compilation skipped, task does not implement CompilationLifecycleEventAware')
+            if not isinstance(declaration.get_task_to_execute(), ExtendableTaskInterface):
+                io.internal('compilation skipped, task does not implement ExtendableTaskInterface')
                 continue
 
-            task: Union[CompilationLifecycleEventAware, TaskInterface] = declaration.get_task_to_execute()
+            task: ExtendableTaskInterface = declaration.get_task_to_execute()
             task.compile(CompilationLifecycleEvent(declaration, compiled, io))
 
 
@@ -136,13 +135,13 @@ class ConfigurationResolver(object):
             self.io.internal('configuration skipped, not a TaskDeclaration')
             return
 
-        if not isinstance(declaration.get_task_to_execute(), ConfigurationLifecycleEventAware):
-            self.io.internal('configuration skipped, task does not implement ConfigurationLifecycleEventAware')
+        if not isinstance(declaration.get_task_to_execute(), ExtendableTaskInterface):
+            self.io.internal('configuration skipped, task does not implement ExtendableTaskInterface')
             return
 
         self.io.internal(f'configuring {declaration}')
 
-        task: Union[ConfigurationLifecycleEventAware, TaskInterface] = declaration.get_task_to_execute()
+        task: ExtendableTaskInterface = declaration.get_task_to_execute()
 
         try:
             # perform a static analysis first
