@@ -89,16 +89,17 @@ class RiotKitDoApplication(object):
         # iterate over each task, parse commandline arguments
         try:
             requested_tasks = cmdline_parser.create_grouped_arguments([':init'] + argv[1:])
+
         except CommandlineParsingError as err:
             io.error_msg(str(err))
             sys.exit(1)
 
         try:
-            # validate all tasks
-            task_resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
-
             # resolve configuration
             task_resolver.resolve(requested_tasks, config_resolver.run_event, fail_fast=False)
+
+            # validate all tasks, it's input arguments
+            task_resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
 
             # execute all tasks
             task_resolver.resolve(requested_tasks, executor.execute)
