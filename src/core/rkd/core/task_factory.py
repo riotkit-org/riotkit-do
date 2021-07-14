@@ -1,4 +1,3 @@
-from inspect import signature as get_signature
 from types import FunctionType
 from typing import Dict, Type, Tuple, Optional, List
 from rkd.core.api.contract import TaskInterface, ExtendableTaskInterface
@@ -6,25 +5,26 @@ from rkd.core.api.inputoutput import ReadableStreamType
 from rkd.core.exception import TaskFactoryException
 
 
+ALLOWED_METHODS_TO_DEFINE = [
+    'configure', 'stdin', 'inner_execute', 'configure_argparse', 'compile', 'execute'
+]
+
+ALLOWED_METHODS_TO_INHERIT = [
+    'configure', 'inner_execute', 'configure_argparse', 'compile', 'execute'
+]
+
+MARKER_SKIP_PARENT_CALL = 'no_parent_call_wrapper'
+MARKER_CALL_PARENT_FIRST = 'call_parent_first_wrapper'
+
+ALLOWED_MARKERS = [
+    MARKER_SKIP_PARENT_CALL, MARKER_CALL_PARENT_FIRST
+]
+
+
 class TaskFactory(object):
     """
     Produces TaskInterface from FunctionType, YAML, etc.
     """
-
-    ALLOWED_METHODS_TO_DEFINE = [
-        'configure', 'stdin', 'inner_execute'
-    ]
-
-    ALLOWED_METHODS_TO_INHERIT = [
-        'configure', 'inner_execute'
-    ]
-
-    MARKER_SKIP_PARENT_CALL = 'no_parent_call_wrapper'
-    MARKER_CALL_PARENT_FIRST = 'call_parent_first_wrapper'
-
-    ALLOWED_MARKERS = [
-        MARKER_SKIP_PARENT_CALL, MARKER_CALL_PARENT_FIRST
-    ]
 
     @classmethod
     def create_task_from_func(cls, func: FunctionType) -> Tuple[TaskInterface, Optional[FunctionType]]:
@@ -48,7 +48,8 @@ class TaskFactory(object):
         stdin_method = None
         exports = cls._extract_exported_methods(func)
 
-        cls._validate_methods_allowed(list(exports.keys()), cls.ALLOWED_METHODS_TO_DEFINE, after_filtering=False)
+        cls._validate_methods_allowed(list(exports.keys()), ALLOWED_METHODS_TO_DEFINE,
+                                      after_filtering=False, func=func)
 
         # we do not support overriding of `execute()` method, but we do for `inner_execute()`
         if 'execute' in exports:
@@ -65,7 +66,8 @@ class TaskFactory(object):
             stdin_method = stdin_readable_stream
             del exports['stdin']
 
-        cls._validate_methods_allowed(list(exports.keys()), cls.ALLOWED_METHODS_TO_INHERIT, after_filtering=True)
+        cls._validate_methods_allowed(list(exports.keys()), ALLOWED_METHODS_TO_INHERIT,
+                                      after_filtering=True, func=func)
 
         methods = cls._create_inheritance_proxy(exports, extended_class)
         task = type(f'Extended_{func.__name__}_{extended_class.__name__}', (extended_class,), methods)()
@@ -73,13 +75,14 @@ class TaskFactory(object):
         return task, stdin_method
 
     @classmethod
-    def _validate_methods_allowed(cls, methods: List[str], allowed: List[str], after_filtering: bool):
+    def _validate_methods_allowed(cls, methods: List[str], allowed: List[str],
+                                  after_filtering: bool, func: FunctionType):
         for method in methods:
             if method not in allowed:
                 if after_filtering:
-                    raise TaskFactoryException.from_method_not_allowed_to_be_inherited(method)
+                    raise TaskFactoryException.from_method_not_allowed_to_be_inherited(method, func)
                 else:
-                    raise TaskFactoryException.from_method_not_allowed_to_be_defined_for_inheritance(method)
+                    raise TaskFactoryException.from_method_not_allowed_to_be_defined_for_inheritance(method, func)
 
     @classmethod
     def _create_inheritance_proxy(cls, attributes: Dict[str, FunctionType],
@@ -117,7 +120,7 @@ class TaskFactory(object):
             """
 
             # do not call parent() at all
-            if current_method.marker == cls.MARKER_SKIP_PARENT_CALL:
+            if current_method.marker == MARKER_SKIP_PARENT_CALL:
                 return current_method(self, *args, **kwargs)
 
             # call parent() first
@@ -142,7 +145,7 @@ class TaskFactory(object):
             function.marker = None
 
             # interpret the decorator
-            if function.__name__ in cls.MARKER_CALL_PARENT_FIRST:
+            if function.__name__ in MARKER_CALL_PARENT_FIRST:
                 marker = function.__name__
                 function = function()
                 function.marker = marker
