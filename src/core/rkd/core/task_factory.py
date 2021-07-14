@@ -118,14 +118,14 @@ class TaskFactory(object):
                 return current_method(self, *args, **kwargs)
 
             # call parent() first
-            elif current_method.marker == cls.MARKER_CALL_PARENT_FIRST:
-                parent_result = parent_method(self, *args, **kwargs)
+            elif current_method.marker == MARKER_CALL_PARENT_FIRST:
+                parent_result = parent_method(self, *args, **kwargs) if parent_method else True
                 current_result = current_method(self, *args, **kwargs)
 
             # call children() then parent()
             else:
                 current_result = current_method(self, *args, **kwargs)
-                parent_result = parent_method(self, *args, **kwargs)
+                parent_result = parent_method(self, *args, **kwargs) if parent_method else True
 
             return parent_result and current_result
 
