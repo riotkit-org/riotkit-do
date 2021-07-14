@@ -16,7 +16,7 @@ class TaskDeclarationValidator(object):
             args = []
 
         if task.block().has_action_on_error() and task.block().should_rescue_task():
-            raise BlockDefinitionLogicError.from_both_rescue_and_error_defined()
+            raise BlockDefinitionLogicError.from_both_rescue_and_error_defined(task)
 
         # check if arguments are satisfied
         CommandlineParsingHelper.parse(task, args)

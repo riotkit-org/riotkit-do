@@ -37,10 +37,13 @@ class TaskFactory(object):
         """
 
         try:
-            extended_class = func.__dict__.get('extends')
+            extended_class: Type = func.__dict__.get('extends')
 
         except KeyError:
             raise TaskFactoryException.from_missing_extends(func)
+
+        if not issubclass(extended_class, ExtendableTaskInterface):
+            raise TaskFactoryException.from_not_extendable_base_task(extended_class, func)
 
         stdin_method = None
         exports = cls._extract_exported_methods(func)

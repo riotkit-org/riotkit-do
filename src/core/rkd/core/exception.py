@@ -1,4 +1,5 @@
-from typing import List
+from types import FunctionType
+from typing import List, Type
 from jsonschema import ValidationError
 from .argparsing.model import TaskArguments
 
@@ -108,15 +109,19 @@ class EnvironmentVariableNameNotAllowed(TaskDeclarationException):
 class TaskFactoryException(TaskDeclarationException):
     @classmethod
     def from_missing_extends(cls, func):
-        raise cls(f'{func} needs to have "extends" parameter defined with an annotation')
+        raise cls(f'{func} needs to use @extends annotation')
 
     @classmethod
-    def from_method_not_allowed_to_be_inherited(cls, method):
+    def from_not_extendable_base_task(cls, extended_class: Type, func: FunctionType):
+        raise cls(f'Class {extended_class} that is extended by {func} must implemented ExtendableTaskInterface')
+
+    @classmethod
+    def from_method_not_allowed_to_be_inherited(cls, method, origin: FunctionType):
         raise cls(f'Method {method} is not allowed to be inherited')
 
     @classmethod
-    def from_method_not_allowed_to_be_defined_for_inheritance(cls, method):
-        raise cls(f'Method {method} is not allowed to be defined for inheritance')
+    def from_method_not_allowed_to_be_defined_for_inheritance(cls, method, origin: FunctionType):
+        raise cls(f'Method {method} is not allowed to be defined for inheritance. Defined in {origin.__name__}()')
 
 
 class UserInputException(RiotKitDoException):
@@ -125,8 +130,9 @@ class UserInputException(RiotKitDoException):
 
 class BlockDefinitionLogicError(RiotKitDoException):
     @staticmethod
-    def from_both_rescue_and_error_defined():
-        return BlockDefinitionLogicError('Block "{0:s}" cannot define both @rescue and @error'.format(task.block().body))
+    def from_both_rescue_and_error_defined(task):
+        return BlockDefinitionLogicError('Block "{0:s}" cannot define both @rescue and @error'
+                                         .format(task.block().body))
 
 
 class NotSupportedEnvVariableError(UserInputException):
