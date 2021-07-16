@@ -38,6 +38,7 @@ class ArchivePackagingBaseTask(ExtendableTaskInterface):
 
     dry_run: bool
     allow_archive_overwriting: bool
+    archive: Union[ZipFile, TarFile]
 
     def __init__(self):
         self.archive_type = ARCHIVE_TYPE_ZIP
@@ -108,12 +109,13 @@ class ArchivePackagingBaseTask(ExtendableTaskInterface):
 
         # prepare
         self._make_sure_destination_directory_exists(os.path.dirname(self.archive_path))
-        archive = self._create_archive(self.archive_path)
+        self.archive = self._create_archive(self.archive_path)
 
         for dest_path, path in self.sources.items():
-            self._add_to_archive(archive, path, dest_path)
+            self._add_to_archive(self.archive, path, dest_path)
 
-        self._commit_changes(archive)
+        self.inner_execute(context)
+        self._commit_changes(self.archive)
 
         return True
 
