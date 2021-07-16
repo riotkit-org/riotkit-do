@@ -114,4 +114,3 @@ class ComposerIntegrationTask(ExtendableTaskInterface):
 
         return True
 
-

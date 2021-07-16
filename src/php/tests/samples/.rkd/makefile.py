@@ -1,6 +1,7 @@
 from rkd.core.api.contract import ExecutionContext
 from rkd.core.execution.lifecycle import ConfigurationLifecycleEvent, CompilationLifecycleEvent
 from rkd.core.standardlib import ShellCommandTask
+from rkd.core.standardlib.io import ArchivePackagingBaseTask
 from rkd.php import ComposerIntegrationTask, PhpScriptTask
 from rkd.core.api.syntax import TaskDeclaration, ExtendedTaskDeclaration
 from rkd.core.api.decorators import no_parent_call, extends, call_parent_first
@@ -28,6 +29,22 @@ phpinfo();
         task.version = '8.0-alpine'
 
     return [stdin, configure]
+
+
+@extends(ArchivePackagingBaseTask)
+def PackIntoZipTask():
+    """
+    Packs application into a ZIP file
+
+    :return:
+    """
+
+    def configure(task: ArchivePackagingBaseTask, event: ConfigurationLifecycleEvent):
+        task.archive_path = '/tmp/test-archive.zip'
+        task.consider_gitignore('/home/krzysiek/Projekty/riotkit/riotkit/rkd/.gitignore')
+        task.add('/home/krzysiek/Projekty/riotkit/riotkit/rkd/src/php/tests/samples/', './')
+
+    return [configure]
 
 
 # def CopyDocsTask(extends: FileOperationsBaseTask):
@@ -79,7 +96,8 @@ IMPORTS = [
     TaskDeclaration(ComposerIntegrationTask(), name=':composer'),
     TaskDeclaration(PhpScriptTask(), name=':php'),
     # ExtendedTaskDeclaration(name=':phpinfo', task=PhpInfoTask),
-    ExtendedTaskDeclaration(name=':workspace:ls', task=ListWorkspaceFiles)
+    ExtendedTaskDeclaration(name=':workspace:ls', task=ListWorkspaceFiles),
+    ExtendedTaskDeclaration(name=':dist:zip', task=PackIntoZipTask),
     # ExtendedTaskDeclaration(name=':docs:copy', task=CopyDocsTask),
     # ExtendedTaskDeclaration(name=':dist:build', task=PackDistributionTask)
 ]
