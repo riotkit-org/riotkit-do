@@ -14,12 +14,35 @@ ARCHIVE_TYPE_TARGZ = 'tar+gzip'
 class ArchivePackagingBaseTask(ExtendableTaskInterface):
     """
     Packages files into a compressed archive.
+    -----------------------------------------
 
     Supports:
       - dry-run mode (do not write anything to disk, just print messages)
       - copies directories recursively
       - .gitignore files support (manually added using API method)
     """
+
+    sources: Dict[str, str]
+    _gitignore: List[Callable]
+
+    dry_run: bool                     # Skip IO operations, just print messages
+    allow_archive_overwriting: bool   # Allow overwriting if destination file already exists
+    archive: Union[ZipFile, TarFile]  # Direct access to archive object - TarFile or ZipFile
+
+    archive_path: str  # Path where to save the archive
+    archive_type: str  # One of supported types (see io.ARCHIVE_TYPE_ZIP and io.ARCHIVE_TYPE_TARGZ), defaults to zip
+
+    def __init__(self):
+        self.archive_type = ARCHIVE_TYPE_ZIP
+        self.sources = {}
+        self._gitignore = [lambda x: True]
+        self.dry_run = False
+
+    def get_configuration_attributes(self) -> List[str]:
+        return [
+            'archive_path', 'archive_type', 'sources', 'dry_run',
+            'allow_archive_overwriting', 'add', 'consider_gitignore'
+        ]
 
     def get_name(self) -> str:
         return ':archive'
@@ -30,21 +53,6 @@ class ArchivePackagingBaseTask(ExtendableTaskInterface):
     def configure_argparse(self, parser: ArgumentParser):
         parser.add_argument('--dry-run', help='Don\'t do anything, just print messages', action='store_true')
         parser.add_argument('--allow-overwrite', help='Overwrite destination file if exists', action='store_true')
-
-    archive_path: str
-    archive_type: str
-    sources: Dict[str, str]
-    _gitignore: List[Callable]
-
-    dry_run: bool
-    allow_archive_overwriting: bool
-    archive: Union[ZipFile, TarFile]
-
-    def __init__(self):
-        self.archive_type = ARCHIVE_TYPE_ZIP
-        self.sources = {}
-        self._gitignore = [lambda x: True]
-        self.dry_run = False
 
     def add(self, src_path: str, target_path: str = None):
         """
@@ -89,8 +97,9 @@ class ArchivePackagingBaseTask(ExtendableTaskInterface):
 
     def consider_gitignore(self, path: str = '.gitignore'):
         """
-        Load rules of .gitignore
+        Load ignore rules from .gitignore
 
+        :api: configure
         :param path:
         :return:
         """
@@ -148,7 +157,7 @@ class ArchivePackagingBaseTask(ExtendableTaskInterface):
             if self.archive_type == ARCHIVE_TYPE_ZIP:
                 return ZipFile(temp_path, 'w')
             elif self.archive_type == ARCHIVE_TYPE_TARGZ:
-                return TarFile(temp_path, 'w')
+                return TarFile(temp_path, 'w:gz')
 
     def _make_sure_destination_directory_exists(self, path: str) -> None:
         if not self.dry_run:

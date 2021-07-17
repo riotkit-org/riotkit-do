@@ -93,11 +93,11 @@ def ListWorkspaceFiles():
 
 
 IMPORTS = [
+    ExtendedTaskDeclaration(name=':dist:zip', task=PackIntoZipTask),
     TaskDeclaration(ComposerIntegrationTask(), name=':composer'),
     TaskDeclaration(PhpScriptTask(), name=':php'),
     # ExtendedTaskDeclaration(name=':phpinfo', task=PhpInfoTask),
     ExtendedTaskDeclaration(name=':workspace:ls', task=ListWorkspaceFiles),
-    ExtendedTaskDeclaration(name=':dist:zip', task=PackIntoZipTask),
     # ExtendedTaskDeclaration(name=':docs:copy', task=CopyDocsTask),
     # ExtendedTaskDeclaration(name=':dist:build', task=PackDistributionTask)
 ]

@@ -9,10 +9,16 @@ from ..api.contract import ExecutionContext
 
 # <sphinx=shell-command>
 class ShellCommandTask(ExtendableTaskInterface):
-    """Executes shell commands and scripts"""
+    """
+    Executes shell commands and scripts
+
+    Extendable in two ways:
+      - overwrite stdin()/input to execute a script
+      - overwrite execute() to execute a Python code that could contain calls to self.sh()
+    """
 
     # to be overridden in compile()
-    is_cmd_required: bool
+    is_cmd_required: bool  # Is --cmd switch required to be set?
 
     def __init__(self):
         self.is_cmd_required = True
