@@ -141,8 +141,8 @@ class ContextTest(BasicTestingCase):
                 parse_method.return_value = ([TaskAliasDeclaration(':hello', [':test'])], [], [])
 
                 ctx_factory = ContextFactory(NullSystemIO())
-                ctx = ctx_factory._load_from_yaml(os.path.dirname(tmp_file.name), os.path.basename(tmp_file.name),
-                                                  workdir='', prefix='')
+                ctx = ctx_factory._load_from_static_file(os.path.dirname(tmp_file.name), os.path.basename(tmp_file.name),
+                                                         workdir='', prefix='')
 
                 self.assertIn(':hello', ctx._task_aliases)
 

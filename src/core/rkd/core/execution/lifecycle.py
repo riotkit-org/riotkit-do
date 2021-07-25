@@ -45,7 +45,7 @@ class CompilationLifecycleEvent(object):
 
     def expand_into_group(self, tasks: List[TaskDeclaration], pipeline: bool = True,
                           source_first: bool = False, source_last: bool = False,
-                          rename_to: str = ':exec-group') -> None:
+                          rename_to: str = ':exec-group', hide_children: bool = False) -> None:
         """
         Make a single task to expand itself into a group of tasks
 
@@ -55,7 +55,10 @@ class CompilationLifecycleEvent(object):
         :param:pipeline should the grouped task be added as a pipeline?
         :param:source_first Add source task at beginning of pipeline
         :param:source_last Add source task at end of pipeline
+        :param:rename_to Rename original task to
         """
+
+        self.io.internal(f'Expanding task {self._current_task} into a group')
 
         # be sure that old task is no longer there
         del self._compiled[self._current_task.to_full_name()]
@@ -72,9 +75,11 @@ class CompilationLifecycleEvent(object):
         # add our group (a pipeline)
         if pipeline:
             if source_first:
+                self.io.internal('Original task will be executed first in a group')
                 tasks = [renamed] + tasks
 
             if source_last:
+                self.io.internal('Original task will be executed last in a group')
                 tasks.append(renamed)
 
             group = GroupDeclaration(
@@ -82,10 +87,16 @@ class CompilationLifecycleEvent(object):
                 declarations=tasks,
                 description=self._current_task.get_description()
             )
+
+            self.io.internal(f'Adding group task {group} as {group.to_full_name()}')
             self._compiled[group.to_full_name()] = group
 
         # add tasks that are part of the pipeline
         for task in tasks:
+            if hide_children:
+                task = task.as_internal_task()
+
+            self.io.internal(f'Appending {task} to group')
             self._compiled[task.to_full_name()] = task
 
     @staticmethod

@@ -12,7 +12,7 @@ from importlib.machinery import SourceFileLoader
 from traceback import print_exc
 from uuid import uuid4
 from . import env
-from .api.syntax import TaskDeclaration, parse_path_into_subproject_prefix
+from .api.syntax import TaskDeclaration, parse_path_into_subproject_prefix, ExtendedTaskDeclaration
 from .api.syntax import TaskAliasDeclaration
 from .api.syntax import GroupDeclaration
 from .api.contract import ContextInterface
@@ -26,7 +26,9 @@ from .exception import NotImportedClassException
 from .exception import ContextException
 from .execution.lifecycle import CompilationLifecycleEvent
 from .packaging import get_user_site_packages
-from .yaml_context import YamlSyntaxInterpreter
+from .task_factory import TaskFactory
+from .yaml_context import StaticFileSyntaxInterpreter
+from .dto import StaticFileContextParsingResult
 from .yaml_parser import YamlFileLoader
 
 
@@ -256,14 +258,14 @@ class ContextFactory(object):
                                                                  prefix=subproject))
 
         if os.path.isfile(path + '/makefile.yaml'):
-            contexts += self._expand_contexts(self._load_from_yaml(path, 'makefile.yaml',
-                                                                   workdir=workdir,
-                                                                   prefix=subproject))
+            contexts += self._expand_contexts(self._load_from_static_file(path, 'makefile.yaml',
+                                                                          workdir=workdir,
+                                                                          prefix=subproject))
 
         if os.path.isfile(path + '/makefile.yml'):
-            contexts += self._expand_contexts(self._load_from_yaml(path, 'makefile.yml',
-                                                                   workdir=workdir,
-                                                                   prefix=subproject))
+            contexts += self._expand_contexts(self._load_from_static_file(path, 'makefile.yml',
+                                                                          workdir=workdir,
+                                                                          prefix=subproject))
         if not contexts:
             raise ContextFileNotFoundException(path)
 
@@ -311,13 +313,33 @@ class ContextFactory(object):
 
         return contexts
 
-    def _load_from_yaml(self, path: str, filename: str, workdir: str, prefix: str) -> ApplicationContext:
+    def _load_from_static_file(self, path: str, filename: str, workdir: str, prefix: str) -> ApplicationContext:
+        """
+        Load Tasks and build an ApplicationContext basing on a static configuration file (eg. YAML)
+
+        :param path:
+        :param filename:
+        :param workdir:
+        :param prefix:
+        :return:
+        """
+
         makefile_path = path + '/' + filename
 
         with open(makefile_path, 'rb') as handle:
-            imported, tasks, subprojects = YamlSyntaxInterpreter(self._io, YamlFileLoader([])).parse(
-                handle.read().decode('utf-8'), path, makefile_path
-            )
+            parsing_result: StaticFileContextParsingResult = StaticFileSyntaxInterpreter(self._io, YamlFileLoader([]))\
+                .parse(
+                    content=handle.read().decode('utf-8'),
+                    rkd_path=path,
+                    file_path=makefile_path
+                )
+
+            imported = parsing_result.imports
+
+            for parsed in parsing_result.parsed:
+                imported.append(TaskFactory.create_task_after_parsing(parsed, parsing_result))
+
+            imported = unpack_extended_task_declarations(imported)
 
             # Issue 33: Support mixed declarations in imports()
             imports, aliases = distinct_imports(makefile_path, imported)
@@ -326,8 +348,8 @@ class ContextFactory(object):
                 f'Building context from YAML workdir={workdir}, project_prefix={prefix}, directory={path}'
             )
 
-            return ApplicationContext(tasks=imports, aliases=tasks + aliases, directory=path,
-                                      subprojects=subprojects, workdir=workdir, project_prefix=prefix)
+            return ApplicationContext(tasks=imports, aliases=aliases, directory=path,
+                                      subprojects=parsing_result.subprojects, workdir=workdir, project_prefix=prefix)
 
     def _load_from_py(self, path: str, workdir: str, prefix: str):
         makefile_path = path + '/makefile.py'
@@ -351,7 +373,7 @@ class ContextFactory(object):
 
         # Issue 33: Support mixed declarations in imports()
         # noinspection PyUnresolvedReferences
-        imports, aliases = distinct_imports(makefile_path, makefile.IMPORTS if "IMPORTS" in dir(makefile) else [])
+        imports, aliases = distinct_imports(makefile_path, unpack_extended_task_declarations(makefile.IMPORTS) if "IMPORTS" in dir(makefile) else [])
         # noinspection PyUnresolvedReferences
         subprojects = makefile.SUBPROJECTS if "SUBPROJECTS" in dir(makefile) else []
 
@@ -448,6 +470,21 @@ class ContextFactory(object):
         ctx.compile()
 
         return ctx
+
+
+def unpack_declaration(declaration: Union[TaskDeclaration, ExtendedTaskDeclaration]) -> TaskDeclaration:
+    if isinstance(declaration, ExtendedTaskDeclaration):
+        task, stdin = TaskFactory.create_task_from_func(declaration.func)
+
+        return declaration.create_declaration(task, stdin)
+
+    return declaration
+
+
+def unpack_extended_task_declarations(declarations: List[Union[TaskDeclaration, ExtendedTaskDeclaration]]) \
+        -> List[TaskDeclaration]:
+
+    return list(map(unpack_declaration, declarations))
 
 
 def distinct_imports(file_path: str, imported: List[Union[TaskDeclaration, TaskAliasDeclaration]]) \

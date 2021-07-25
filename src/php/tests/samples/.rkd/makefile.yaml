@@ -1,0 +1,16 @@
+version: org.riotkit.rkd/yaml/v1
+imports:
+    - rkd.php.script.PhpScriptTask
+
+tasks:
+#    :yaml:test:php:
+#        extends: rkd.php.script.PhpScriptTask
+#        input: |
+#            <?php
+#            print('Hello world from PHP');
+
+    :yaml:test:multi:
+        steps:
+            - |
+                #!bash
+                echo "Hello world from Bash"

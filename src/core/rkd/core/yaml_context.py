@@ -1,25 +1,26 @@
+from dataclasses import dataclass
+
 import yaml
 import os
-from typing import List, Tuple, Union, Callable, Dict
+from typing import List, Union
 from dotenv import dotenv_values
 from copy import deepcopy
 from collections import OrderedDict
 from .api.parsing import SyntaxParsing
-from .exception import YamlParsingException, ParsingException
+from .dto import ParsedTaskDeclaration, StaticFileContextParsingResult
+from .exception import StaticFileParsingException, ParsingException
 from .exception import EnvironmentVariablesFileNotFound
 from .api.syntax import TaskDeclaration
-from .api.syntax import TaskAliasDeclaration
-from .api.contract import ExecutionContext
-from .api.contract import TaskInterface
 from .api.contract import ArgparseArgument
 from .api.inputoutput import IO
 from .api.inputoutput import get_environment_copy
-from .standardlib import CallableTask
 from .yaml_parser import YamlFileLoader
-from .execution.declarative import DeclarativeExecutor
 
 
-class YamlSyntaxInterpreter:
+STANDARD_YAML_SYNTAX_TASK = 'rkd.standardlib.syntax.MultiStepLanguageAgnosticTask'
+
+
+class StaticFileSyntaxInterpreter(object):
     """
     Translates YAML syntax into Python syntax of makefile (makefile.yaml -> makefile.py)
     """
@@ -31,21 +32,21 @@ class YamlSyntaxInterpreter:
         self.io = io
         self.loader = loader
 
-    def parse(self, content: str, rkd_path: str, file_path: str) \
-            -> Tuple[List[TaskDeclaration], List[TaskAliasDeclaration], List[str]]:
-
-        """ Parses whole YAML into entities same as in makefile.py - IMPORTS, TASKS """
+    def parse(self, content: str, rkd_path: str, file_path: str) -> StaticFileContextParsingResult:
+        """
+        Loads a makefile.yaml file with validation on the fly, as results a parsed data is output
+        that is ready to construct tasks from it
+        """
 
         pre_parsed = yaml.load(content, yaml.Loader)
         subprojects = {}
 
         if 'version' not in pre_parsed:
-            raise YamlParsingException('"version" is not specified in YAML file')
+            raise StaticFileParsingException(f'"version" is missing in "{file_path}" file')
 
         parsed = self.loader.load(content, str(pre_parsed.get('version')))
 
         imports = []
-        global_envs = self.parse_env(parsed, file_path)
 
         if "imports" in parsed:
             imports = self.parse_imports(parsed['imports'])
@@ -53,40 +54,46 @@ class YamlSyntaxInterpreter:
         tasks = self.parse_tasks(
             parsed['tasks'] if 'tasks' in parsed else {},
             rkd_path,
-            file_path,
-            global_envs
+            file_path
         )
 
         if "subprojects" in parsed:
             subprojects = self.parse_subprojects(parsed['subprojects'])
 
-        return (imports + tasks), [], subprojects
+        return StaticFileContextParsingResult(
+            imports=imports,
+            parsed=tasks,
+            subprojects=subprojects,
+            global_environment=self.parse_env(parsed, file_path)
+        )
 
     @staticmethod
     def parse_subprojects(subprojects: List[str]) -> List[str]:
         if not isinstance(subprojects, list):
-            raise YamlParsingException.from_subproject_not_a_list()
+            raise StaticFileParsingException.from_subproject_not_a_list()
 
         for value in subprojects:
             if not isinstance(value, str):
-                raise YamlParsingException.from_not_a_string(str(value))
+                raise StaticFileParsingException.from_not_a_string(str(value))
 
         return subprojects
 
-    def parse_tasks(self, tasks: dict, rkd_path: str, makefile_path, global_envs: OrderedDict) -> List[TaskDeclaration]:
-        """ Parse tasks section of YAML and creates rkd.core.standardlib.CallableTask type tasks
+    def parse_tasks(self, tasks: dict, rkd_path: str, makefile_path) \
+            -> List[ParsedTaskDeclaration]:
+
+        """
+        Parse tasks section of YAML
 
         Arguments:
             tasks: List of tasks
             rkd_path: Path to the .rkd directory
             makefile_path: Path to the makefile.yaml/yml that is being parsed
-            global_envs: Environment defined in global scope of YAML document (WITHOUT os.environ)
         """
 
-        parsed_tasks: List[Union[TaskDeclaration, None]] = []
+        parsed_tasks: List[ParsedTaskDeclaration] = []
 
         for name, yaml_declaration in tasks.items():
-            parsed_tasks.append(self._parse_task(name, yaml_declaration, rkd_path, global_envs, makefile_path))
+            parsed_tasks.append(self._parse_task(name, yaml_declaration, rkd_path, makefile_path))
 
         return parsed_tasks
 
@@ -145,19 +152,24 @@ class YamlSyntaxInterpreter:
 
         raise EnvironmentVariablesFileNotFound(path, search_paths)
 
-    def _parse_task(self, name: str, yaml_declaration: dict, rkd_path: str,
-                    global_env: OrderedDict, makefile_path: str) -> TaskDeclaration:
+    def _parse_task(self, name: str, yaml_declaration: dict,
+                    rkd_path: str, makefile_path: str) -> ParsedTaskDeclaration:
 
         description = yaml_declaration['description'] if 'description' in yaml_declaration else ''
         arguments = yaml_declaration['arguments'] if 'arguments' in yaml_declaration else {}
         become = yaml_declaration['become'] if 'become' in yaml_declaration else ''
         workdir = yaml_declaration.get('workdir', '')
         internal = bool(yaml_declaration['internal']) if 'internal' in yaml_declaration else None
+        inner_execute = yaml_declaration['execute'] if 'execute' in yaml_declaration else None
+        task_input = yaml_declaration['input'] if 'input' in yaml_declaration else None
+        extends = yaml_declaration['extends'] if 'extends' in yaml_declaration else STANDARD_YAML_SYNTAX_TASK
+        steps = []
 
         # important: order of environment variables loading
-        envs = deepcopy(global_env)
-        envs.update(self.parse_env(yaml_declaration, makefile_path))
-        envs.update(get_environment_copy())
+        environment = self.parse_env(yaml_declaration, makefile_path)
+
+        if rkd_path:
+            environment['RKD_PATH'] = rkd_path
 
         try:
             steps = yaml_declaration['steps']
@@ -167,58 +179,28 @@ class YamlSyntaxInterpreter:
                 steps = [steps]
 
         except KeyError:
-            raise YamlParsingException('"steps" are required to be defined in task "%s"' % name)
+            if extends == STANDARD_YAML_SYNTAX_TASK:
+                raise StaticFileParsingException('"steps" are required to be defined in task "%s"' % name)
 
         task_name, group_name = TaskDeclaration.parse_name(name)
 
-        return TaskDeclaration(
-            CallableTask(
-                name=task_name,
-                description=description,
-                group=group_name,
-                argparse_options=self.parse_argparse_arguments(arguments),
-                callback=self.create_execution_callback_from_steps(steps, name, rkd_path, envs),
-                become=become
-            ),
+        return ParsedTaskDeclaration(
+            name=task_name,
+            group=group_name,
+            description=description,
+            argparse_options=self.parse_argparse_arguments(arguments),
+            task_type=extends,
+            become=become,
             workdir=workdir,
-            internal=internal
+            internal=internal,
+            steps=steps,
+            execute=inner_execute,
+            task_input=task_input,
+            environment=environment
         )
 
     @staticmethod
-    def create_execution_callback_from_steps(steps: List[str], task_name: str, rkd_path: str, envs: dict) \
-            -> Callable[[ExecutionContext, TaskInterface], bool]:
-
-        """Creates implementation of TaskInterface.execute() - a callback that will execute all steps (callbacks)"""
-
-        declarative = DeclarativeExecutor()
-
-        #
-        # Collect all steps and create micro-callbacks per step, that will be executed one-by-one in execute()
-        #
-        for step in steps:
-            language = 'bash'
-            as_lines = step.strip().split("\n")
-            first_line = as_lines[0]
-            code = step
-
-            # code that begin with a hashbang will have hashbang cut off
-            # #!bash
-            # #!python
-            if first_line[0:2] == '#!':
-                language = first_line[2:]
-                code = "\n".join(as_lines[1:])
-
-            declarative.add_step(language, code, task_name, rkd_path, envs)
-
-            if language not in ['python', 'bash']:
-                raise YamlParsingException('Unsupported step language "%s"' % language)
-
-        return declarative.execute_steps_one_by_one
-
-    @staticmethod
     def parse_argparse_arguments(arguments: dict) -> List[ArgparseArgument]:
-        """ Creates implementation of TaskInterface.configure_argparse() """
-
         converted = []
 
         for name, params in arguments.items():
@@ -248,5 +230,6 @@ class YamlSyntaxInterpreter:
 
         try:
             return SyntaxParsing.parse_imports_by_list_of_classes(classes)
+
         except ParsingException as e:
-            raise YamlParsingException(str(e))
+            raise StaticFileParsingException(str(e))

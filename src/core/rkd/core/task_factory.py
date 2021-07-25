@@ -1,17 +1,22 @@
 from types import FunctionType
 from typing import Dict, Type, Tuple, Optional, List
 from rkd.core.api.contract import TaskInterface, ExtendableTaskInterface
-from rkd.core.api.inputoutput import ReadableStreamType
+from rkd.core.api.inputoutput import ReadableStreamType, get_environment_copy
+from rkd.core.dto import ParsedTaskDeclaration, StaticFileContextParsingResult
 from rkd.core.exception import TaskFactoryException
 
 
 ALLOWED_METHODS_TO_DEFINE = [
-    'configure', 'stdin', 'inner_execute', 'configure_argparse', 'compile', 'execute'
+    'configure', 'stdin', 'inner_execute', 'configure_argparse', 'compile', 'execute', 'get_steps',
+    'get_name', 'get_description'
 ]
 
 ALLOWED_METHODS_TO_INHERIT = [
-    'configure', 'inner_execute', 'configure_argparse', 'compile', 'execute'
+    'configure', 'inner_execute', 'configure_argparse', 'compile', 'execute', 'get_steps',
+    'get_name', 'get_description'
 ]
+
+METHODS_THAT_RETURNS_NON_BOOLEAN_VALUES = ['get_steps', 'get_name', 'get_description']
 
 MARKER_SKIP_PARENT_CALL = 'no_parent_call_wrapper'
 MARKER_CALL_PARENT_FIRST = 'call_parent_first_wrapper'
@@ -24,15 +29,37 @@ ALLOWED_MARKERS = [
 class TaskFactory(object):
     """
     Produces TaskInterface from FunctionType, YAML, etc.
+    ----------------------------------------------------
+
+    Responsibility:
+        - From a parsed and pre-validated static declarations can create a class with methods using a proxy
+        - From a function with inner functions can create a class with methods using a proxy
     """
 
     @classmethod
-    def create_task_from_func(cls, func: FunctionType) -> Tuple[TaskInterface, Optional[FunctionType]]:
+    def create_task_after_parsing(cls, source: ParsedTaskDeclaration, parsing_context: StaticFileContextParsingResult):
+
+        # build an environment hierarchy, task local environment should always overwrite the global and system scope
+        environment = {}
+        environment.update(get_environment_copy())
+        environment.update(parsing_context.global_environment)
+        environment.update(source.environment)
+
+
+
+        print('!!!', source)
+
+        pass
+
+    @classmethod
+    def create_task_from_func(cls, func: FunctionType, name: Optional[str] = None) \
+            -> Tuple[TaskInterface, Optional[FunctionType]]:
         """
         Create a class that will inherit from base task (taken from 'extends' type hint)
         and all returned inner methods of func() will cover new class methods (with super() calls at the beginning)
 
         :param func:
+        :param name:
         :return: Tuple of [task, stdin() method]
         """
 
@@ -48,8 +75,18 @@ class TaskFactory(object):
         stdin_method = None
         exports = cls._extract_exported_methods(func)
 
+        # @todo: Extract YAML-like syntax + description
+
         cls._validate_methods_allowed(list(exports.keys()), ALLOWED_METHODS_TO_DEFINE,
                                       after_filtering=False, func=func)
+
+        # make get_name() return same value as TaskDeclaration does (IMPORTANT for compilation-time created tasks)
+        if name:
+            def get_name(self):
+                return name
+
+            get_name.marker = None
+            exports['get_name'] = get_name
 
         # we do not support overriding of `execute()` method, but we do for `inner_execute()`
         if 'execute' in exports:
@@ -132,6 +169,9 @@ class TaskFactory(object):
             else:
                 current_result = current_method(self, *args, **kwargs)
                 parent_result = parent_method(self, *args, **kwargs) if parent_method else True
+
+            if current_method.__name__ in METHODS_THAT_RETURNS_NON_BOOLEAN_VALUES:
+                return current_result
 
             return parent_result and current_result
 

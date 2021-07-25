@@ -17,7 +17,6 @@ from .contract import TaskInterface
 from .inputoutput import get_environment_copy, ReadableStreamType
 from ..argparsing.model import ArgumentBlock
 from ..exception import DeclarationException
-from ..task_factory import TaskFactory
 
 
 def parse_path_into_subproject_prefix(path: str) -> str:
@@ -264,27 +263,59 @@ class TaskDeclaration(TaskDeclarationInterface):
         return 'TaskDeclaration<%s>' % self.get_task_to_execute().get_full_name()
 
 
-class ExtendedTaskDeclaration(TaskDeclaration):
+class ExtendedTaskDeclaration(object):
     """
     Declaration for a task that extends other task using a function-like syntax
+    This is a factory class for the TaskDeclaration
     """
+
+    func: Union[FunctionType, any]
+    declaration_args: Dict[str, any]
 
     def __init__(self, task: Union[FunctionType, any], env: Dict[str, str] = None, args: List[str] = None,
                  workdir: Optional[str] = None, internal: Optional[bool] = None, name: Optional[str] = None):
 
-        task, stdin = TaskFactory.create_task_from_func(task)
+        """
+        NOTICE: Should keep the same interface as TaskDeclaration
 
-        super().__init__(
-            task=task,
-            env=env,
-            args=args,
-            workdir=workdir,
-            internal=internal,
-            name=name
+        :param task:
+        :param env:
+        :param args:
+        :param workdir:
+        :param internal:
+        :param name:
+        """
+
+        self.func = task
+        self.declaration_args = {
+            'env': env,
+            'args': args,
+            'workdir': workdir,
+            'internal': internal,
+            'name': name
+        }
+
+    def create_declaration(self, task: TaskInterface, stdin: Optional[FunctionType] = None):
+        """
+        To not create dependencies from TaskFactory in the API the job to create a task from function
+        is delegated to later layer
+
+        :param task:
+        :param stdin:
+        :return:
+        """
+
+        args = self.declaration_args
+        args['task'] = task
+
+        declaration = TaskDeclaration(
+            **args
         )
 
         if stdin:
-            self.get_input = stdin
+            declaration.get_input = stdin
+
+        return declaration
 
 
 class GroupDeclaration(GroupDeclarationInterface):

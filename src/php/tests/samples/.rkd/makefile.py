@@ -1,7 +1,10 @@
+from typing import List
+
 from rkd.core.api.contract import ExecutionContext
 from rkd.core.execution.lifecycle import ConfigurationLifecycleEvent, CompilationLifecycleEvent
 from rkd.core.standardlib import ShellCommandTask
 from rkd.core.standardlib.io import ArchivePackagingBaseTask
+from rkd.core.standardlib.syntax import MultiStepLanguageAgnosticTask
 from rkd.php import ComposerIntegrationTask, PhpScriptTask
 from rkd.core.api.syntax import TaskDeclaration, ExtendedTaskDeclaration
 from rkd.core.api.decorators import no_parent_call, extends, call_parent_first
@@ -92,10 +95,32 @@ def ListWorkspaceFiles():
     return [stdin, compile, execute]
 
 
+@extends(MultiStepLanguageAgnosticTask)
+def MultiStepTestTask():
+    def get_steps(task: MultiStepLanguageAgnosticTask) -> List[str]:
+        return [
+            '''
+                #!python
+                print('hello from python')
+                return True
+            ''',
+            '''
+                #!bash
+                echo 'hello from bash'
+            ''',
+            '''
+                echo 'hello from bash, without hashbang'
+            '''
+        ]
+
+    return [get_steps]
+
+
 IMPORTS = [
     ExtendedTaskDeclaration(name=':dist:zip', task=PackIntoZipTask),
     TaskDeclaration(ComposerIntegrationTask(), name=':composer'),
     TaskDeclaration(PhpScriptTask(), name=':php'),
+    ExtendedTaskDeclaration(name=':test', task=MultiStepTestTask),
     # ExtendedTaskDeclaration(name=':phpinfo', task=PhpInfoTask),
     ExtendedTaskDeclaration(name=':workspace:ls', task=ListWorkspaceFiles),
     # ExtendedTaskDeclaration(name=':docs:copy', task=CopyDocsTask),

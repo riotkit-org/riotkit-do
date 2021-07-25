@@ -139,7 +139,7 @@ class NotSupportedEnvVariableError(UserInputException):
     pass
 
 
-class YamlParsingException(ContextException):
+class StaticFileParsingException(ContextException):
     """Logic or syntax errors in makefile.yaml"""
 
     @classmethod
@@ -151,7 +151,7 @@ class YamlParsingException(ContextException):
         return cls(f'"{key}" should be of a string type')
 
 
-class YAMLFileValidationError(YamlParsingException):
+class YAMLFileValidationError(StaticFileParsingException):
     """Errors related to schema validation"""
 
     def __init__(self, err: ValidationError):

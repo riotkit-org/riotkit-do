@@ -11,6 +11,8 @@ Only this layer can use sys.exit() call to pass exit code to the operating syste
 import sys
 import os
 import traceback
+from typing import Optional
+
 from dotenv import load_dotenv
 from rkd.core.execution.lifecycle import ConfigurationResolver
 from .execution.results import ProgressObserver
@@ -19,7 +21,7 @@ from .context import ContextFactory, ApplicationContext
 from .resolver import TaskResolver
 from .validator import TaskDeclarationValidator
 from .execution.executor import OneByOneTaskExecutor
-from .exception import TaskNotFoundException, ParsingException, YamlParsingException, CommandlineParsingError, \
+from .exception import TaskNotFoundException, ParsingException, StaticFileParsingException, CommandlineParsingError, \
     HandledExitException, AggregatedResolvingFailure
 from .api.inputoutput import SystemIO, LEVEL_DEBUG
 from .api.inputoutput import UnbufferedStdout
@@ -76,7 +78,7 @@ class RiotKitDoApplication(object):
                          'Details: {}'.format(str(e)))
             sys.exit(1)
 
-        except YamlParsingException as e:
+        except StaticFileParsingException as e:
             io.silent = False
             io.error_msg('Cannot import tasks/module from one of makefile.yaml files. Details: {}'.format(str(e)))
             sys.exit(1)
@@ -109,8 +111,13 @@ class RiotKitDoApplication(object):
             io.error_msg('Cannot resolve tasks, at least one task has invalid initialization or configuration. '
                          'Try to re-run with RKD_SYS_LOG_LEVEL=debug')
 
+            io.print_separator()
+
+            num = 0
+
             for err in aggregated.exceptions:
-                self.print_err(io, err)
+                num += 1
+                self.print_err(io, err, num)
 
             sys.exit(1)
 
@@ -132,9 +139,17 @@ class RiotKitDoApplication(object):
         sys.exit(0)
 
     @staticmethod
-    def print_err(io: SystemIO, err: Exception):
-        io.error("HandledExitException occurred, original traceback:\n" +
-                 "\n".join(traceback.format_tb(err.__cause__.__traceback__)))
+    def print_err(io: SystemIO, err: Exception, num: Optional[int] = None):
+        msg = str(err)
+
+        if num:
+            msg = f'[{num}] {msg}'
+
+        io.error_msg(msg)
+
+        if err.__cause__:
+            io.error("HandledExitException occurred, original traceback:\n" +
+                     "\n".join(traceback.format_tb(err.__cause__.__traceback__)))
 
 
 def main():
