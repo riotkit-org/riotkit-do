@@ -117,11 +117,11 @@ class TaskFactoryException(TaskDeclarationException):
 
     @classmethod
     def from_method_not_allowed_to_be_inherited(cls, method, origin: FunctionType):
-        raise cls(f'Method {method} is not allowed to be inherited')
+        raise cls(f'Method {method} is not allowed to be inherited. Defined in {origin}')
 
     @classmethod
     def from_method_not_allowed_to_be_defined_for_inheritance(cls, method, origin: FunctionType):
-        raise cls(f'Method {method} is not allowed to be defined for inheritance. Defined in {origin.__name__}()')
+        raise cls(f'Method {method} is not allowed to be defined for inheritance. Defined in {origin}')
 
 
 class UserInputException(RiotKitDoException):

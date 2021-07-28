@@ -49,7 +49,7 @@ class TestYamlContext(BasicTestingCase):
         declaration.get_task_to_execute()._io = NullSystemIO()
 
         with io.capture_descriptors(stream=out, enable_standard_out=False):
-            declaration.get_task_to_execute().execute(ExecutionContext(declaration))
+            declaration.get_task_to_execute().inner_execute(ExecutionContext(declaration))
 
         self.assertIn('Resistentia!', out.getvalue(), msg='Expected that echo contents will be visible')
 
@@ -113,7 +113,7 @@ print(syntax-error-here)
         task._io = io
 
         # execute prepared task
-        result = task.execute(ExecutionContext(declaration))
+        result = task.inner_execute(ExecutionContext(declaration))
 
         self.assertEqual(False, result, msg='Expected that syntax error would result in a failure')
         self.assertIn("NameError: name 'syntax' is not defined", io.get_value(), msg='Error message should be attached')

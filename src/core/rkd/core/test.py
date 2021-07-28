@@ -7,10 +7,10 @@ For internal usage only.
 """
 
 
-from typing import Dict
+from typing import Dict, Union
 from argparse import ArgumentParser
 from .api.syntax import TaskDeclaration
-from .api.contract import TaskInterface
+from .api.contract import TaskInterface, ArgumentEnv
 from .api.contract import ExecutionContext
 from .standardlib import CallableTask
 from .api.inputoutput import NullSystemIO
@@ -39,7 +39,8 @@ class TaskForTesting(CallableTask):
     def configure_argparse(self, parser: ArgumentParser):
         pass
 
-    def get_declared_envs(self) -> Dict[str, str]:
+    @classmethod
+    def get_declared_envs(cls) -> Dict[str, Union[str, ArgumentEnv]]:
         return {
             'ORG_NAME': 'International Workers Association'
         }

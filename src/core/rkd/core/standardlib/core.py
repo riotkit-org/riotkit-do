@@ -3,10 +3,10 @@ import pkg_resources
 import os
 import re
 from subprocess import CalledProcessError
-from typing import Dict
+from typing import Dict, Union
 from typing import List
 from argparse import ArgumentParser
-from ..api.contract import TaskInterface
+from ..api.contract import TaskInterface, ArgumentEnv
 from ..api.contract import ExecutionContext
 from ..api.contract import TaskDeclarationInterface
 from ..api.syntax import TaskDeclaration
@@ -101,7 +101,8 @@ class TasksListingTask(TaskInterface):
     def configure_argparse(self, parser: ArgumentParser):
         parser.add_argument('--all', '-a', help='Show all tasks, including internal tasks', action='store_true')
 
-    def get_declared_envs(self) -> Dict[str, str]:
+    @classmethod
+    def get_declared_envs(cls) -> Dict[str, Union[str, ArgumentEnv]]:
         return {
             'RKD_WHITELIST_GROUPS': '',
             'RKD_ALIAS_GROUPS': ''

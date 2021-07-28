@@ -124,8 +124,8 @@ class ApplicationContext(ContextInterface):
         try:
             return self._compiled[name]
         except KeyError:
-            raise TaskNotFoundException(('Task "%s" is not defined. Check if it is defined, or' +
-                                         ' imported, or if the spelling is correct.') % name)
+            raise TaskNotFoundException(('Task "%s" is not defined. Check the import, definition '
+                                         'and typed command.') % name)
 
     def find_all_tasks(self) -> Dict[str, Union[TaskDeclaration, GroupDeclaration]]:
         return self._compiled
@@ -337,7 +337,8 @@ class ContextFactory(object):
             imported = parsing_result.imports
 
             for parsed in parsing_result.parsed:
-                imported.append(TaskFactory.create_task_after_parsing(parsed, parsing_result))
+                imported.append(TaskFactory.create_task_with_declaration_after_parsing(parsed, parsing_result,
+                                                                                       io=self._io))
 
             imported = unpack_extended_task_declarations(imported)
 

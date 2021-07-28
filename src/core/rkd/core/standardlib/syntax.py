@@ -13,6 +13,7 @@ from ..api.contract import ArgparseArgument
 from ..api.syntax import TaskDeclaration
 from ..execution.lifecycle import CompilationLifecycleEvent
 from .shell import ShellCommandTask
+from ..taskutil import evaluate_code
 
 
 class CallableTask(TaskInterface):
@@ -94,23 +95,16 @@ class PythonSyntaxTask(ExtendableTaskInterface):
     def execute(self, context: ExecutionContext) -> bool:
         full_task_name = self.get_name() + '@step ' + str(self.step_num)
 
-        # "ctx" and "this" will be available as a local context
         try:
             # compile code
-            self.io().debug('Compiling Python code')
-            tree = ast.parse(self.code)
-
-            if not isinstance(tree.body[-1], ast.Return):
-                self.io().debug(f'Python code at step {full_task_name} does not have return')
-                tree = ast.parse(self.code + "\nreturn False")
-
-            eval_expr = ast.Expression(tree.body[-1].value)
-            exec_expr = ast.Module(tree.body[:-1], type_ignores=[])
-
-            # run compiled code
-            exec(compile(exec_expr, full_task_name, 'exec'))
-
-            to_return = eval(compile(eval_expr, full_task_name, 'eval'))
+            to_return = evaluate_code(
+                code=self.code,
+                io=self.io(),
+                full_task_name=full_task_name,
+                returns_boolean=True,
+                ctx=context,
+                self=self
+            )
 
         except Exception as e:
             self.io().error_msg('Error while executing step %i in task "%s". Exception: %s' % (
@@ -165,6 +159,12 @@ class MultiStepLanguageAgnosticTask(ExtendableTaskInterface):
         tasks = []
         step_num = 0
 
+        event.io.internal(f'MultiStepLanguageAgnosticTask: {self.get_name()} - expanding {len(steps)} steps into tasks')
+
+        if not steps:
+            # todo: Better exception class
+            raise Exception(f'No tasks to expand for task {self.get_name()} ({self}), possibly missing steps')
+
         for step in steps:
             step_num += 1
             step_type_name = self._parse_type(step)
@@ -174,7 +174,9 @@ class MultiStepLanguageAgnosticTask(ExtendableTaskInterface):
             else:
                 step_type = self._try_to_import_type(step_type_name)
 
-            tasks.append(TaskDeclaration(self._create_task(step_type, step, step_num, self.get_name())))
+            tasks.append(
+                TaskDeclaration(self._create_task(step_type, step, step_num, self.get_group_name() + self.get_name()))
+            )
 
         event.expand_into_group(
             tasks=tasks,

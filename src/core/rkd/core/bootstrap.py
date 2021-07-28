@@ -108,7 +108,8 @@ class RiotKitDoApplication(object):
 
         except AggregatedResolvingFailure as aggregated:
             io.print_opt_line()
-            io.error_msg('Cannot resolve tasks, at least one task has invalid initialization or configuration. '
+            io.error_msg('Cannot resolve tasks, at least one of scheduled tasks has invalid '
+                         'initialization, configuration, or it does not exist. '
                          'Try to re-run with RKD_SYS_LOG_LEVEL=debug')
 
             io.print_separator()

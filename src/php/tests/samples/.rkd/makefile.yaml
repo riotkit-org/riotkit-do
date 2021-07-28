@@ -3,11 +3,11 @@ imports:
     - rkd.php.script.PhpScriptTask
 
 tasks:
-#    :yaml:test:php:
-#        extends: rkd.php.script.PhpScriptTask
-#        input: |
-#            <?php
-#            print('Hello world from PHP');
+    :yaml:test:php:
+        extends: rkd.php.script.PhpScriptTask
+        input: |
+            <?php
+            print('Hello world from PHP');
 
     :yaml:test:multi:
         steps:

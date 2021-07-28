@@ -40,7 +40,8 @@ class PhpScriptTask(RunInContainerBaseTask):
     def get_group_name(self) -> str:
         return ''
 
-    def get_declared_envs(self) -> Dict[str, Union[str, ArgumentEnv]]:
+    @classmethod
+    def get_declared_envs(cls) -> Dict[str, Union[str, ArgumentEnv]]:
         return {
             'PHP': ArgumentEnv('PHP', '--php', '8.0-alpine'),
             'IMAGE': ArgumentEnv('IMAGE', '--image', 'php')

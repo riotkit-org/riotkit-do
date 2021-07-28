@@ -1,4 +1,4 @@
-
+import ast
 import os
 import sys
 from typing import Union
@@ -179,3 +179,33 @@ class TaskUtilities(AbstractClass):
         args_str = ' '.join(args)
 
         return self.sh(bash_opts + ' %%RKD%% --no-ui %s' % args_str, capture=capture)
+
+
+def evaluate_code(code: str, io: IO, full_task_name: str = 'unknown',
+                  returns_boolean: bool = False, ctx=None, self=None) -> Union[any, bool]:
+    """
+    Executes a Python snippet and returns a boolean value
+
+    :param code:
+    :param io:
+    :param full_task_name:
+    :param returns_boolean: Declares if the code is expected to return a boolean value
+    :param ctx: Optionally ExecutionContext object to pass into the executed code
+    :param self: Optionally a TaskInterface object to pass into the executed code
+    :return:
+    """
+
+    io.debug(f'Compiling Python code for {full_task_name}')
+    _tree = ast.parse(code)
+
+    if returns_boolean and not isinstance(_tree.body[-1], ast.Return):
+        io.debug(f'Python code at task {full_task_name} does not have return, but is expected to return a boolean')
+        _tree = ast.parse(code + "\nreturn False")
+
+    eval_expr = ast.Expression(_tree.body[-1].value)
+    exec_expr = ast.Module(_tree.body[:-1], type_ignores=[])
+
+    # run compiled code
+    exec(compile(exec_expr, full_task_name, 'exec'))
+
+    return eval(compile(eval_expr, full_task_name, 'eval'))

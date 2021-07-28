@@ -6,7 +6,7 @@ Place for internal types such as named tuples returning named values.
 All types that are present in the tasks should go into the rkd.core.api.contract (as a part of RKD API)
 """
 from dataclasses import dataclass
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Optional
 from rkd.core.api.contract import ArgparseArgument
 from rkd.core.api.syntax import TaskDeclaration, TaskAliasDeclaration
 
@@ -33,10 +33,15 @@ class ParsedTaskDeclaration(object):
     workdir: str
     internal: bool
 
-    # methods source code
-    steps: List[str]  # source code as a list in possibly different languages
-    execute: str
-    task_input: str
+    # methods source code (None means we are not overwriting parent method)
+    steps: Optional[List[str]]  # source code as a list in possibly different languages
+    inner_execute: Optional[str]
+    execute: Optional[str]
+    task_input: Optional[str]
+    configure: Optional[str]
+
+    # meta method - contains mapping of methods and decorators eg. {"execute": "call_parent_first"}
+    method_decorators: Dict[str, str]
 
     # environment declared for THIS task, should NOT include GLOBAL (document) ENVIRONMENT
     # and should NOT include SYSTEM ENVIRONMENT

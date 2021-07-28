@@ -2,10 +2,9 @@ from dataclasses import dataclass
 
 import yaml
 import os
-from typing import List, Union
+from typing import List
 from dotenv import dotenv_values
-from copy import deepcopy
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from .api.parsing import SyntaxParsing
 from .dto import ParsedTaskDeclaration, StaticFileContextParsingResult
 from .exception import StaticFileParsingException, ParsingException
@@ -13,11 +12,10 @@ from .exception import EnvironmentVariablesFileNotFound
 from .api.syntax import TaskDeclaration
 from .api.contract import ArgparseArgument
 from .api.inputoutput import IO
-from .api.inputoutput import get_environment_copy
 from .yaml_parser import YamlFileLoader
 
 
-STANDARD_YAML_SYNTAX_TASK = 'rkd.standardlib.syntax.MultiStepLanguageAgnosticTask'
+STANDARD_YAML_SYNTAX_TASK = 'rkd.core.standardlib.syntax.MultiStepLanguageAgnosticTask'
 
 
 class StaticFileSyntaxInterpreter(object):
@@ -152,51 +150,72 @@ class StaticFileSyntaxInterpreter(object):
 
         raise EnvironmentVariablesFileNotFound(path, search_paths)
 
-    def _parse_task(self, name: str, yaml_declaration: dict,
+    def _parse_task(self, name: str, document_attributes: dict,
                     rkd_path: str, makefile_path: str) -> ParsedTaskDeclaration:
 
-        description = yaml_declaration['description'] if 'description' in yaml_declaration else ''
-        arguments = yaml_declaration['arguments'] if 'arguments' in yaml_declaration else {}
-        become = yaml_declaration['become'] if 'become' in yaml_declaration else ''
-        workdir = yaml_declaration.get('workdir', '')
-        internal = bool(yaml_declaration['internal']) if 'internal' in yaml_declaration else None
-        inner_execute = yaml_declaration['execute'] if 'execute' in yaml_declaration else None
-        task_input = yaml_declaration['input'] if 'input' in yaml_declaration else None
-        extends = yaml_declaration['extends'] if 'extends' in yaml_declaration else STANDARD_YAML_SYNTAX_TASK
-        steps = []
+        mappedVar = namedtuple('mappedVar', ['name', 'default', 'casting', 'is_method'])
+        mapping = {
+            # ParsedTaskDeclaration attributes
+            'description': mappedVar(name='description', default='', casting=None, is_method=False),
+            'argparse_options': mappedVar(name='arguments', default={},
+                                          casting=self.parse_argparse_arguments, is_method=False),
+            'become': mappedVar(name='become', default='', casting=None, is_method=False),
+            'workdir': mappedVar(name='workdir', default='', casting=None, is_method=False),
+            'internal': mappedVar(name='internal', default=False, casting=bool, is_method=False),
+            'execute': mappedVar(name='execute', default=None, casting=None, is_method=True),
+            'configure': mappedVar(name='configure', default=None, casting=None, is_method=True),
+            'steps': mappedVar(name='steps', default=[], casting=None, is_method=True),
+            'inner_execute': mappedVar(name='inner_execute', default=None, casting=None, is_method=True),
+            'task_input': mappedVar(name='input', default=None, casting=None, is_method=False),
+            'task_type': mappedVar(name='extends', default=STANDARD_YAML_SYNTAX_TASK, casting=None, is_method=False)
+        }
+
+        parsed_task_declaration_kwargs = {}
+        parsed_decorators = {}
+
+        for mapped_attribute, mapped_data in mapping.items():
+            yaml_key, default_value, casting, is_method = mapped_data
+
+            # only attributes for methods are supporting inheritance decorators
+            if is_method:
+                for decorator in ['call_parent_first', 'no_parent_call']:
+                    if "@" in yaml_key:
+                        # todo: Better exception class
+                        raise Exception(f'Doubled decorator "{decorator}" for {yaml_key}, can use only one decorator')
+
+                    if f"{yaml_key}@{decorator}" in document_attributes:
+                        parsed_decorators[yaml_key] = decorator
+                        yaml_key = f"{yaml_key}@{decorator}"
+
+            value = document_attributes.get(yaml_key, default_value)
+
+            if casting:
+                value = casting(value)
+
+            parsed_task_declaration_kwargs[mapped_attribute] = value
 
         # important: order of environment variables loading
-        environment = self.parse_env(yaml_declaration, makefile_path)
+        environment = self.parse_env(document_attributes, makefile_path)
 
         if rkd_path:
             environment['RKD_PATH'] = rkd_path
 
-        try:
-            steps = yaml_declaration['steps']
-
-            # to make the syntax easier allow a single step
-            if isinstance(steps, str):
-                steps = [steps]
-
-        except KeyError:
-            if extends == STANDARD_YAML_SYNTAX_TASK:
+        if not parsed_task_declaration_kwargs.get('steps'):
+            if parsed_task_declaration_kwargs['task_type'] == STANDARD_YAML_SYNTAX_TASK:
                 raise StaticFileParsingException('"steps" are required to be defined in task "%s"' % name)
+
+        # to make the syntax easier allow a single step
+        if isinstance(parsed_task_declaration_kwargs.get('steps'), str):
+            parsed_task_declaration_kwargs['steps'] = [parsed_task_declaration_kwargs.get('steps')]
 
         task_name, group_name = TaskDeclaration.parse_name(name)
 
         return ParsedTaskDeclaration(
             name=task_name,
             group=group_name,
-            description=description,
-            argparse_options=self.parse_argparse_arguments(arguments),
-            task_type=extends,
-            become=become,
-            workdir=workdir,
-            internal=internal,
-            steps=steps,
-            execute=inner_execute,
-            task_input=task_input,
-            environment=environment
+            environment=environment,
+            method_decorators=parsed_decorators,
+            **parsed_task_declaration_kwargs
         )
 
     @staticmethod

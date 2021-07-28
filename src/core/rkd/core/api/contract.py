@@ -277,8 +277,6 @@ class ExecutionContext(object):
                 raise MissingInputException(name, '')
 
     def get_input(self) -> Optional[ReadableStreamType]:
-        # todo: Support for loading input from file and from other tasks, dynamically resolving variables
-
         return self.__declaration.get_input()
 
 
@@ -351,7 +349,8 @@ class TaskInterface(TaskUtilities):
 
         return self.get_group_name() + self.get_name()
 
-    def get_declared_envs(self) -> Dict[str, Union[str, ArgumentEnv]]:
+    @classmethod
+    def get_declared_envs(cls) -> Dict[str, Union[str, ArgumentEnv]]:
         """ Dictionary of allowed envs to override: KEY -> DEFAULT VALUE """
         return {}
 
