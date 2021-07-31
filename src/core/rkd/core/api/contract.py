@@ -8,7 +8,7 @@ Any breaking change there requires to bump RKD major version (see: Semantic Vers
 """
 from tabulate import tabulate
 from abc import abstractmethod, ABC as AbstractClass, ABC
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Union, Optional, Type
 from argparse import ArgumentParser
 
 from ..inputoutput import IO
@@ -286,6 +286,7 @@ class TaskInterface(TaskUtilities):
     _executor: ExecutorInterface
     temp: TempManager
     _internal: bool
+    _extended_from: Type['TaskInterface']
 
     def internal_inject_dependencies(self, io: IO, ctx: ContextInterface = None,
                                      executor: ExecutorInterface = None, temp_manager: TempManager = None):
@@ -470,7 +471,13 @@ class TaskInterface(TaskUtilities):
         return super().silent_sh(cmd=cmd, verbose=verbose, strict=strict, env=env)
 
     def __str__(self):
-        return 'Task<{name}, object_id={id}>'.format(name=self.get_full_name(), id=id(self))
+
+
+        return 'Task<{name}, object_id={id}, extended_from={extends}>'.format(
+            name=self.get_full_name(),
+            id=id(self),
+            extends=self.extends_task()
+        )
 
     @staticmethod
     def table(header: list, body: list, tablefmt: str = "simple",
@@ -507,6 +514,14 @@ class TaskInterface(TaskUtilities):
     @property
     def is_internal(self) -> bool:
         return False
+
+    def extends_task(self):
+        try:
+            extends_from = self._extended_from.__module__ + '.' + self._extended_from.__name__
+        except AttributeError:
+            extends_from = 'TaskInterface'
+
+        return extends_from
 
     def __deepcopy__(self, memodict={}):
         """

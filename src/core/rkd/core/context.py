@@ -241,8 +241,12 @@ class ContextFactory(object):
     Takes responsibility of loading all tasks defined in USER PROJECT, USER HOME and GLOBALLY
     """
 
+    _task_factory: TaskFactory
+    _io: SystemIO
+
     def __init__(self, io: SystemIO):
         self._io = io
+        self._task_factory = TaskFactory(io)
 
     def _load_context_from_directory(self, path: str, workdir: Optional[str] = None,
                                      subproject: str = None) -> List[ApplicationContext]:
@@ -337,10 +341,9 @@ class ContextFactory(object):
             imported = parsing_result.imports
 
             for parsed in parsing_result.parsed:
-                imported.append(TaskFactory.create_task_with_declaration_after_parsing(parsed, parsing_result,
-                                                                                       io=self._io))
+                imported.append(self._task_factory.create_task_with_declaration_after_parsing(parsed, parsing_result))
 
-            imported = unpack_extended_task_declarations(imported)
+            imported = unpack_extended_task_declarations(imported, self._task_factory)
 
             # Issue 33: Support mixed declarations in imports()
             imports, aliases = distinct_imports(makefile_path, imported)
@@ -374,7 +377,10 @@ class ContextFactory(object):
 
         # Issue 33: Support mixed declarations in imports()
         # noinspection PyUnresolvedReferences
-        imports, aliases = distinct_imports(makefile_path, unpack_extended_task_declarations(makefile.IMPORTS) if "IMPORTS" in dir(makefile) else [])
+        imports, aliases = distinct_imports(
+            makefile_path,
+            unpack_extended_task_declarations(makefile.IMPORTS, self._task_factory) if "IMPORTS" in dir(makefile) else []
+        )
         # noinspection PyUnresolvedReferences
         subprojects = makefile.SUBPROJECTS if "SUBPROJECTS" in dir(makefile) else []
 
@@ -473,19 +479,29 @@ class ContextFactory(object):
         return ctx
 
 
-def unpack_declaration(declaration: Union[TaskDeclaration, ExtendedTaskDeclaration]) -> TaskDeclaration:
+def unpack_declaration(declaration: Union[TaskDeclaration, ExtendedTaskDeclaration],
+                       task_factory: TaskFactory) -> TaskDeclaration:
+    """
+    Converts ExtendedTaskDeclaration into a regular TaskDeclaration.
+    Existing TaskDeclarations are not touched.
+
+    :param declaration:
+    :param task_factory:
+    :return:
+    """
+
     if isinstance(declaration, ExtendedTaskDeclaration):
-        task, stdin = TaskFactory.create_task_from_func(declaration.func)
+        task, stdin = task_factory.create_task_from_func(declaration.func, name=declaration.name)
 
         return declaration.create_declaration(task, stdin)
 
     return declaration
 
 
-def unpack_extended_task_declarations(declarations: List[Union[TaskDeclaration, ExtendedTaskDeclaration]]) \
-        -> List[TaskDeclaration]:
+def unpack_extended_task_declarations(declarations: List[Union[TaskDeclaration, ExtendedTaskDeclaration]],
+                                      task_factory: TaskFactory) -> List[TaskDeclaration]:
 
-    return list(map(unpack_declaration, declarations))
+    return list(map(lambda x: unpack_declaration(x, task_factory), declarations))
 
 
 def distinct_imports(file_path: str, imported: List[Union[TaskDeclaration, TaskAliasDeclaration]]) \

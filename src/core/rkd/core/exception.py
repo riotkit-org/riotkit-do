@@ -150,6 +150,25 @@ class StaticFileParsingException(ContextException):
     def from_not_a_string(cls, key: str):
         return cls(f'"{key}" should be of a string type')
 
+    @classmethod
+    def from_unsupported_decorator_type(cls, attribute: str, task_name: str,
+                                        makefile_path: str) -> 'StaticFileParsingException':
+
+        return cls(f'Unsupported decorator type (after "@") in "{attribute}" for task "{task_name}" '
+                   f'defined in {makefile_path}')
+
+    @classmethod
+    def from_not_allowed_attribute(cls, yaml_key_without_decorator: str, task_name: str):
+        return cls(f'Not allowed attribute "{yaml_key_without_decorator}" used for "{task_name}" task')
+
+    @classmethod
+    def from_attribute_not_supporting_decorators(cls, yaml_key_without_decorator: str, decorator: str):
+        return cls(f'"{yaml_key_without_decorator}" does not support decorators, "{decorator}" used')
+
+    @classmethod
+    def from_doubled_decorator(cls, yaml_key_without_decorator: str, decorator: str):
+        return cls(f'Doubled decorator "{decorator}" for {yaml_key_without_decorator}, can use only one decorator')
+
 
 class YAMLFileValidationError(StaticFileParsingException):
     """Errors related to schema validation"""

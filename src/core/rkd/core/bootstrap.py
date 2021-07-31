@@ -70,6 +70,7 @@ class RiotKitDoApplication(object):
 
         # load context of components - all tasks, plugins etc.
         try:
+            io.internal_lifecycle('Loading all contexts and building an unified context')
             self._ctx = ContextFactory(io).create_unified_context(additional_imports=preparsed_args['imports'])
 
         except ParsingException as e:
@@ -98,12 +99,15 @@ class RiotKitDoApplication(object):
 
         try:
             # resolve configuration
+            io.internal_lifecycle('Resolving configurations')
             task_resolver.resolve(requested_tasks, config_resolver.run_event, fail_fast=False)
 
             # validate all tasks, it's input arguments
+            io.internal_lifecycle('Validating tasks')
             task_resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
 
             # execute all tasks
+            io.internal_lifecycle('Executing tasks')
             task_resolver.resolve(requested_tasks, executor.execute)
 
         except AggregatedResolvingFailure as aggregated:

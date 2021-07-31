@@ -271,6 +271,7 @@ class ExtendedTaskDeclaration(object):
 
     func: Union[FunctionType, any]
     declaration_args: Dict[str, any]
+    name: str
 
     def __init__(self, task: Union[FunctionType, any], env: Dict[str, str] = None, args: List[str] = None,
                  workdir: Optional[str] = None, internal: Optional[bool] = None, name: Optional[str] = None):
@@ -287,6 +288,7 @@ class ExtendedTaskDeclaration(object):
         """
 
         self.func = task
+        self.name = name
         self.declaration_args = {
             'env': env,
             'args': args,

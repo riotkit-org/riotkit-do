@@ -5,9 +5,14 @@ imports:
 tasks:
     :yaml:test:php:
         extends: rkd.php.script.PhpScriptTask
+        configure@before_parent: |
+            self.version = '7.2-alpine'
+        inner_execute@after_parent: |
+            print('IM AFTER PARENT')
+            return True
         input: |
-            <?php
-            print('Hello world from PHP');
+            var_dump(getcwd());
+            var_dump(phpversion());
 
     :yaml:test:multi:
         steps:

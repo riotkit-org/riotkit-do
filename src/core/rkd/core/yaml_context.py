@@ -1,10 +1,17 @@
-from dataclasses import dataclass
+"""
+Static File Syntax Interpreter
+==============================
+
+Parses static document (eg. YAML) into StaticFileContextParsingResult()
+On later stage there are tasks created from StaticFileContextParsingResult()
+"""
 
 import yaml
 import os
 from typing import List
 from dotenv import dotenv_values
 from collections import OrderedDict, namedtuple
+from .api.decorators import SUPPORTED_DECORATORS
 from .api.parsing import SyntaxParsing
 from .dto import ParsedTaskDeclaration, StaticFileContextParsingResult
 from .exception import StaticFileParsingException, ParsingException
@@ -170,29 +177,66 @@ class StaticFileSyntaxInterpreter(object):
             'task_type': mappedVar(name='extends', default=STANDARD_YAML_SYNTAX_TASK, casting=None, is_method=False)
         }
 
+        mapping_by_yaml_key = {v.name: k for k, v in mapping.items()}
+        allowed_yaml_keys = mapping_by_yaml_key.keys()
+
         parsed_task_declaration_kwargs = {}
         parsed_decorators = {}
 
-        for mapped_attribute, mapped_data in mapping.items():
-            yaml_key, default_value, casting, is_method = mapped_data
+        # resolve all configuration that is defined
+        for attribute, value in document_attributes.items():
+            split = attribute.split('@')
+            yaml_key_without_decorator = split[0]
 
-            # only attributes for methods are supporting inheritance decorators
-            if is_method:
-                for decorator in ['call_parent_first', 'no_parent_call']:
-                    if "@" in yaml_key:
-                        # todo: Better exception class
-                        raise Exception(f'Doubled decorator "{decorator}" for {yaml_key}, can use only one decorator')
+            try:
+                decorator = split[1]
+            except IndexError:
+                decorator = None
 
-                    if f"{yaml_key}@{decorator}" in document_attributes:
-                        parsed_decorators[yaml_key] = decorator
-                        yaml_key = f"{yaml_key}@{decorator}"
+            yaml_key = yaml_key_without_decorator + ('@' + decorator if decorator else '')
 
-            value = document_attributes.get(yaml_key, default_value)
+            if yaml_key_without_decorator not in allowed_yaml_keys:
+                raise StaticFileParsingException.from_not_allowed_attribute(
+                    yaml_key_without_decorator, name
+                )
+
+            if decorator:
+                if not mapping[yaml_key_without_decorator].is_method:
+                    raise StaticFileParsingException.from_attribute_not_supporting_decorators(
+                        yaml_key_without_decorator, decorator
+                    )
+
+                if decorator not in SUPPORTED_DECORATORS:
+                    raise StaticFileParsingException.from_unsupported_decorator_type(
+                        attribute, name, makefile_path
+                    )
+
+                if yaml_key_without_decorator in parsed_decorators:
+                    raise StaticFileParsingException.from_doubled_decorator(yaml_key_without_decorator, decorator)
+
+                parsed_decorators[yaml_key_without_decorator] = decorator
+
+            def_key, default_value, casting, is_method = mapping[mapping_by_yaml_key[yaml_key_without_decorator]]
+            value = document_attributes.get(yaml_key)
 
             if casting:
                 value = casting(value)
 
-            parsed_task_declaration_kwargs[mapped_attribute] = value
+            # output will be used as kwargs to ParsedTaskDeclaration()
+            parsed_task_declaration_kwargs[mapping_by_yaml_key[yaml_key_without_decorator]] = value
+
+        # apply default values to keys NOT DEFINED by user
+        for kwarg, mapped_var in mapping.items():
+            yaml_key, default_value, casting, is_method = mapped_var
+
+            # value already defined
+            if yaml_key in document_attributes:
+                continue
+
+            if casting:
+                default_value = casting(default_value)
+
+            parsed_task_declaration_kwargs[kwarg] = default_value
 
         # important: order of environment variables loading
         environment = self.parse_env(document_attributes, makefile_path)
@@ -200,6 +244,7 @@ class StaticFileSyntaxInterpreter(object):
         if rkd_path:
             environment['RKD_PATH'] = rkd_path
 
+        # extra logic: Multistep tasks have a mandatory "steps" key to be defined
         if not parsed_task_declaration_kwargs.get('steps'):
             if parsed_task_declaration_kwargs['task_type'] == STANDARD_YAML_SYNTAX_TASK:
                 raise StaticFileParsingException('"steps" are required to be defined in task "%s"' % name)

@@ -55,6 +55,7 @@ class PhpScriptTask(RunInContainerBaseTask):
             version=self.version if self.version else event.ctx.get_arg_or_env('--php')
         )
 
+        # todo: Check - is workdir already set there? (subprojects, custom workdir etc.)
         self.mount(local=os.getcwd(), remote=os.getcwd())
 
     def inner_execute(self, context: ExecutionContext) -> bool:
@@ -67,14 +68,19 @@ class PhpScriptTask(RunInContainerBaseTask):
         try:
             # takes a RKD task input as input file, stdin is interactive
             if not self.script and context.get_input():
+                input_php_code = context.get_input().read()
+
+                if "<?php" not in input_php_code:
+                    input_php_code = "<?php\n" + input_php_code
+
                 with tempfile.NamedTemporaryFile() as tmp_file:
-                    tmp_file.write(context.get_input().read().encode('utf-8'))
+                    tmp_file.write(input_php_code.encode('utf-8'))
                     tmp_file.flush()
 
-                    self.copy_to_container(local=tmp_file.name, remote='/tmp/script.php')
-                    self.in_container('chown www-data:www-data /tmp/script.php', user='root')
+                    self.copy_to_container(local=tmp_file.name, remote='/tmp/script.php')      # copy file
+                    self.in_container('chown www-data:www-data /tmp/script.php', user='root')  # fix permissions
 
-                self.in_container('php /tmp/script.php')
+                self.in_container('php /tmp/script.php', workdir=os.getcwd(), user=self.user)
                 return True
 
             # takes stdin as input

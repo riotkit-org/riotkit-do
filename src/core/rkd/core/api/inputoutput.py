@@ -235,14 +235,27 @@ class IO:
     #
 
     def internal(self, text):
-        """Logger: internal
-           Should be used only by RKD core for more intensive logging
+        """
+        Logger: internal
+        Should be used only by RKD core for more intensive logging
         """
         if self.log_level < LEVEL_PRIORITY_INTERNAL:
             return
 
         text = inspect.stack()[1][3] + ' ~> ' + text
         self.log(text, 'internal')
+
+    def internal_lifecycle(self, text):
+        """
+        Should be used only by RKD core for more intensive logging
+        :param text:
+        :return:
+        """
+
+        if self.log_level < LEVEL_PRIORITY_INTERNAL:
+            return
+
+        self.opt_outln("\x1B[93m[LIFECYCLE] %s\x1B[0m " % text)
 
     def debug(self, text):
         """Logger: debug

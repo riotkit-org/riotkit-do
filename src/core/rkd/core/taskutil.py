@@ -181,10 +181,11 @@ class TaskUtilities(AbstractClass):
         return self.sh(bash_opts + ' %%RKD%% --no-ui %s' % args_str, capture=capture)
 
 
+# @todo: Cover a case with return and without return
 def evaluate_code(code: str, io: IO, full_task_name: str = 'unknown',
                   returns_boolean: bool = False, ctx=None, self=None) -> Union[any, bool]:
     """
-    Executes a Python snippet and returns a boolean value
+    Executes a Python snippet and returns a boolean/any value
 
     :param code:
     :param io:
@@ -198,14 +199,16 @@ def evaluate_code(code: str, io: IO, full_task_name: str = 'unknown',
     io.debug(f'Compiling Python code for {full_task_name}')
     _tree = ast.parse(code)
 
-    if returns_boolean and not isinstance(_tree.body[-1], ast.Return):
-        io.debug(f'Python code at task {full_task_name} does not have return, but is expected to return a boolean')
+    if not isinstance(_tree.body[-1], ast.Return):
+        if returns_boolean:
+            io.warn(f'Python code at task {full_task_name} does not have return, but is expected to return a boolean')
         _tree = ast.parse(code + "\nreturn False")
 
     eval_expr = ast.Expression(_tree.body[-1].value)
     exec_expr = ast.Module(_tree.body[:-1], type_ignores=[])
 
-    # run compiled code
+    # run compiled code (code till RETURN)
     exec(compile(exec_expr, full_task_name, 'exec'))
 
+    # run only one-line RETURN
     return eval(compile(eval_expr, full_task_name, 'eval'))

@@ -3,7 +3,10 @@ from argparse import ArgumentParser
 from types import FunctionType
 from typing import Dict, Type, Tuple, Optional, List, Union
 from rkd.core.api.contract import TaskInterface, ExtendableTaskInterface, ExecutionContext, ArgumentEnv
-from rkd.core.api.inputoutput import ReadableStreamType, IO
+from rkd.core.api.decorators import MARKER_SKIP_PARENT_CALL, MARKERS_MAPPING, \
+    ALLOWED_MARKERS, MARKER_CALL_PARENT_LAST, \
+    MARKER_CALL_PARENT_FIRST
+from rkd.core.api.inputoutput import ReadableStreamType, SystemIO
 from rkd.core.api.syntax import TaskDeclaration
 from rkd.core.dto import ParsedTaskDeclaration, StaticFileContextParsingResult
 from rkd.core.exception import TaskFactoryException
@@ -19,19 +22,7 @@ ALLOWED_METHODS_TO_INHERIT = [
     'get_name', 'get_description', 'get_group_name', 'get_declared_envs'
 ]
 
-METHODS_THAT_RETURNS_NON_BOOLEAN_VALUES = ['steps', 'get_name', 'get_description']
-
-MARKER_SKIP_PARENT_CALL = 'no_parent_call_wrapper'
-MARKER_CALL_PARENT_FIRST = 'call_parent_first_wrapper'
-
-ALLOWED_MARKERS = [
-    MARKER_SKIP_PARENT_CALL, MARKER_CALL_PARENT_FIRST
-]
-
-MARKERS_MAPPING = {
-    'no_parent_call': MARKER_SKIP_PARENT_CALL,
-    'call_parent_first': MARKER_CALL_PARENT_FIRST
-}
+METHODS_THAT_RETURNS_NON_BOOLEAN_VALUES = ['steps', 'get_name', 'get_description', 'get_steps']
 
 
 class TaskFactory(object):
@@ -44,17 +35,24 @@ class TaskFactory(object):
         - From a function with inner functions can create a class with methods using a proxy
     """
 
-    @classmethod
-    def create_task_with_declaration_after_parsing(cls, source: ParsedTaskDeclaration,
-                                                   parsing_context: StaticFileContextParsingResult,
-                                                   io: IO) -> TaskDeclaration:
+    _io: SystemIO
+
+    def __init__(self, io: SystemIO):
+        self._io = io
+
+    def create_task_with_declaration_after_parsing(factory_self, source: ParsedTaskDeclaration,
+                                                   parsing_context: StaticFileContextParsingResult) -> TaskDeclaration:
         """
         Creates executable methods from already prepared code (parsed from a document eg. YAML)
         as a result _create_task() is called to construct dynamically a class with prepared methods
 
+        IO - Used ONLY for task creation stage. On runtime each task is given its own IO() instance
+
+        NOTICE: self is defined as factory_self, because inner methods with their own "self" are defined inside
+                this method
+
         :param source:
         :param parsing_context:
-        :param io: Used ONLY for task creation stage. On runtime each task is given its own IO() instance
         :return: TaskDeclaration
         """
 
@@ -74,7 +72,7 @@ class TaskFactory(object):
                     returns_boolean=True,
                     ctx=ctx,
                     self=self,
-                    io=io
+                    io=self._io
                 )
 
             methods['inner_execute'] = inner_execute
@@ -87,7 +85,7 @@ class TaskFactory(object):
                     returns_boolean=True,
                     ctx=ctx,
                     self=self,
-                    io=io
+                    io=self._io
                 )
 
             methods['execute'] = execute
@@ -100,7 +98,7 @@ class TaskFactory(object):
                     returns_boolean=False,
                     ctx=ctx,
                     self=self,
-                    io=io
+                    io=self._io
                 )
 
             methods['configure'] = execute
@@ -157,16 +155,16 @@ class TaskFactory(object):
         # </decorators appended to methods - one decorator only allowed>
 
         # import type (class) that will be extended - TaskInterface to extend
-        extended_class = cls._import_type(source.task_type)
+        extended_class = factory_self._import_type(source.task_type)
 
         # build an environment hierarchy, task local environment should always overwrite the global and system scope
         environment = {}
-        environment.update(cls._unpack_envs(extended_class.get_declared_envs()))  # prepend parent task environment
+        environment.update(factory_self._unpack_envs(extended_class.get_declared_envs()))  # prepend parent task environment
         environment.update(parsing_context.global_environment)                # add global environment (whole document)
         environment.update(source.environment)                                # add THIS TASK-defined environment
 
         # allow all used environment variables in YAML document declaration
-        def get_declared_envs(self):
+        def get_declared_envs(task_self):
             return environment
 
         # we do not call parent actually, as we already merged the dicts in {environment} variable
@@ -177,7 +175,7 @@ class TaskFactory(object):
         def task_created_from_yaml_document():
             pass
 
-        task, stdin_method = cls._create_task(
+        task, stdin_method = factory_self._create_task(
             extended_class=extended_class,
             exports=methods,
             func=task_created_from_yaml_document,
@@ -202,8 +200,7 @@ class TaskFactory(object):
 
         return declaration
 
-    @classmethod
-    def create_task_from_func(cls, func: FunctionType, name: Optional[str] = None) \
+    def create_task_from_func(self, func: FunctionType, name: Optional[str] = None) \
             -> Tuple[TaskInterface, Optional[FunctionType]]:
         """
         Create a class that will inherit from base task (taken from 'extends' type hint)
@@ -223,17 +220,16 @@ class TaskFactory(object):
         if not issubclass(extended_class, ExtendableTaskInterface):
             raise TaskFactoryException.from_not_extendable_base_task(extended_class, func)
 
-        exports = cls._extract_exported_methods(func)
+        exports = self._extract_exported_methods(func)
 
-        return cls._create_task(
+        return self._create_task(
             extended_class=extended_class,
             exports=exports,
             func=func,
             name=name
         )
 
-    @classmethod
-    def _create_task(cls, extended_class: Type[TaskInterface], exports: Dict[str, FunctionType],
+    def _create_task(factory_self, extended_class: Type[TaskInterface], exports: Dict[str, FunctionType],
                      func: Optional[FunctionType], name: str) -> Tuple[TaskInterface, Optional[FunctionType]]:
 
         """
@@ -246,8 +242,8 @@ class TaskFactory(object):
         :return:
         """
 
-        cls._validate_methods_allowed(list(exports.keys()), ALLOWED_METHODS_TO_DEFINE,
-                                      after_filtering=False, func=func)
+        factory_self._validate_methods_allowed(list(exports.keys()), ALLOWED_METHODS_TO_DEFINE,
+                                               after_filtering=False, func=func)
 
         # make get_name() return same value as TaskDeclaration does (IMPORTANT for compilation-time created tasks)
         if name:
@@ -257,25 +253,18 @@ class TaskFactory(object):
             get_name.marker = None
             exports['get_name'] = get_name
 
-        if 'execute' in exports:
-            exports['execute'] = exports['execute']
-            del exports['execute']
-
-        if 'inner_execute' in exports:
-            exports['inner_execute'] = exports['inner_execute']
-            del exports['inner_execute']
-
         # move from dict to locals(), so the validation could not reach it - it is on declaration level, not task level
         stdin_method = None
         if 'stdin' in exports:
             stdin_method = exports['stdin']
             del exports['stdin']
 
-        cls._validate_methods_allowed(list(exports.keys()), ALLOWED_METHODS_TO_INHERIT,
-                                      after_filtering=True, func=func)
+        factory_self._validate_methods_allowed(list(exports.keys()), ALLOWED_METHODS_TO_INHERIT,
+                                               after_filtering=True, func=func)
 
-        methods = cls._create_inheritance_proxy(exports, extended_class)
-        task = type(f'Extended_{func.__name__}_{extended_class.__name__}', (extended_class,), methods)()
+        methods = factory_self._create_inheritance_proxies(exports, extended_class)
+        task: TaskInterface = type(f'Extended_{func.__name__}_{extended_class.__name__}', (extended_class,), methods)()
+        task._extended_from = extended_class
 
         # stdin method is inherited at TaskDeclaration level, not TaskInterface
         if stdin_method:
@@ -332,7 +321,6 @@ class TaskFactory(object):
 
         return copy
 
-
     @classmethod
     def _validate_methods_allowed(cls, methods: List[str], allowed: List[str],
                                   after_filtering: bool, func: FunctionType = None):
@@ -343,9 +331,8 @@ class TaskFactory(object):
                 else:
                     raise TaskFactoryException.from_method_not_allowed_to_be_defined_for_inheritance(method, func)
 
-    @classmethod
-    def _create_inheritance_proxy(cls, attributes: Dict[str, FunctionType],
-                                  extended_class: Type[TaskInterface]) -> Dict[str, FunctionType]:
+    def _create_inheritance_proxies(self, attributes: Dict[str, FunctionType],
+                                    extended_class: Type[TaskInterface]) -> Dict[str, FunctionType]:
         """
         Create methods that will inherit call to parent `super()`
 
@@ -355,19 +342,50 @@ class TaskFactory(object):
         """
 
         inherited_attributes = {}
+        # todo: Test case - calling parent.parent.method()
+        #       eg. MyTask extends PhpScriptTask extends RunInContainerBaseTask
+        #       (and only RunInContainerBaseTask has execute())
 
         for name, method in attributes.items():
             method: FunctionType
 
-            inherited_attributes[name] = cls._create_proxy_method(
+            inherited_attributes[name] = self._create_proxy_method(
                 method,
-                extended_class.__dict__.get(name)
+                self._find_method_including_bases(extended_class, name)
             )
 
         return inherited_attributes
 
     @classmethod
-    def _create_proxy_method(cls, current_method, parent_method):
+    def _find_method_including_bases(cls, starting_class: Type, method_name: str) -> Union[FunctionType, None]:
+        """
+        Given: ClassName(A, B)
+
+        We look for method in priority:
+        - ClassName.method_name
+        - B.method_name
+        - A.method_name
+
+        :param starting_class:
+        :param method_name:
+        :return:
+        """
+
+        if method_name in starting_class.__dict__:
+            return starting_class.__dict__.get(method_name)
+
+        for base_class in reversed(starting_class.__bases__):
+            found = cls._find_method_including_bases(base_class, method_name)
+
+            if found:
+                return found
+
+    def _create_proxy_method(factory_self, current_method, parent_method):
+        if current_method.marker and current_method.marker not in ALLOWED_MARKERS:
+            # todo: Better exception
+            raise Exception(f'Method {current_method} uses unsupported annotation/marker. '
+                            f'Only {ALLOWED_MARKERS} are supported, used {current_method.marker}')
+
         def _inner_proxy_method(self, *args, **kwargs):
             """
             Proxy method to call method + parent in proper order
@@ -378,17 +396,23 @@ class TaskFactory(object):
             :return:
             """
 
+            current_result = None
+            parent_result = None
+
             # do not call parent() at all
-            if current_method.marker == MARKER_SKIP_PARENT_CALL:
+            if current_method.marker == MARKER_SKIP_PARENT_CALL or not current_method.marker:
+                factory_self._io.internal(f'[{type(self).__name__}] Calling @without_parent: {current_method}')
                 return current_method(self, *args, **kwargs)
 
             # call parent() first
             elif current_method.marker == MARKER_CALL_PARENT_FIRST:
+                factory_self._io.internal(f'[{type(self).__name__}] Calling @before_parent: {current_method} -> {parent_method}')
                 parent_result = parent_method(self, *args, **kwargs) if parent_method else True
                 current_result = current_method(self, *args, **kwargs)
 
             # call children() then parent()
-            else:
+            elif current_method.marker == MARKER_CALL_PARENT_LAST:
+                factory_self._io.internal(f'[{type(self).__name__}] Calling @after_parent: {parent_method} -> {current_method}')
                 current_result = current_method(self, *args, **kwargs)
                 parent_result = parent_method(self, *args, **kwargs) if parent_method else True
 

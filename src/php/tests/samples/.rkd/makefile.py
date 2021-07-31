@@ -7,7 +7,7 @@ from rkd.core.standardlib.io import ArchivePackagingBaseTask
 from rkd.core.standardlib.syntax import MultiStepLanguageAgnosticTask
 from rkd.php import ComposerIntegrationTask, PhpScriptTask
 from rkd.core.api.syntax import TaskDeclaration, ExtendedTaskDeclaration
-from rkd.core.api.decorators import no_parent_call, extends, call_parent_first
+from rkd.core.api.decorators import before_parent, without_parent, after_parent, extends
 
 
 @extends(PhpScriptTask)
@@ -26,8 +26,7 @@ def PhpInfoTask():
 phpinfo();
         '''
 
-    # @no_parent_call
-    # @call_parent_first
+    # @without_parent or @before_parent or @after_parent
     def configure(task: PhpScriptTask, event: ConfigurationLifecycleEvent):
         task.version = '8.0-alpine'
 
@@ -102,6 +101,7 @@ def MultiStepTestTask():
             '''
                 #!python
                 print('hello from python')
+                print('this is self', self)
                 return True
             ''',
             '''
@@ -122,7 +122,7 @@ IMPORTS = [
     TaskDeclaration(PhpScriptTask(), name=':php'),
     ExtendedTaskDeclaration(name=':test', task=MultiStepTestTask),
     # ExtendedTaskDeclaration(name=':phpinfo', task=PhpInfoTask),
-    ExtendedTaskDeclaration(name=':workspace:ls', task=ListWorkspaceFiles),
+    # ExtendedTaskDeclaration(name=':workspace:ls', task=ListWorkspaceFiles),
     # ExtendedTaskDeclaration(name=':docs:copy', task=CopyDocsTask),
     # ExtendedTaskDeclaration(name=':dist:build', task=PackDistributionTask)
 ]

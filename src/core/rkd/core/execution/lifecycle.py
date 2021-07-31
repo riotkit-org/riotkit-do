@@ -35,7 +35,9 @@ class CompilationLifecycleEvent(object):
     _compiled: Dict[str, Union[TaskDeclaration, GroupDeclaration]]
     io: IO
 
-    def __init__(self, current_task: TaskDeclaration, compiled: Dict[str, Union[TaskDeclaration, GroupDeclaration]], io: IO):
+    def __init__(self, current_task: TaskDeclaration, compiled: Dict[str, Union[TaskDeclaration, GroupDeclaration]],
+                 io: IO):
+
         self._current_task = current_task
         self._compiled = compiled
         self.io = io

@@ -204,6 +204,12 @@ class CommandlineParsingHelper(object):
 
         argparse.description += task.get_full_description() + "\n"
 
+        argparse.description += "\nType: " + \
+                                type(task.get_task_to_execute()).__module__ + \
+                                "." + \
+                                type(task.get_task_to_execute()).__name__ + \
+                                "\n"
+
         # print all environment variables possible to use
         argparse.description += "\nEnvironment variables for task \"%s\":\n" % task.to_full_name()
 

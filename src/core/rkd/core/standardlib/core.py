@@ -216,7 +216,7 @@ class VersionTask(TaskInterface):
             if not isinstance(declaration, TaskDeclarationInterface):
                 continue
 
-            task = declaration.get_task_to_execute()
+            task: TaskInterface = declaration.get_task_to_execute()
             class_name = str(task.__class__)
             module = task.__class__.__module__
             parts = module.split('.')
@@ -226,16 +226,16 @@ class VersionTask(TaskInterface):
 
                 try:
                     version = pkg_resources.get_distribution(try_module_name).version
-                    table_body.append([name, version, module, class_name])
+                    table_body.append([name, version, module, class_name, task.extends_task()])
 
                     break
                 except pkg_resources.DistributionNotFound:
                     parts = parts[:-1]
                 except ValueError:
-                    table_body.append([name, 'UNKNOWN (local module?)', module, class_name])
+                    table_body.append([name, 'UNKNOWN (local module?)', module, class_name, task.extends_task()])
 
         self.io().outln(self.table(
-            header=['Name', 'Version', 'Imported from', 'Representation'],
+            header=['Name', 'Version', 'Imported from', 'Representation', 'Extends'],
             body=table_body
         ))
 
