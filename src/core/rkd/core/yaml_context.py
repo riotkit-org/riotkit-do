@@ -159,6 +159,16 @@ class StaticFileSyntaxInterpreter(object):
 
     def _parse_task(self, name: str, document_attributes: dict,
                     rkd_path: str, makefile_path: str) -> ParsedTaskDeclaration:
+        """
+        Maps YAML keys into ParsedTaskDeclaration() object
+        Parsing decorators, putting default values, casting data types
+
+        :param name:
+        :param document_attributes:
+        :param rkd_path:
+        :param makefile_path:
+        :return:
+        """
 
         mappedVar = namedtuple('mappedVar', ['name', 'default', 'casting', 'is_method'])
         mapping = {
