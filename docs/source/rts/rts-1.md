@@ -117,6 +117,7 @@ Syntax
 
 There exists actually three available syntax styles.
 
+********************************
 1. Python Class: Classic syntax
 ********************************
 
@@ -151,8 +152,9 @@ IMPORTS = [
 ]
 ```
 
-2. Simplified Python
-********************
+***************************
+2. Simplified Python syntax
+***************************
 
 Allows writing Tasks that extends Base Tasks in a very easy and short manner.
 
@@ -187,8 +189,11 @@ IMPORTS = [
 ```
 
 
-3. Document/YAML
-****************
+***********************
+3. Document/YAML syntax
+***********************
+
+Has similar purpose as `Simplified Python syntax`, but should be simpler for non-programmers like System Administrators, or just for people that likes YAML declarations.
 
 ```yaml
 version: org.riotkit.rkd/yaml/v1
