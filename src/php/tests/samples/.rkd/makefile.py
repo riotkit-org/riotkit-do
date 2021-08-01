@@ -90,6 +90,7 @@ def ListWorkspaceFiles():
     def execute(task: ShellCommandTask, ctx: ExecutionContext):
         out = task.sh('ps aux', capture=True)
         task.io().info(f'Test length: {len(out)}')
+        return True
 
     return [stdin, compile, execute]
 
@@ -122,7 +123,7 @@ IMPORTS = [
     TaskDeclaration(PhpScriptTask(), name=':php'),
     ExtendedTaskDeclaration(name=':test', task=MultiStepTestTask),
     # ExtendedTaskDeclaration(name=':phpinfo', task=PhpInfoTask),
-    # ExtendedTaskDeclaration(name=':workspace:ls', task=ListWorkspaceFiles),
+    ExtendedTaskDeclaration(name=':workspace:ls', task=ListWorkspaceFiles),
     # ExtendedTaskDeclaration(name=':docs:copy', task=CopyDocsTask),
     # ExtendedTaskDeclaration(name=':dist:build', task=PackDistributionTask)
 ]
