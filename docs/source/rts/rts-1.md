@@ -210,6 +210,18 @@ tasks:
         input: |
             var_dump(getcwd());
             var_dump(phpversion());
+
+    # defining classic shell tasks is easiest with YAML syntax
+    :yaml:test:multi:
+        steps:
+            - |
+                #!bash
+                echo "Hello world from Bash"
+            - |
+                #!python
+                print("Hello from Python")
+            - ps aux
+            - ls -la
 ```
 
 Execute and Inner Execute concept
