@@ -212,6 +212,7 @@ tasks:
             var_dump(phpversion());
 
     # defining classic shell tasks is easiest with YAML syntax
+    # "bash" and "python" can be also replaced with a full package name + class that implements executing code in other language e.g. rkd.php.script.PhpScriptTask
     :yaml:test:multi:
         steps:
             - |
