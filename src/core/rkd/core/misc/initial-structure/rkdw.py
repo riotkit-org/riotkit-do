@@ -138,7 +138,8 @@ class VenvSupport(PluggableEnvironmentSupport):
 
 
 def debug(msg: str) -> None:
-    print(f'DEBUG >> {msg}')
+    if os.getenv('RKD_SYS_LOG_LEVEL') in ['debug', 'internal']:
+        print(f'DEBUG >> {msg}')
 
 
 def lock_exists() -> bool:
