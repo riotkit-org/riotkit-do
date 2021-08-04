@@ -188,6 +188,7 @@ class StaticFileSyntaxInterpreter(object):
         }
 
         mapping_by_yaml_key = {v.name: k for k, v in mapping.items()}
+        allowed_keys_not_in_mapping = ['environment', 'env_files']  # those are handled manually
         allowed_yaml_keys = mapping_by_yaml_key.keys()
 
         parsed_task_declaration_kwargs = {}
@@ -205,11 +206,23 @@ class StaticFileSyntaxInterpreter(object):
 
             yaml_key = yaml_key_without_decorator + ('@' + decorator if decorator else '')
 
+            #
+            # Special attributes - are not mapped, but handled manually
+            #
+            if yaml_key_without_decorator in allowed_keys_not_in_mapping:
+                if decorator:
+                    raise StaticFileParsingException.from_attribute_not_supporting_decorators(
+                        yaml_key_without_decorator, decorator
+                    )
+                continue
+
+            # the YAML key that describes task is not supported (e.g. a name with typo "extteends")
             if yaml_key_without_decorator not in allowed_yaml_keys:
                 raise StaticFileParsingException.from_not_allowed_attribute(
                     yaml_key_without_decorator, name
                 )
 
+            # @before_parent, @after_parent, etc.
             if decorator:
                 if not mapping[yaml_key_without_decorator].is_method:
                     raise StaticFileParsingException.from_attribute_not_supporting_decorators(

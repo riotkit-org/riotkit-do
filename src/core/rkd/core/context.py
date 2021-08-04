@@ -197,7 +197,7 @@ class ApplicationContext(ContextInterface):
                         .with_env(merged_env) \
                         .with_args(argument_group.args() + resolved_declaration.get_args()) \
                         .with_user_overridden_env(
-                            pipeline.get_user_overridden_envs() + resolved_declaration.get_user_overridden_envs()
+                            pipeline.get_user_overridden_envs() + resolved_declaration.get_list_of_user_overridden_envs()
                         ) \
                         .with_connected_block(block)
 

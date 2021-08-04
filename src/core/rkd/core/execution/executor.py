@@ -1,5 +1,6 @@
 
 import os
+from copy import deepcopy
 from pwd import getpwnam
 from pickle import dumps as pickle_dumps
 from pickle import loads as pickle_loads
@@ -169,11 +170,19 @@ class OneByOneTaskExecutor(ExecutorInterface):
         """Execute directly or pass to a forked process
         """
 
+        env_backup = deepcopy(os.environ)
+        os.environ.update(ctx.env)
+
         if task.should_fork() or cmdline_become:
             task.io().debug('Executing task as separate process')
             return self._execute_as_forked_process(cmdline_become, task, temp, ctx)
 
-        return task.execute(ctx)
+        try:
+            result = task.execute(ctx)
+        finally:
+            os.environ = env_backup
+
+        return result
 
     @staticmethod
     def _execute_as_forked_process(become: str, task: TaskInterface, temp: TempManager, ctx: ExecutionContext):

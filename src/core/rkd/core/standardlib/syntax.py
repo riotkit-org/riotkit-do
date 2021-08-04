@@ -175,7 +175,12 @@ class MultiStepLanguageAgnosticTask(ExtendableTaskInterface):
                 step_type = self._try_to_import_type(step_type_name)
 
             tasks.append(
-                TaskDeclaration(self._create_task(step_type, step, step_num, self.get_group_name() + self.get_name()))
+                TaskDeclaration(
+                    task=self._create_task(step_type, step, step_num, self.get_group_name() + self.get_name()),
+                    workdir=event.get_current_declaration().workdir,
+                    internal=event.get_current_declaration().is_internal,
+                    env=event.get_current_declaration().get_user_overridden_env()
+                )
             )
 
         event.expand_into_group(
@@ -190,19 +195,19 @@ class MultiStepLanguageAgnosticTask(ExtendableTaskInterface):
         # @todo: better exception
         raise Exception(f'Language {type_name} not supported in task {self.get_name()}')
 
-    @staticmethod
-    def _create_task(step_type: Type, code: str, step_num: int, name_prefix: str) -> ExtendableTaskInterface:
+    def _create_task(self, step_type: Type, code: str, step_num: int, name_prefix: str) -> ExtendableTaskInterface:
         as_lines = code.split("\n")
 
         # cut off first line
         if as_lines[0][0:2] == '#!':
             code = "\n".join(as_lines[1:])
 
-        step = step_type().with_predefined_details(
+        step: ExtendableTaskInterface = step_type().with_predefined_details(
             code=code,
             name=name_prefix + f':step_{step_num}',
             step_num=step_num
         )
+        step.get_declared_envs = self.get_declared_envs
 
         return step
 

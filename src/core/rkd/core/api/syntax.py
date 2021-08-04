@@ -189,10 +189,18 @@ class TaskDeclaration(TaskDeclarationInterface):
     def get_env(self):
         return self._env
 
-    def get_user_overridden_envs(self) -> list:
+    def get_list_of_user_overridden_envs(self) -> list:
         """ Lists environment variables which were overridden by user """
 
         return self._user_defined_env
+
+    def get_user_overridden_env(self) -> Dict[str, str]:
+        """
+        Returns key->value of environment defined by user (not inherited from OS)
+        :return:
+        """
+
+        return {k: v for k, v in self._env.items() if k in self.get_list_of_user_overridden_envs()}
 
     def get_group_name(self) -> str:
         split = self.to_full_name().split(':')

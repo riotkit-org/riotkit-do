@@ -9,6 +9,7 @@ from rkd.core.context import ContextFactory
 from rkd.core.context import ApplicationContext
 from rkd.core.context import distinct_imports
 from rkd.core.api.inputoutput import NullSystemIO, IO, SystemIO
+from rkd.core.dto import StaticFileContextParsingResult
 from rkd.core.exception import ContextException
 from rkd.core.api.syntax import TaskDeclaration
 from rkd.core.api.syntax import TaskAliasDeclaration
@@ -137,8 +138,14 @@ class ContextTest(BasicTestingCase):
                 - fictional
             ''')
 
-            with unittest.mock.patch('rkd.core.context.YamlSyntaxInterpreter.parse') as parse_method:
-                parse_method.return_value = ([TaskAliasDeclaration(':hello', [':test'])], [], [])
+            with unittest.mock.patch('rkd.core.yaml_context.StaticFileSyntaxInterpreter.parse') as parse_method:
+
+                parse_method.return_value = StaticFileContextParsingResult(
+                    imports=[TaskAliasDeclaration(':hello', [':test'])],
+                    parsed=[],
+                    subprojects=[],
+                    global_environment={}
+                )
 
                 ctx_factory = ContextFactory(NullSystemIO())
                 ctx = ctx_factory._load_from_static_file(os.path.dirname(tmp_file.name), os.path.basename(tmp_file.name),
@@ -146,7 +153,11 @@ class ContextTest(BasicTestingCase):
 
                 self.assertIn(':hello', ctx._task_aliases)
 
+    def test_parsed_tasks_from_yaml_are_built_using_task_factory(self):
+        raise NotImplementedError('Implement me')
+
     def test_distinct_imports_raises_exception_when_unknown_type_object_added_to_list(self):
+        # noinspection PyTypeChecker
         self.assertRaises(ContextException,
                           lambda: distinct_imports('hello', ['string-should-not-be-there-even-IDE-knows-that']))
 
