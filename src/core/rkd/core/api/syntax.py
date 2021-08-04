@@ -77,7 +77,14 @@ class TaskDeclaration(TaskDeclarationInterface):
             args = []
 
         if not isinstance(task, TaskInterface):
-            has_taskinterface_subclass = list(filter(lambda cls: issubclass(cls, TaskInterface), task.__bases__))
+            try:
+                has_taskinterface_subclass = list(filter(lambda cls: issubclass(cls, TaskInterface), task.__bases__))
+
+            except AttributeError:
+                raise DeclarationException(
+                    'Invalid class: TaskDeclaration needs to take TaskInterface as task argument. '
+                    f'Got {type(task).__name__}'
+                )
 
             if not has_taskinterface_subclass:
                 raise DeclarationException(
