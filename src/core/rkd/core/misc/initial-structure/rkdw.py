@@ -129,7 +129,7 @@ class VenvSupport(PluggableEnvironmentSupport):
 
         subprocess.check_call(f'{PYTHON_BIN} -m virtualenv {VENV_CREATION_ARGS} {VENV_PATH}', shell=True)
         subprocess.check_call(f'''
-            /bin/bash -c 'set -e; pwd; find ./; source "{VENV_PATH}/bin/activate"; pip install {args}'
+            /bin/bash -c 'set -e; source "{VENV_PATH}/bin/activate"; pip install {args}'
         ''', shell=True)
 
     @staticmethod
