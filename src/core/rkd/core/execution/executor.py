@@ -166,7 +166,8 @@ class OneByOneTaskExecutor(ExecutorInterface):
             output_formatted_exception(exception, str(declaration.get_task_to_execute().get_full_name()), self.io)
             self._observer.task_errored(declaration, exception)
 
-    def _execute_directly_or_forked(self, cmdline_become: str, task: TaskInterface, temp: TempManager, ctx: ExecutionContext):
+    def _execute_directly_or_forked(self, cmdline_become: str, task: TaskInterface, temp: TempManager,
+                                    ctx: ExecutionContext):
         """Execute directly or pass to a forked process
         """
 
@@ -179,8 +180,10 @@ class OneByOneTaskExecutor(ExecutorInterface):
 
         try:
             result = task.execute(ctx)
+
         finally:
-            os.environ = env_backup
+            if not ctx.can_mutate_globals():
+                os.environ = env_backup
 
         return result
 

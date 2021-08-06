@@ -39,7 +39,6 @@ class OutputCapturingSafeTestCase(TestCase):
     _stderr = None
 
     def setUp(self) -> None:
-        os.environ['RKD_DEPTH'] = '0'
         self._stdout = sys.stdout
         self._stderr = sys.stderr
 

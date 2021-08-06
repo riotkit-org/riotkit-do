@@ -97,8 +97,8 @@ class StaticFileSyntaxInterpreter(object):
 
         parsed_tasks: List[ParsedTaskDeclaration] = []
 
-        for name, yaml_declaration in tasks.items():
-            parsed_tasks.append(self._parse_task(name, yaml_declaration, rkd_path, makefile_path))
+        for name, task_attributes in tasks.items():
+            parsed_tasks.append(self._parse_task(name, task_attributes, rkd_path, makefile_path))
 
         return parsed_tasks
 

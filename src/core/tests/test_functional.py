@@ -207,10 +207,9 @@ class TestFunctional(FunctionalTestingCase):
         """
 
         full_output, exit_code = self.run_and_capture_output([
-            '--no-ui', ':sh', '-c', '%RKD% :tasks'
+            '--no-ui', ':sh', '-c', '%RKD% :sh -c "env |grep DEPTH"'
         ])
 
-        self.assertIn(':tasks', full_output)
         self.assertNotIn('>> Executing', full_output)
 
     def test_env_file_is_loaded_from_cwd(self):

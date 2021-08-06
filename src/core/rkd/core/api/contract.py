@@ -161,6 +161,7 @@ class ExecutionContext(object):
     env: Dict[str, str]
     __ctx: ContextInterface
     executor: ExecutorInterface
+    _allow_mutating_globals: bool
 
     # List of arguments definitions populated by Argparse (with limited parameters supported)
     # Read about "traced arguments"
@@ -170,11 +171,13 @@ class ExecutionContext(object):
                  parent: Union[GroupDeclarationInterface, None] = None, args: Dict[str, str] = {},
                  env: Dict[str, str] = {},
                  defined_args: Dict[str, dict] = {}):
+
         self.__declaration = declaration
         self.parent = parent
         self.args = args
         self.env = env
         self.defined_args = defined_args
+        self._allow_mutating_globals = declaration.to_full_name() == ':init'
 
     def get_env(self, name: str, switch: str = '', error_on_not_used: bool = False):
         """Get environment variable value"""
@@ -278,6 +281,14 @@ class ExecutionContext(object):
 
     def get_input(self) -> Optional[ReadableStreamType]:
         return self.__declaration.get_input()
+
+    def can_mutate_globals(self) -> bool:
+        """
+        Is task having a special permissions to mutate globals such as OS environment
+        :return:
+        """
+
+        return self._allow_mutating_globals
 
 
 class TaskInterface(TaskUtilities):

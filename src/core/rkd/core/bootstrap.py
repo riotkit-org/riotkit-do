@@ -12,8 +12,8 @@ import sys
 import os
 import traceback
 from typing import Optional
-
 from dotenv import load_dotenv
+
 from rkd.core.execution.lifecycle import ConfigurationResolver
 from .execution.results import ProgressObserver
 from .argparsing.parser import CommandlineParsingHelper
