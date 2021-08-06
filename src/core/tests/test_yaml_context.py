@@ -40,18 +40,11 @@ class TestYamlContext(BasicTestingCase):
         io = IO()
         out = StringIO()
         factory = StaticFileSyntaxInterpreter(io, YamlFileLoader([]))
-        parsed_tasks = factory.parse_tasks(input_tasks, '', './makefile.yaml', OrderedDict())
+        parsed_tasks = factory.parse_tasks(input_tasks, '', './makefile.yaml')
 
-        self.assertEqual(':resistentia', parsed_tasks[0].to_full_name(),
+        self.assertEqual(':resistentia', parsed_tasks[0].name,
                          msg='Expected that the task name will be present')
-
-        declaration = parsed_tasks[0]
-        declaration.get_task_to_execute()._io = NullSystemIO()
-
-        with io.capture_descriptors(stream=out, enable_standard_out=False):
-            declaration.get_task_to_execute().inner_execute(ExecutionContext(declaration))
-
-        self.assertIn('Resistentia!', out.getvalue(), msg='Expected that echo contents will be visible')
+        self.assertEqual('echo "Resistentia!"', parsed_tasks[0].steps[0])
 
     def test_internal_task_can_be_defined(self):
         """
@@ -80,44 +73,10 @@ class TestYamlContext(BasicTestingCase):
 
         io = IO()
         factory = StaticFileSyntaxInterpreter(io, YamlFileLoader([]))
-        parsed_tasks = factory.parse_tasks(input_tasks, '', './makefile.yaml', OrderedDict())
+        parsed_tasks = factory.parse_tasks(input_tasks, '', './makefile.yaml')
 
-        self.assertTrue(parsed_tasks[0].is_internal)
-        self.assertFalse(parsed_tasks[1].is_internal)
-
-    def test_parse_tasks_signals_error_instead_of_throwing_exception(self):
-        """
-        Test that error thrown by executed Python code will
-        """
-
-        input_tasks = {
-            ':song': {
-                'description': 'Bella Ciao is an Italian protest folk song that originated in the hardships of the ' +
-                               'mondina women, the paddy field workers in the late 19th century who sang it to ' +
-                               'protest against harsh working conditions in the paddy fields of North Italy',
-                'steps': [
-                    '''#!python
-print(syntax-error-here)
-                    '''
-                ]
-            }
-        }
-
-        io = BufferedSystemIO()
-        factory = StaticFileSyntaxInterpreter(io, YamlFileLoader([]))
-        parsed_tasks = factory.parse_tasks(input_tasks, '', 'makefile.yaml', {})
-
-        declaration = parsed_tasks[0]
-        declaration.get_task_to_execute()._io = IO()
-        task = declaration.get_task_to_execute()
-        task._io = io
-
-        # execute prepared task
-        result = task.inner_execute(ExecutionContext(declaration))
-
-        self.assertEqual(False, result, msg='Expected that syntax error would result in a failure')
-        self.assertIn("NameError: name 'syntax' is not defined", io.get_value(), msg='Error message should be attached')
-        self.assertIn('File ":song@step 1", line 1', io.get_value(), msg='Stacktrace should be attached')
+        self.assertTrue(parsed_tasks[0].internal)
+        self.assertFalse(parsed_tasks[1].internal)
 
     def test_parse_env_parses_environment_variables_added_manually(self):
         """Test "environment" block
