@@ -182,7 +182,9 @@ class TestFunctional(FunctionalTestingCase):
                           'country\'s largest industry put profits before people', full_output)
 
     def test_help_shows_full_task_description(self):
-        """:hello --help should show full description, even if it is multiline
+        """
+        YAML - :hello --help should show full description, even if it is multiline
+        Check that "description" (get_description()) can be overridden
         """
 
         with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../../../docs/examples/env-in-yaml/.rkd'}):
@@ -193,7 +195,8 @@ class TestFunctional(FunctionalTestingCase):
             self.assertIn('#3 line: https://libcom.org/library/story-proletarian-life', full_output)
 
     def test_depth_increased(self):
-        """Test that RKD_DEPTH is increased within next calls
+        """
+        Test that RKD_DEPTH is increased within next calls
         """
 
         full_output, exit_code = self.run_and_capture_output(

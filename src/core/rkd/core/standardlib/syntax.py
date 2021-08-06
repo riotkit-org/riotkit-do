@@ -208,6 +208,10 @@ class MultiStepLanguageAgnosticTask(ExtendableTaskInterface):
             step_num=step_num
         )
         step.get_declared_envs = self.get_declared_envs
+        step.get_description = self.get_description
+
+        if "get_full_description" in dir(self):
+            step.get_full_description = self.__getattribute__('get_full_description')
 
         return step
 

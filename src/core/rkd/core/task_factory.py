@@ -14,12 +14,12 @@ from rkd.core.taskutil import evaluate_code
 
 ALLOWED_METHODS_TO_DEFINE = [
     'configure', 'stdin', 'inner_execute', 'configure_argparse', 'compile', 'execute', 'get_steps',
-    'get_name', 'get_description', 'get_group_name', 'get_declared_envs'
+    'get_name', 'get_description', 'get_group_name', 'get_declared_envs', 'get_full_description'
 ]
 
 ALLOWED_METHODS_TO_INHERIT = [
     'configure', 'inner_execute', 'configure_argparse', 'compile', 'execute', 'get_steps',
-    'get_name', 'get_description', 'get_group_name', 'get_declared_envs'
+    'get_name', 'get_description', 'get_group_name', 'get_declared_envs', 'get_full_description'
 ]
 
 METHODS_THAT_RETURNS_NON_BOOLEAN_VALUES = ['steps', 'get_name', 'get_description', 'get_steps']
@@ -119,6 +119,14 @@ class TaskFactory(object):
 
             steps.marker = MARKER_SKIP_PARENT_CALL
             methods['get_steps'] = steps
+
+        if source.description:
+            def get_description(self):
+                return source.description
+
+            get_description.marker = MARKER_SKIP_PARENT_CALL
+            methods['get_full_description'] = get_description
+            methods['get_description'] = get_description
 
         if source.group:
             def group(self):
