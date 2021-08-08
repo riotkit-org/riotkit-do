@@ -283,5 +283,5 @@ class TestFunctional(FunctionalTestingCase):
             self.assertNotIn('--imports', full_output)
 
         with self.subTest('Behind tasks, but task defined'):
-            full_output, exit_code = self.run_and_capture_output(['--help', ':sh'])
+            full_output, exit_code = self.run_and_capture_output(['--help', ':sh', '-c', 'ps'])
             self.assertIn('--imports', full_output)
