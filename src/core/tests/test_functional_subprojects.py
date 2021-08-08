@@ -59,4 +59,3 @@ class TestFunctionalSubprojects(FunctionalTestingCase):
             self.assertIn('internal-samples/subprojects/testsubproject1/infrastructure/terraform', full_output)
             self.assertIn('from terraform', full_output)
 
-
