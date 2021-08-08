@@ -198,7 +198,7 @@ class TaskFactory(object):
         declaration_type = type(
             f'TaskDeclaration_generated_{source.task_type}', (TaskDeclaration,), declaration_methods
         )
-        declaration = declaration_type(
+        declaration: TaskDeclaration = declaration_type(
             task=task,
             env=environment,
             workdir=source.workdir,

@@ -171,6 +171,9 @@ class OneByOneTaskExecutor(ExecutorInterface):
         """Execute directly or pass to a forked process
         """
 
+        # unset incrementing variables
+        ctx.env.pop('RKD_DEPTH') if 'RKD_DEPTH' in ctx.env else None
+
         env_backup = deepcopy(os.environ)
         os.environ.update(ctx.env)
 

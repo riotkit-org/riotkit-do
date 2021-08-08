@@ -196,7 +196,7 @@ class TestFunctional(FunctionalTestingCase):
 
     def test_depth_increased(self):
         """
-        Test that RKD_DEPTH is increased within next calls
+        Test that RKD_DEPTH is increased within next calls (RKD -> RKD -> RKD = 0 + 1 + 1 = 2 depth)
         """
 
         full_output, exit_code = self.run_and_capture_output(
