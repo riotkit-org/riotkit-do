@@ -301,7 +301,7 @@ class TaskFactory(object):
         try:
             module = importlib.import_module(import_path)
             imported_type: Type[TaskInterface] = module.__getattribute__(class_name)
-        except ModuleNotFoundError:
+        except (ModuleNotFoundError, AttributeError):
             raise Exception(f'Cannot import {class_full_path}. No such class? Check if package is installed in current environment')
 
         if not isinstance(imported_type, type):
