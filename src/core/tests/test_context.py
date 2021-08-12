@@ -153,9 +153,6 @@ class ContextTest(BasicTestingCase):
 
                 self.assertIn(':hello', ctx._task_aliases)
 
-    def test_parsed_tasks_from_yaml_are_built_using_task_factory(self):
-        raise NotImplementedError('Implement me')
-
     def test_distinct_imports_raises_exception_when_unknown_type_object_added_to_list(self):
         # noinspection PyTypeChecker
         self.assertRaises(ContextException,
