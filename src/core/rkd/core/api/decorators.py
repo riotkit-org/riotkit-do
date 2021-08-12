@@ -29,7 +29,6 @@ def without_parent(func):
     """
 
     def without_parent_marker():
-        func.wrapper = 'without_parent_marker'
         return func
 
     return without_parent_marker
@@ -44,7 +43,6 @@ def before_parent(func):
     """
 
     def before_parent_wrapper():
-        func.wrapper = 'before_parent_marker'
         return func
 
     return before_parent_wrapper
@@ -59,7 +57,6 @@ def after_parent(func):
     """
 
     def after_parent_wrapper():
-        func.wrapper = 'after_parent_wrapper'
         return func
 
     return after_parent_wrapper
@@ -74,7 +71,6 @@ def extends(extend_type: Type):
     """
 
     def extends_marker(func):
-        func.wrapper = 'extends_marker'
         func.extends = extend_type
         return func
 

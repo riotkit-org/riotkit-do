@@ -16,6 +16,9 @@ from .standardlib import CallableTask
 from .api.inputoutput import NullSystemIO
 
 
+TEST_CONSTANT = 'this is an example constant'
+
+
 class TaskForTesting(CallableTask):
     _description = 'Test task for automated tests'
     _become: str = False
