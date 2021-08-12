@@ -400,9 +400,9 @@ class TaskFactory(object):
 
     def _create_proxy_method(factory_self, current_method, parent_method):
         if current_method.marker and current_method.marker not in ALLOWED_MARKERS:
-            # todo: Better exception
-            raise Exception(f'Method {current_method} uses unsupported annotation/marker. '
-                            f'Only {ALLOWED_MARKERS} are supported, used {current_method.marker}')
+            raise TaskFactoryException.from_unsupported_decorator_type(
+                method=current_method, allowed=ALLOWED_MARKERS, used_decorator=current_method.marker
+            )
 
         def _inner_proxy_method(self, *args, **kwargs):
             """

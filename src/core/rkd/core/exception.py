@@ -109,29 +109,34 @@ class EnvironmentVariableNameNotAllowed(TaskDeclarationException):
 class TaskFactoryException(TaskDeclarationException):
     @classmethod
     def from_missing_extends(cls, func):
-        raise cls(f'{func} needs to use @extends annotation')
+        return cls(f'{func} needs to use @extends annotation')
 
     @classmethod
     def from_not_extendable_base_task(cls, extended_class: Type, func: FunctionType):
-        raise cls(f'Class {extended_class} that is extended by {func} must implemented ExtendableTaskInterface')
+        return cls(f'Class {extended_class} that is extended by {func} must implemented ExtendableTaskInterface')
 
     @classmethod
     def from_method_not_allowed_to_be_inherited(cls, method, origin: FunctionType):
-        raise cls(f'Method {method} is not allowed to be inherited. Defined in {origin}')
+        return cls(f'Method {method} is not allowed to be inherited. Defined in {origin}')
 
     @classmethod
     def from_method_not_allowed_to_be_defined_for_inheritance(cls, method, origin: FunctionType):
-        raise cls(f'Method {method} is not allowed to be defined for inheritance. Defined in {origin}')
+        return cls(f'Method {method} is not allowed to be defined for inheritance. Defined in {origin}')
 
     @classmethod
     def from_invalid_import_path(cls, class_full_path: str):
-        raise cls(f'Cannot import {class_full_path}. '
-                  f'No such class? Check if package is installed in current environment')
+        return cls(f'Cannot import {class_full_path}. '
+                   f'No such class? Check if package is installed in current environment')
 
     @classmethod
     def from_importing_not_a_class(cls, class_full_path: str):
-        raise cls(f'Cannot import {class_full_path}. '
-                  f'Imported element is not a type (class)')
+        return cls(f'Cannot import {class_full_path}. '
+                   f'Imported element is not a type (class)')
+
+    @classmethod
+    def from_unsupported_decorator_type(cls, method, allowed, used_decorator):
+        return cls(f'Method {method} uses unsupported annotation/marker. '
+                   f'Only {allowed} are supported, used {used_decorator}')
 
 
 class UserInputException(RiotKitDoException):
