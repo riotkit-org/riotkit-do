@@ -9,7 +9,8 @@ from collections import OrderedDict
 from io import StringIO
 from rkd.core.api.testing import BasicTestingCase, OutputCapturingSafeTestCase
 from rkd.core.standardlib import InitTask
-from rkd.core.api.inputoutput import IO
+from rkd.core.api.inputoutput import IO, BufferedSystemIO
+from rkd.core.taskutil import evaluate_code
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -332,3 +333,42 @@ print(os)
             task.py(code='print("test")', capture=True, become='root')
 
         self.assertIn('sudo -E -u root python', mocked_subprocess.call_args[0][0])
+
+    def test_evaulate_code_adds_return_when_is_not_present(self):
+        io = BufferedSystemIO()
+        what_is_returned = evaluate_code(
+            io=io,
+            full_task_name=':bakunin:had:a:farm',
+            returns_boolean=True,
+            ctx=None,
+            self=None,
+            code='''
+import sys
+            '''
+        )
+
+        # a warning is raised
+        self.assertIn('does not have return, but is expected to return a boolean', io.get_value())
+
+        # default value is returned
+        self.assertFalse(what_is_returned)
+
+    def test_evaluate_code_returns_value_returned_by_code(self):
+        io = BufferedSystemIO()
+        what_is_returned = evaluate_code(
+            io=io,
+            full_task_name=':bakunin:had:a:farm',
+            returns_boolean=True,
+            ctx=None,
+            self=None,
+            code='''
+import os
+return f"The process id is {os.getpid()}"
+            '''
+        )
+
+        # warning should not be raised, because we return something actually
+        self.assertNotIn('does not have return, but is expected to return a boolean', io.get_value())
+
+        # default value is returned
+        self.assertIn('The process id is', what_is_returned)
