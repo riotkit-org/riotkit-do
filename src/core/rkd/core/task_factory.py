@@ -59,6 +59,9 @@ class TaskFactory(object):
         # build methods list
         methods = {}
 
+        # import type (class) that will be extended - TaskInterface to extend
+        extended_class = factory_self._import_type(source.task_type)
+
         # all overridden methods: those are not generated fully automatically for purpose of the static analysis
         #                         so the interpreter will not be lost, and stacktrace could be more readable
         #                         as we are doing some meta programming there
@@ -139,10 +142,11 @@ class TaskFactory(object):
         # <specific syntax: argparse args and kwargs>
         if source.argparse_options:
             def configure_argparse(self, parser: ArgumentParser):
+                extended_class.configure_argparse(self, parser)  # call parent first (inherit arguments)
+
                 for argument in source.argparse_options:
                     parser.add_argument(*argument.args, **argument.kwargs)
 
-            # todo: test case - are arguments inherited from parent?
             methods['configure_argparse'] = configure_argparse
 
         # </specific syntax: argparse args and kwargs>
@@ -162,14 +166,8 @@ class TaskFactory(object):
 
         # </decorators appended to methods - one decorator only allowed>
 
-        # import type (class) that will be extended - TaskInterface to extend
-        extended_class = factory_self._import_type(source.task_type)
-
         # build an environment hierarchy, task local environment should always overwrite the global and system scope
-        environment = {}
-        environment.update(factory_self._unpack_envs(extended_class.get_declared_envs()))  # prepend parent task environment
-        environment.update(parsing_context.global_environment)                # add global environment (whole document)
-        environment.update(source.environment)                                # add THIS TASK-defined environment
+        environment = factory_self._build_environment(parsing_context, source, extended_class)
 
         # allow all used environment variables in YAML document declaration
         def get_declared_envs(task_self):
@@ -207,6 +205,22 @@ class TaskFactory(object):
         )
 
         return declaration
+
+    def _build_environment(self, parsing_context: StaticFileContextParsingResult,
+                           source: ParsedTaskDeclaration,
+                           extended_class: Type[TaskInterface]):
+        environment = {}
+
+        # prepend parent task environment
+        environment.update(self._unpack_envs(extended_class.get_declared_envs()))
+
+        # add global environment (whole document)
+        environment.update(parsing_context.global_environment)
+
+        # add THIS TASK-defined environment
+        environment.update(source.environment)
+
+        return environment
 
     def create_task_from_func(self, func: FunctionType, name: Optional[str] = None) \
             -> Tuple[TaskInterface, Optional[FunctionType]]:
@@ -302,11 +316,10 @@ class TaskFactory(object):
             module = importlib.import_module(import_path)
             imported_type: Type[TaskInterface] = module.__getattribute__(class_name)
         except (ModuleNotFoundError, AttributeError):
-            raise Exception(f'Cannot import {class_full_path}. No such class? Check if package is installed in current environment')
+            raise TaskFactoryException.from_invalid_import_path(class_full_path)
 
         if not isinstance(imported_type, type):
-            # @todo: Use better exception
-            raise Exception(f'Cannot import {class_full_path}. No such class? Check if package is installed in current environment')
+            raise TaskFactoryException.from_importing_not_a_class(class_full_path)
 
         return imported_type
 
@@ -350,9 +363,6 @@ class TaskFactory(object):
         """
 
         inherited_attributes = {}
-        # todo: Test case - calling parent.parent.method()
-        #       eg. MyTask extends PhpScriptTask extends RunInContainerBaseTask
-        #       (and only RunInContainerBaseTask has execute())
 
         for name, method in attributes.items():
             method: FunctionType
@@ -414,13 +424,13 @@ class TaskFactory(object):
 
             # call parent() first
             elif current_method.marker == MARKER_CALL_PARENT_FIRST:
-                factory_self._io.internal(f'[{type(self).__name__}] Calling @before_parent: {current_method} -> {parent_method}')
+                factory_self._io.internal(f'[{type(self).__name__}] Calling @after_parent: {current_method} -> {parent_method}')
                 parent_result = parent_method(self, *args, **kwargs) if parent_method else True
                 current_result = current_method(self, *args, **kwargs)
 
             # call children() then parent()
             elif current_method.marker == MARKER_CALL_PARENT_LAST:
-                factory_self._io.internal(f'[{type(self).__name__}] Calling @after_parent: {parent_method} -> {current_method}')
+                factory_self._io.internal(f'[{type(self).__name__}] Calling @before_parent: {parent_method} -> {current_method}')
                 current_result = current_method(self, *args, **kwargs)
                 parent_result = parent_method(self, *args, **kwargs) if parent_method else True
 
