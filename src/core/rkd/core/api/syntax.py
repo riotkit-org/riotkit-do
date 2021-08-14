@@ -53,6 +53,13 @@ def merge_workdir(task_workdir: Optional[str], subproject_workdir: Optional[str]
 class TaskDeclaration(TaskDeclarationInterface):
     """
     Task Declaration is a DECLARED USAGE of a Task (instance of TaskInterface)
+
+    Examples of usage:
+
+    .. code:: python
+
+        TaskDeclaration(MyNiceTask(), env={'SOME': 'thing'}, workdir='/tmp', name=':custom:task:name')
+
     """
 
     _task: TaskInterface

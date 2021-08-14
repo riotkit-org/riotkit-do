@@ -57,8 +57,8 @@ Example: Mocking RKD-specific dependencies in TaskInterface
 
             self.assertEqual('something', task.some_method())
 
-Documentation
--------------
+API
+---
 
 .. autoclass:: rkd.core.api.testing.BasicTestingCase
    :members:

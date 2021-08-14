@@ -12,7 +12,6 @@ SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 class TestFunctional(FunctionalTestingCase):
     """
-    Functional tests case of the whole application.
     Runs application like from the shell, captures output and performs assertions on the results.
     """
 

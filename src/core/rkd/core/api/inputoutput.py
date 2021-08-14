@@ -552,7 +552,9 @@ class Wizard(object):
         return self
 
     def input(self, secret: bool = False):
-        """Extracted for unit testing to be possible easier"""
+        """
+        (Internal) Extracted for unit testing to make testing easier
+        """
 
         if os.getenv('__WIZARD_INPUT'):
             return os.getenv('__WIZARD_INPUT')

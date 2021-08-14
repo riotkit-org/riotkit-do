@@ -20,7 +20,19 @@ RiotKit-Do can be compared to **Gradle** and to **GNU Make**, by allowing both P
 **RKD can be used on PRODUCTION, for development, for testing, to replace some of Bash scripts inside docker containers,
 and for many more, where Makefile was used.**
 
-.. image:: ../syntax.png
+.. tabs::
+
+   .. tab:: YAML
+
+      .. literalinclude:: syntax/simplified/.rkd/makefile.yaml
+
+   .. tab:: Simplified Python
+
+      .. literalinclude:: syntax/simplified/.rkd/makefile.py
+
+   .. tab:: Classic Python
+
+      .. literalinclude:: syntax/classic/.rkd/makefile.py
 
 Example use cases
 ~~~~~~~~~~~~~~~~~
@@ -29,7 +41,7 @@ Example use cases
 - Database administrator workspace (importing dumps, creating new user accounts, plugging/unplugging databases)
 - Development environment (executing migrations, importing test database, splitting tests and running parallel)
 - On CI (prepare project to run on eg. Jenkins or Gitlab CI) - RKD is reproducible on local computer which makes inspection easier
-- Kubernetes/OKD deployment workspace (create shared YAML parts with JINJA2 between multiple environments and deploy from RKD)
+- Application cluster management, deploying applications, adding users, setting permissons
 - Automate things like certificate regeneration on production server, RKD can generate any application configs using JINJA2
 - Installers (RKD has built-in commands for replacing lines in files, modifying .env files, asking user questions and validating answers)
 
@@ -41,11 +53,11 @@ The virtual environment installation is similar in concept to the Gradle wrapper
 
 .. code:: bash
 
-    # 1) via PIP
-    pip install rkd
-
-    # 2) Create project (will create a virtual env and commit files to GIT)
-    rkd :rkd:create-structure --commit
+    # download a wrapper that will automatically setup virtual environment and install RKD
+    # do not forget to commit wrapper to the GIT repository
+    wget https://github.com/riotkit-org/riotkit-do/blob/master/src/core/rkd/core/misc/initial-structure/rkdw.py -O rkdw
+    chmod +x rkdw
+    ./rkdw
 
 
 Getting started in freshly created structure
@@ -54,8 +66,8 @@ Getting started in freshly created structure
 The "Quick start" section ends up with a **.rkd** directory, a requirements.txt and ./rkdw
 
 1. Call RKD using a wrapper in project directory **./rkdw**
-2. Each time you install anything from **pip** in your project - add it to requirements.txt (or Pipfile), you can install additional RKD tasks from pip
-3. In **.rkd/makefile.yaml** add your first tasks, pipelines and imports
+2. Each time you install anything from **pip** in your project - add it to requirements.txt (or use :code:`pipenv install`), additional RKD tasks can be installed from PIP
+3. In **.rkd/makefile.yaml** add your tasks, pipelines and imports
 
 Create your first task with :ref:`READ MORE ABOUT YAML SYNTAX IN THE BEGINNERS GUIDE`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -77,11 +89,15 @@ Keep learning
 
 
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 1
    :caption: Contents:
 
    makefile-guide
    quickstart
+   syntax
    usage/importing-tasks
+   extending-tasks
    usage/index
    standardlib/index
+   rts/index
+

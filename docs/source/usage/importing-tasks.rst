@@ -7,8 +7,8 @@ Tasks can be defined as installable Python's packages that you can import in you
 
 **Please note:**
 
-- To import a group, the package you try to import need to hvve a defined **imports()** method inside of the package.
-- The imported group does not need to import automatically dependend tasks (but it can, it is recommended), you need to read into the docs of specific package if it does so
+- To import a group of packages, the package you try to import need to have a defined **imports()** method inside of the package.
+- The imported group does not need to import automatically dependent tasks (but it can, it is recommended), you need to read into the docs of specific package if it does so
 
 1) Install a package
 --------------------
@@ -19,14 +19,17 @@ Example: Given we want to import tasks from package "rkt_armutils".
 
 .. code:: bash
 
+    # Using virtualenv
     echo "rkt_armutils==3.0" >> requirements.txt
     pip install -r requirements.txt
+
+    # Alternatively, using pipenv (recommended)
+    pipenv install rkt_armutils==3.0
 
 
 **Good practices:**
 
-- Use fixed versions eg. 3.0 or even 3.0.0 and upgrade only intentionally to reduce your work. Automatic updates, especially of major versions
-could be unpredictable and possibly can break something time-to-time
+- Use fixed versions eg. 3.0 or even 3.0.0 and upgrade only intentionally to reduce your work. Automatic updates, especially of major versions could be unpredictable and introduce breaking changes into your project
 
 **How do I check latest version?:**
 
@@ -82,7 +85,7 @@ Tasks could be imported also in shell, for quick check, handy scripts, or for em
 will be inherited into subshells of RKD, commandline argument not.*
 
 
-For more information about this environment variable check it's documentation page: :ref:`RKD_IMPORTS`
+For more information about this environment variable - check it's documentation page: :ref:`RKD_IMPORTS`
 
 Ready to go? Check :ref:`Built-in tasks` that you can import in your Makefile
 -----------------------------------------------------------------------------

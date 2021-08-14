@@ -95,8 +95,10 @@ class BasicTestingCase(TestCase):
         Mocks environment
 
         Example usage:
-            with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/env-in-yaml/.rkd'}):
-                ...
+            .. code:: python
+
+                with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/env-in-yaml/.rkd'}):
+                    # code there
 
         :param environ:
         :return:

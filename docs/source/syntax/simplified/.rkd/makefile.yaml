@@ -1,0 +1,12 @@
+version: org.riotkit.rkd/yaml/v1
+tasks:
+    :hello1:
+        extends: rkd.core.standardlib.syntax.PythonSyntaxTask
+        arguments:
+            "--name":
+                required: True
+                help: "Allows to specify a name"
+        description: Prints your name
+        execute: |
+            self.io().info_msg(f'Hello {ctx.get_arg("--name")}, I\'m talking from YAML, and you?')
+            return True

@@ -67,6 +67,12 @@ in such project.
 RKD_BIN is automatically generated, when executing task in a separate process, but it can be also set globally.
 
 
+RKD_DIST_NAME
+~~~~~~~~~~~~~
+
+Name of the Python package that wraps RKD (similar case as RKD_BIN use case)
+
+
 RKD_SYS_LOG_LEVEL
 ~~~~~~~~~~~~~~~~~
 
@@ -94,3 +100,8 @@ Useful in daily tasks to create handy shortcuts, also very useful for testing ta
     RKD_IMPORTS="rkt_utils.docker" rkd :docker:tag
     RKD_IMPORTS="rkt_utils.docker:rkt_ciutils.boatci:rkd_python" rkd :tasks
 
+
+RKD_DEPTH
+~~~~~~~~~
+
+Internally used to detect if RKD is called from inside of RKD

@@ -1,4 +1,7 @@
 RKD Tech Specification
 ======================
 
-{ menu here - list of RTS }
+.. toctree::
+   :maxdepth: 1
+
+   rts-1

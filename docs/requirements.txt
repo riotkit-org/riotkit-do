@@ -1,9 +1,9 @@
-sphinx-glpi-theme
+sphinx >= 4.1, < 5
+sphinx-material
+sphinx-tabs
 sphinx-jinja==1.1.1
 
-pbr>=5.4.5
-jinja2>=2.11
-pyyaml>=5.3.1
-python-dotenv>=0.13.0
-tabulate>=0.8.7
-jsonschema
+-e ../src/process/ --pre
+-e ../src/pythonic/ --pre
+# -e ../src/php/ --pre
+-e ../src/core/ --pre

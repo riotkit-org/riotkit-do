@@ -309,7 +309,8 @@ class TaskInterface(TaskUtilities):
         self.temp = temp_manager
 
     def copy_internal_dependencies(self, task):
-        """Allows to execute a task-in-task, by copying dependent services from one task to other task
+        """
+        Allows to execute a task-in-task, by copying dependent services from one task to other task
         """
 
         task.internal_inject_dependencies(self._io, self._ctx, self._executor, self.temp)

@@ -181,7 +181,6 @@ class TaskUtilities(AbstractClass):
         return self.sh(bash_opts + ' %%RKD%% --no-ui %s' % args_str, capture=capture)
 
 
-# @todo: Cover a case with return and without return
 def evaluate_code(code: str, io: IO, full_task_name: str = 'unknown',
                   returns_boolean: bool = False, ctx=None, self=None) -> Union[any, bool]:
     """
