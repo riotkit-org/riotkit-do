@@ -3,7 +3,7 @@ sphinx-material
 sphinx-tabs
 sphinx-jinja==1.1.1
 
--e ../src/process/ --pre
--e ../src/pythonic/ --pre
-# -e ../src/php/ --pre
--e ../src/core/ --pre
+-e src/process/ --pre
+-e src/pythonic/ --pre
+# -e src/php/ --pre
+-e src/core/ --pre
