@@ -70,12 +70,39 @@ class RunInContainerBaseTask(ExtendableTaskInterface, ABC):
         return result
 
     def mount(self, local: str, remote: str, mount_type: str = 'bind', read_only: bool = False) -> None:
+        """
+        Adds a mountpoint
+
+        :param local:
+        :param remote:
+        :param mount_type:
+        :param read_only:
+        :return:
+        """
+
         self.mounts.append(Mount(target=remote, source=local, type=mount_type, read_only=read_only))
 
     def add_file_to_copy(self, local: str, remote: str) -> None:
+        """
+        Schedules a file to be copied during execution time
+
+        :param local:
+        :param remote:
+        :return:
+        """
+
         self.to_copy[remote] = local
 
     def in_container(self, cmd: str, workdir: Optional[str] = None, user: Optional[str] = None) -> None:
+        """
+        Execute a shell command inside of the container
+
+        :param cmd:
+        :param workdir:
+        :param user:
+        :return:
+        """
+
         additional_args = ''
 
         if workdir:
