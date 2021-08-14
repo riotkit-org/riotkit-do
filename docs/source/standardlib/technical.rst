@@ -49,6 +49,9 @@ to create a task by defining a simple method as a callback.
 :rkd:create-structure
 ~~~~~~~~~~~~~~~~~~~~~
 
+.. HINT::
+    This is an extendable task. Read more in :ref:`Extending tasks` chapter.
+
 .. jinja:: rkd_create_structure
    :file: source/templates/package-usage.rst
 

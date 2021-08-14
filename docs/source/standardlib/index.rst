@@ -10,5 +10,8 @@ Built-in tasks
    shell
    technical
    python
+   php
    env
    jinja
+   io
+   docker

@@ -1,3 +1,4 @@
+import os
 from distutils.version import LooseVersion
 import sphinx_material
 
@@ -23,8 +24,114 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
-    "sphinx_tabs.tabs"
+    "sphinx_tabs.tabs",
+    "sphinxcontrib.jinja"
 ]
+
+jinja_contexts = {
+    'py_publish': {
+        'PKG_NAME': 'rkd_python',
+        'PKG_CLASS_NAME': 'rkd_python.PublishTask',
+        'PKG_PIP': 'rkd_python'
+    },
+    'py_build': {
+        'PKG_NAME': 'rkd_python',
+        'PKG_CLASS_NAME': 'rkd_python.BuildTask',
+        'PKG_PIP': 'rkd_python'
+    },
+    'py_install': {
+        'PKG_NAME': 'rkd_python',
+        'PKG_CLASS_NAME': 'rkd_python.InstallTask',
+        'PKG_PIP': 'rkd_python'
+    },
+    'py_clean': {
+        'PKG_NAME': 'rkd_python',
+        'PKG_CLASS_NAME': 'rkd_python.CleanTask',
+        'PKG_PIP': 'rkd_python'
+    },
+    'py_unittest': {
+        'PKG_NAME': 'rkd_python',
+        'PKG_CLASS_NAME': 'rkd_python.UnitTestTask',
+        'PKG_PIP': 'rkd_python'
+    },
+    'shell': {
+        'PKG_NAME': 'rkd.core.standardlib.shell',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.shell.ShellCommandTask',
+        'PKG_PIP': 'rkd'
+    },
+    'exec': {
+        'PKG_NAME': 'rkd.core.standardlib.shell',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.shell.ExecProcessCommand',
+        'PKG_PIP': 'rkd'
+    },
+    'j2_render': {
+        'PKG_NAME': 'rkd.core.standardlib.jinja',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.jinja.FileRendererTask',
+        'PKG_PIP': 'rkd'
+    },
+    'j2_directory_to_directory': {
+        'PKG_NAME': 'rkd.core.standardlib.jinja',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.jinja.RenderDirectoryTask',
+        'PKG_PIP': 'rkd'
+    },
+    'init': {
+        'PKG_NAME': 'rkd.core.standardlib',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.InitTask',
+        'PKG_PIP': 'rkd'
+    },
+    'tasks': {
+        'PKG_NAME': 'rkd.core.standardlib',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.TasksListingTask',
+        'PKG_PIP': 'rkd'
+    },
+    'callable_task': {
+        'PKG_NAME': 'rkd.core.standardlib',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.CallableTask',
+        'PKG_PIP': 'rkd'
+    },
+    'rkd_create_structure': {
+        'PKG_NAME': 'rkd.core.standardlib',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.CreateStructureTask',
+        'PKG_PIP': 'rkd'
+    },
+    'version': {
+        'PKG_NAME': 'rkd.core.standardlib',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.VersionTask',
+        'PKG_PIP': 'rkd'
+    },
+    'env_get': {
+        'PKG_NAME': 'rkd.core.standardlib.env',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.env.SetEnvTask',
+        'PKG_PIP': 'rkd'
+    },
+    'env_set': {
+        'PKG_NAME': 'rkd.core.standardlib.env',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.env.GetEnvTask',
+        'PKG_PIP': 'rkd'
+    },
+    'line_in_file': {
+        'PKG_NAME': 'rkd.core.standardlib',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.LineInFileTask',
+        'PKG_PIP': 'rkd'
+    },
+    'ArchivePackagingBaseTask': {
+        'PKG_NAME': 'rkd.core.standardlib.io',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.io.ArchivePackagingBaseTask',
+        'PKG_PIP': 'rkd'
+    },
+    'PhpScriptTask': {
+        'PKG_NAME': 'rkd.php.script',
+        'PKG_CLASS_NAME': 'rkd.php.script.PhpScriptTask',
+        'PKG_PIP': 'rkd.php'
+    },
+    'RunInContainerBaseTask': {
+        'PKG_NAME': 'rkd.core.standardlib.docker',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.docker.RunInContainerBaseTask',
+        'PKG_PIP': 'rkd'
+    }
+}
+
+jinja_base = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + '/../')
 
 autosummary_generate = True
 autoclass_content = "class"

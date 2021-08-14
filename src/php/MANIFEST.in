@@ -1,0 +1,5 @@
+recursive-exclude tests *
+recursive-exclude example *
+include requirements-external.txt
+include requirements-subpackages.txt
+include setup.json

@@ -1,3 +1,4 @@
+.. _Extending tasks:
 Extending tasks
 ===============
 

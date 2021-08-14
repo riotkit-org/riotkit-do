@@ -43,8 +43,8 @@ def PackIntoZipTask():
 
     def configure(task: ArchivePackagingBaseTask, event: ConfigurationLifecycleEvent):
         task.archive_path = '/tmp/test-archive.zip'
-        task.consider_gitignore('/home/krzysiek/Projekty/riotkit/riotkit/rkd/.gitignore')
-        task.add('/home/krzysiek/Projekty/riotkit/riotkit/rkd/src/php/tests/samples/', './')
+        task.consider_gitignore('.gitignore')
+        task.add('tests/samples/', './')
 
     return [configure]
 

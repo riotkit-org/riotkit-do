@@ -11,7 +11,11 @@ Provides tasks for shell commands execution - mostly used in YAML syntax and in 
 
 Executes a Bash script. Can be multi-line.
 
-*Notice: phrase %RKD% is replaced with an rkd binary name*
+.. HINT::
+    Phrase %RKD% is replaced with an rkd binary name
+
+.. HINT::
+    This is an extendable task. Read more in :ref:`Extending tasks` chapter.
 
 **Example of plain usage:**
 

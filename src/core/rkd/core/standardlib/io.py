@@ -20,6 +20,22 @@ class ArchivePackagingBaseTask(ExtendableTaskInterface):
       - dry-run mode (do not write anything to disk, just print messages)
       - copies directories recursively
       - .gitignore files support (manually added using API method)
+
+
+    Example:
+
+        .. code:: python
+
+            @extends(ArchivePackagingBaseTask)
+            def PackIntoZipTask():
+                def configure(task: ArchivePackagingBaseTask, event: ConfigurationLifecycleEvent):
+                    task.archive_path = '/tmp/test-archive.zip'
+                    task.consider_gitignore('.gitignore')
+                    task.add('tests/samples/', './')
+
+                return [configure]
+
+
     """
 
     sources: Dict[str, str]

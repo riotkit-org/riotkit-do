@@ -2,8 +2,9 @@ sphinx >= 4.1, < 5
 sphinx-material
 sphinx-tabs
 sphinx-jinja==1.1.1
+docker
 
 -e src/process/ --pre
 -e src/pythonic/ --pre
-# -e src/php/ --pre
+-e src/php/ --pre
 -e src/core/ --pre

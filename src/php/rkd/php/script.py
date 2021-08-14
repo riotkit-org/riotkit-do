@@ -21,6 +21,26 @@ class PhpScriptTask(RunInContainerBaseTask):
         script: Path to script to load instead of stdin (could be a relative path)
         version: PHP version. Leave None to use default 8.0-alpine version
 
+    Example of usage:
+
+        .. code:: yaml
+
+            version: org.riotkit.rkd/yaml/v1
+            imports:
+                - rkd.php.script.PhpScriptTask
+
+            tasks:
+                :yaml:test:php:
+                    extends: rkd.php.script.PhpScriptTask
+                    configure@before_parent: |
+                        self.version = '7.2-alpine'
+                    inner_execute@after_parent: |
+                        print('IM AFTER PARENT')
+                        return True
+                    input: |
+                        var_dump(getcwd());
+                        var_dump(phpversion());
+
     """
 
     script: Optional[str]
