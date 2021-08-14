@@ -7,7 +7,7 @@ and YAML syntax.
 
 RiotKit-Do can be compared to **Gradle** and to **GNU Make**, by allowing both Python and Makefile-like YAML syntax.
 
-**What I can do with RKD?**
+**What can be achieved with RKD?**
 
 - Simplify the scripts
 - Put your Python and Bash scripts inside a YAML file (like in GNU Makefile)
