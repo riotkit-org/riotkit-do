@@ -38,7 +38,7 @@ The schema file cannot be found, the name is invalid or file missing. The schema
 
 It means you created a list (starts with "-") instead of dictionary at "tasks" path.
 
-**Example what went wrong:**
+**Example of what went wrong:**
 
 .. code:: yaml
 
@@ -46,7 +46,7 @@ It means you created a list (starts with "-") instead of dictionary at "tasks" p
         - description: first
         - description: second
 
-**Example how it should be as an 'object':**
+**Example of how it should be as an 'object' (dictionary):**
 
 .. code:: yaml
 
@@ -61,5 +61,5 @@ It means you created a list (starts with "-") instead of dictionary at "tasks" p
 API
 ---
 
-.. autoclass:: rkd.yaml_parser.YamlFileLoader
+.. autoclass:: rkd.core.yaml_parser.YamlFileLoader
    :members:

@@ -1,0 +1,35 @@
+{
+    "name": "rkd.core",
+    "author": "RiotKit non-profit organization",
+    "author_email": "riotkit@riseup.net",
+    "description": "Task executor, handy for DevOps and not only - balance between Makefile and Gradle.",
+    "url": "https://github.com/riotkit-org",
+    "license": "Apache-2",
+    "classifiers": [
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "Intended Audience :: System Administrators",
+        "Intended Audience :: Information Technology",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: POSIX",
+        "Programming Language :: Python :: 3 :: Only"
+    ],
+    "entry_points": {
+        "console_scripts": [
+            "rkd=rkd.core.bootstrap:main"
+        ]
+    },
+    "keywords": ["rkd", "riotkit", "gradle", "gradlew", "task executor", "maven", "build manager", "project manager"],
+    "include_package_data": true,
+    "package_data": {
+        "rkd.core": [
+            "misc/*",
+            "misc/**/*",
+            "misc/initial-structure/.rkd/*",
+            "misc/initial-structure/.rkd/**/*",
+            "misc/initial-structure/.rkd/logs/.gitkeep",
+            "misc/internal/**/*"
+        ]
+    }
+}

@@ -7,6 +7,7 @@ jobs:
         strategy:
             matrix:
                 python-version: ["3.8", "3.9", "3.7"]
+            max-parallel: 3
         steps:
             - name: Set GIT identity
               run: |
@@ -21,8 +22,11 @@ jobs:
               with:
                   python-version: ${{ matrix.python-version }}
 
+            - name: Check if the code compiles
+              run: "python -m compileall ."
+
             - name: Install dependencies
-              run: "pip install -r ./requirements.txt && pip install -r ./requirements-dev.txt && pip install -r ./subpackages/rkd_python/requirements.txt"
+              run: "make deps"
 
             - name: Build project
               run: "make package"
@@ -35,15 +39,13 @@ jobs:
               if: always()
               with:
                   name: "[${{ matrix.python-version }}] RKD tests"
-                  path: build/tests.xml
+                  path: src/*/build/tests.xml
                   reporter: java-junit
-
-            - name: Run rkd_python tests on Python ${{ matrix.python-version }}
-              run: "cd subpackages/rkd_python && make tests"
 
     release:
         needs: [test]
         runs-on: ubuntu-20.04
+        if: always()
         steps:
             - name: Checkout
               uses: actions/checkout@v2
@@ -56,10 +58,7 @@ jobs:
                   python-version: 3.7
 
             - name: Install dependencies
-              run: "pip install -r ./requirements.txt && pip install -r ./requirements-dev.txt && pip install -r ./subpackages/rkd_python/requirements.txt"
+              run: "make deps"
 
-            - name: Release RKD to PyPI
+            - name: Release to PyPI
               run: "make release PYPI_TOKEN=${{ secrets.PYPI_TOKEN }}"
-
-            - name: Release rkd_python to PyPI
-              run: "cd subpackages/rkd_python && make release PYPI_TOKEN=${{ secrets.PYPI_TOKEN }}"

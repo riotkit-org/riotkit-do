@@ -1,10 +1,10 @@
 import os
-from rkd.api.syntax import TaskAliasDeclaration as Task  # RKD API (for defining shortcuts/aliases for whole tasks lists)
-from rkd.api.syntax import TaskDeclaration               # RKD API (for declaring usage of given task, importing it)
-from rkd.api.contract import ExecutionContext            # RKD API (one of dependencies - context gives us access to commandline arguments and environment variables)
-from rkd_python import imports as PythonImports          # group of imports (not all packages supports it, but most of them)
-from rkd.standardlib.jinja import FileRendererTask       # single task
-from rkd.standardlib import CallableTask                 # Basic Python callable task for a little bit advanced usage
+from rkd.core.api.syntax import TaskAliasDeclaration as Task  # RKD API (for defining shortcuts/aliases for whole tasks lists)
+from rkd.core.api.syntax import TaskDeclaration               # RKD API (for declaring usage of given task, importing it)
+from rkd.core.api.contract import ExecutionContext            # RKD API (one of dependencies - context gives us access to commandline arguments and environment variables)
+from rkd.pythonic import imports as PythonImports          # group of imports (not all packages supports it, but most of them)
+from rkd.core.standardlib.jinja import FileRendererTask       # single task
+from rkd.core.standardlib import CallableTask                 # Basic Python callable task for a little bit advanced usage
 # from .mypackage import MyTask                          # import your task from local package
 
 os.putenv('LANG', 'c')

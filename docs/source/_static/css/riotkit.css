@@ -1,8 +1,16 @@
-table.right-align-right-col {
-    text-align: right
+.py.class {
+    margin-bottom: 100px;
+    background-color: #2196f314;
+    padding: 10px;
 }
 
-.wy-nav-content {
-    max-width: none;
-    width: 100%;
+.py.class .property span {
+    font-weight: bold;
+}
+
+.py.method {
+    margin-bottom: 25px;
+    margin-top: 25px;
+    background-color: #2196f31c;
+    padding: 10px;
 }

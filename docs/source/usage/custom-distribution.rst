@@ -93,6 +93,6 @@ Files like banner, internal Makefiles can be overridden in user's home directory
 
 Here is the priority list, first matching result stops the search:
 
-.. include:: ../../rkd/packaging.py
+.. include:: ../../../src/core/rkd/core/packaging.py
    :start-after: <sphinx_resources-get_possible_paths>
    :end-before: </sphinx_resources-get_possible_paths>
