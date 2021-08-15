@@ -1,6 +1,7 @@
 PHP
 ===
 
+.. _PhpScriptTask:
 PhpScriptTask
 ~~~~~~~~~~~~~
 

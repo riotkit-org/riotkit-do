@@ -9,23 +9,48 @@ from rkd.core.api.contract import ExecutionContext, ExtendableTaskInterface
 
 class RunInContainerBaseTask(ExtendableTaskInterface, ABC):
     """
-    RunInContainerBaseTask
-    ----------------------
+    # <sphinx:extending-tasks>
 
     Allows to work inside of a temporary docker container.
 
     Configuration:
-        mount(): Mount directories/files as volumes
-        add_file_to_copy(): Copy given files to container before container starts
-        user: Container username, defaults to "root"
-        shell: Shell binary path, defaults to "/bin/sh"
-        docker_image: Full docker image name with registry (optional), group, image name and tag
-        entrypoint: Entrypoint
-        command: Command to execute on entrypoint
+
+        - mount(): Mount directories/files as volumes
+        - add_file_to_copy(): Copy given files to container before container starts
+        - user: Container username, defaults to "root"
+        - shell: Shell binary path, defaults to "/bin/sh"
+        - docker_image: Full docker image name with registry (optional), group, image name and tag
+        - entrypoint: Entrypoint
+        - command: Command to execute on entrypoint
 
     Runtime:
-        copy_to_container(): Copy files/directory to container immediately
-        in_container(): Execute inside container
+
+        - copy_to_container(): Copy files/directory to container immediately
+        - in_container(): Execute inside container
+
+    Example:
+
+        .. code:: yaml
+
+            version: org.riotkit.rkd/yaml/v1
+            imports:
+                - rkd.core.standardlib.docker.RunInContainerBaseTask
+
+            tasks:
+                :something-in-docker:
+                    extends: rkd.core.standardlib.docker.RunInContainerBaseTask
+                    configure: |
+                        self.docker_image = 'php:7.3'
+                        self.user = 'www-data'
+                        self.mount(local='./build', remote='/build')
+                        self.add_file_to_copy('build.php', '/build/build.php')
+                    inner_execute: |
+                        self.in_container('php build.php')
+                        return True
+                    # do not extend just "execute", because "execute" is used by RunInContainerBaseTask
+                    # to spawn docker container, run inner_execute(), and after just destroy the container
+
+    # </sphinx:extending-tasks>
     """
 
     docker_image: str

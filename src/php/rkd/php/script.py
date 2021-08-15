@@ -12,14 +12,16 @@ from rkd.core.standardlib.docker import RunInContainerBaseTask
 
 class PhpScriptTask(RunInContainerBaseTask):
     """
+    # <sphinx:extending-tasks>
     Execute a PHP code (using a docker container)
     Can be extended - this is a base task.
 
     Inherits settings from `RunInContainerBaseTask`.
 
     Configuration:
-        script: Path to script to load instead of stdin (could be a relative path)
-        version: PHP version. Leave None to use default 8.0-alpine version
+
+        - script: Path to script to load instead of stdin (could be a relative path)
+        - version: PHP version. Leave None to use default 8.0-alpine version
 
     Example of usage:
 
@@ -35,12 +37,14 @@ class PhpScriptTask(RunInContainerBaseTask):
                     configure@before_parent: |
                         self.version = '7.2-alpine'
                     inner_execute@after_parent: |
-                        print('IM AFTER PARENT')
+                        self.in_container('php --version')
+                        print('IM AFTER PARENT. At first the PHP code from "input" will be executed.')
                         return True
                     input: |
                         var_dump(getcwd());
                         var_dump(phpversion());
 
+    # </sphinx:extending-tasks>
     """
 
     script: Optional[str]
