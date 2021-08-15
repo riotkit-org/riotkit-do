@@ -74,6 +74,41 @@ It's exactly the same example as above, but written multiline. It's recommended 
         :task4 \
         :task5
 
+Arguments
+---------
+
+**Each task has it's own arguments parsing and --help method**
+
+.. code:: bash
+
+    # see a list of commandline switches
+    ./rkdw :task1 --help
+
+    # increase log level
+    ./rkdw :task1 --log-level debug
+
+    # log output to file
+    ./rkdw :task1 --log-to-file=/tmp/task1.log
+
+    # change user for task execution time
+    ./rkdw :task1 --become=root
+
+
+**Global commandline switches**
+
+To apply default, global error level use a switch before all tasks.
+
+.. code:: bash
+
+    ./rkdw --log-level=debug :task1 :task2
+
+    # alternatively (changes log level on earlier stage than argument parsing)
+    RKD_SYS_LOG_LEVEL=debug ./rkdw :task1 :task2
+
+    # or like shown in 'Tasks arguments usage in shell and in scripts' - any commandline switches
+    # can be propagated, including RKD internal switches
+    ./rkdw @ --log-level=debug --task-workdir=/tmp :task1 :task2
+
 
 Advanced: Blocks for error handling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
