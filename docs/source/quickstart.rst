@@ -1,8 +1,8 @@
 
 .. _Commandline basics:
 
-Commandline basics
-==================
+Commandline usage
+=================
 
 RKD command-line usage is highly inspired by GNU Make and Gradle, but it has its own extended possibilities to
 make your scripts smaller and more readable.
