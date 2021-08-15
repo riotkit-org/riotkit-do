@@ -16,6 +16,7 @@ subprojects as subdirectories of any depth.
     # some domain-specific files (e.g. web application)
     src/Application/index.php
     composer.json
+    composer.lock
 
     # example subproject - documentation
     docs/index.rst
