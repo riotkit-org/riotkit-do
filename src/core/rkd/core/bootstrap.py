@@ -54,24 +54,52 @@ class RiotKitDoApplication(object):
 
         sys.path = [os.getcwd() + '/src'] + sys.path
 
+    @staticmethod
+    def increment_depth():
+        """
+        Note how many RKD we launched inside RKD... RKD->RKD->RKD->...->RKD
+        :return:
+        """
+
+        os.environ['RKD_DEPTH'] = str(env.rkd_depth() + 1)
+
+    @staticmethod
+    def setup_global_io(pre_parsed_args: dict) -> SystemIO:
+        """
+        SystemIO is the default IO instance that is used BETWEEN tasks.
+        Some of its setting are later INHERITED into IO of tasks, it is done explicit using inheritation method.
+        :return:
+        """
+
+        io = SystemIO()
+        io.silent = (pre_parsed_args['log_level'] not in ['debug', 'internal']) and pre_parsed_args['silent']
+        io.set_log_level(pre_parsed_args['log_level'])
+
+        if env.rkd_ui() is not None:
+            io.set_display_ui(env.rkd_ui())
+
+        if env.rkd_depth() >= 2 or pre_parsed_args['no_ui']:
+            io.set_display_ui(False)
+
+        return io
+
     def main(self, argv: list):
         if not CommandlineParsingHelper.has_any_task(argv) and not CommandlineParsingHelper.was_help_used(argv):
             self.print_banner_and_exit()
 
-        # system wide IO instance with defaults, the :init task should override those settings
-        io = SystemIO()
-        io.silent = env.system_log_level() not in ['debug', 'internal']
-        io.set_log_level(env.system_log_level())
+        # parse arguments that are before tasks e.g. rkd --help (in comparison to rkd :task1 --help)
+        pre_parsed_args = CommandlineParsingHelper.preparse_global_arguments_before_tasks(argv)
+
+        # system wide IO instance with defaults
+        io = self.setup_global_io(pre_parsed_args)
+        self.increment_depth()
 
         cmdline_parser = CommandlineParsingHelper(io)
-
-        # preparse arguments that are before tasks
-        preparsed_args = CommandlineParsingHelper.preparse_args(argv)
 
         # load context of components - all tasks, plugins etc.
         try:
             io.internal_lifecycle('Loading all contexts and building an unified context')
-            self._ctx = ContextFactory(io).create_unified_context(additional_imports=preparsed_args['imports'])
+            self._ctx = ContextFactory(io).create_unified_context(additional_imports=pre_parsed_args['imports'])
 
         except ParsingException as e:
             io.silent = False
@@ -91,7 +119,7 @@ class RiotKitDoApplication(object):
 
         # iterate over each task, parse commandline arguments
         try:
-            requested_tasks = cmdline_parser.create_grouped_arguments([':init'] + argv[1:])
+            requested_tasks = cmdline_parser.create_grouped_arguments(argv[1:])
 
         except CommandlineParsingError as err:
             io.error_msg(str(err))

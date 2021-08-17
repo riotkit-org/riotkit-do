@@ -17,74 +17,6 @@ from .. import env
 from .shell import ShellCommandTask
 
 
-class InitTask(TaskInterface):
-    """
-    :init task is executing ALWAYS. That's a technical, core task.
-
-    The purpose of this task is to handle global settings
-    """
-
-    def get_name(self) -> str:
-        return ':init'
-
-    def get_group_name(self) -> str:
-        return ''
-
-    def get_declared_envs(self) -> Dict[str, str]:
-        return {
-            'RKD_DEPTH': '0',
-            'RKD_PATH': '',                # supported by core, here only for documentation in CLI
-            'RKD_ALIAS_GROUPS': '',        # supported by core, here only for documentation in CLI
-            'RKD_UI': 'true',
-            'RKD_SYS_LOG_LEVEL': 'info',   # supported by core, here only for documentation in CLI
-            'RKD_IMPORTS': ''              # supported by core, here only for documentation in CLI
-        }
-
-    def configure_argparse(self, parser: ArgumentParser):
-        parser.add_argument('--no-ui', '-n', action='store_true',
-                            help='Do not display RKD interface (similar to --silent, ' +
-                                 'but does not inherit --silent into next tasks)')
-
-        parser.add_argument('--imports', '-ri',
-                            help='Imports a task or list of tasks separated by ":". '
-                                 'Example: "rkt_utils.docker:rkt_ciutils.boatci:rkd_python". '
-                                 'Instead of switch there could be also environment variable "RKD_IMPORTS" used')
-
-    def execute(self, context: ExecutionContext) -> bool:
-        """
-        :init task is setting user-defined global defaults on runtime
-        It allows user to call eg. rkd --log-level debug :task1 :task2
-        to set global settings such as log level
-
-        :param context:
-        :return:
-        """
-
-        # increment RKD_DEPTH
-        os.environ['RKD_DEPTH'] = str(env.rkd_depth() + 1)
-
-        self._ctx.io.silent = context.args['silent']
-
-        # log level is optional to be set
-        if context.args['log_level']:
-            self._ctx.io.set_log_level(context.args['log_level'])
-
-        if context.get_env('RKD_UI'):
-            self._ctx.io.set_display_ui(context.get_env('RKD_UI').lower() == 'true')
-
-        if env.rkd_depth() >= 2 or context.args['no_ui']:
-            self._ctx.io.set_display_ui(False)
-
-        return True
-
-    def is_silent_in_observer(self) -> bool:
-        return True
-
-    @property
-    def is_internal(self) -> bool:
-        return True
-
-
 class TasksListingTask(TaskInterface):
     """Lists all enabled tasks
 
@@ -482,7 +414,7 @@ This task is designed to be extended, see methods marked as "interface methods".
 
         self.sh('cp %s/rkdw.py ./rkdw' % template_structure_path)
         self.sh('chmod +x ./rkdw')
-        self.sh('./rkdw :init', env={'ENVIRONMENT_TYPE': 'pipenv' if use_pipenv else 'venv'})
+        self.sh('./rkdw', env={'ENVIRONMENT_TYPE': 'pipenv' if use_pipenv else 'venv'})
 
     @staticmethod
     def _get_development_pipenv_install_str(dev_dir: str):
@@ -584,7 +516,6 @@ This task is designed to be extended, see methods marked as "interface methods".
 
 def imports() -> List[TaskDeclaration]:
     return [
-        TaskDeclaration(InitTask(), internal=True),
         TaskDeclaration(TasksListingTask()),
         TaskDeclaration(VersionTask()),
         TaskDeclaration(ShellCommandTask(), internal=True),

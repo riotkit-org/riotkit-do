@@ -1,14 +1,6 @@
 Technical/Core
 ==============
 
-:init
-~~~~~
-
-.. jinja:: init
-   :file: source/templates/package-usage.rst
-
-This task runs ALWAYS. :init implements a possibility to inherit global settings to other tasks
-
 :tasks
 ~~~~~~
 

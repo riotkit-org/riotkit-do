@@ -1,5 +1,5 @@
 # list of tasks there is kept for compatibility, as previously "core" tasks were placed in __init__
-from .core import InitTask, \
+from .core import \
     TasksListingTask, VersionTask, \
     ShellCommandTask, LineInFileTask, \
     CreateStructureTask, imports as core_imports

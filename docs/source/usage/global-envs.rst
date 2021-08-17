@@ -76,7 +76,7 @@ Name of the Python package that wraps RKD (similar case as RKD_BIN use case)
 RKD_SYS_LOG_LEVEL
 ~~~~~~~~~~~~~~~~~
 
-Use for debugging. The variable is read in very early stage of RKD initialization, before :code:`:init` task, and before context preparation.
+Use for debugging. The variable is read in very early stage of RKD initialization, before context preparation.
 
 .. code:: bash
 

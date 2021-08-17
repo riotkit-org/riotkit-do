@@ -31,12 +31,11 @@ class TestFunctional(FunctionalTestingCase):
 
         full_output, exit_code = self.run_and_capture_output(['--help'])
 
-        self.assertIn('usage: :init', full_output)
-        self.assertIn('--log-to-file', full_output)
+        self.assertIn('usage: rkd', full_output)
         self.assertIn('--log-level', full_output)
-        self.assertIn('--keep-going', full_output)
         self.assertIn('--silent', full_output)
-        self.assertIn('--become', full_output)
+        self.assertNotIn('--log-to-file', full_output)
+        self.assertNotIn('--keep-going', full_output)
         self.assertEqual(0, exit_code)
 
     def test_workdir_switch(self):

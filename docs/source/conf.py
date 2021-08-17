@@ -74,11 +74,6 @@ jinja_contexts = {
         'PKG_CLASS_NAME': 'rkd.core.standardlib.jinja.RenderDirectoryTask',
         'PKG_PIP': 'rkd'
     },
-    'init': {
-        'PKG_NAME': 'rkd.core.standardlib',
-        'PKG_CLASS_NAME': 'rkd.core.standardlib.InitTask',
-        'PKG_PIP': 'rkd'
-    },
     'tasks': {
         'PKG_NAME': 'rkd.core.standardlib',
         'PKG_CLASS_NAME': 'rkd.core.standardlib.TasksListingTask',

@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
 import os
-from typing import List
+from dataclasses import dataclass
+from typing import List, Optional
 from typing import Tuple
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
 from shlex import split as split_argv
+
+from .. import env
 from ..api.inputoutput import IO
 from ..api.contract import TaskDeclarationInterface
 from ..api.contract import ArgumentEnv
@@ -41,6 +44,25 @@ class TraceableArgumentParser(ArgumentParser):
         return self.traced_arguments[name]
 
 
+@dataclass
+class CommandlineParsingContext(object):
+    current_group_elements: list
+    current_task_name: Optional[str]
+    cursor: int
+    task_num: int
+    max_cursor: int
+    in_block: bool
+
+    # used only when: in_block = True
+    in_block_current_body: list
+    in_block_task_arguments: list
+
+    parsed_into_blocks: list
+
+    def is_next_cursor_an_end(self) -> bool:
+        return self.cursor + 1 == self.max_cursor
+
+
 class CommandlineParsingHelper(object):
     """
     Extends argparse functionality by grouping arguments into Blocks -> Tasks arguments
@@ -51,18 +73,29 @@ class CommandlineParsingHelper(object):
     def __init__(self, io: IO):
         self.io = io
 
-    def create_grouped_arguments(self, commandline: List[str]) -> List[ArgumentBlock]:
+    def create_grouped_arguments(self, commandline: List[str], in_block: bool = False) -> List[ArgumentBlock]:
         commandline, blocks = parse_blocks(commandline)
 
-        current_group_elements = []
-        current_task_name = 'rkd:initialize'
-        cursor = -1
-        max_cursor = len(commandline)
+        self.io.internal_lifecycle(f'Argument parsing, in_block={in_block}')
+        self.io.internal(f'commandline, blocks = {commandline}, {blocks}')
 
-        parsed_into_blocks = []
+        ctx = CommandlineParsingContext(
+            current_group_elements=[],
+            current_task_name=None,
+            cursor=-1,
+            task_num=0,
+            max_cursor=len(commandline),
+
+            # used only when: in_block = True
+            in_block_current_body=[],
+            in_block_task_arguments=[],
+
+            parsed_into_blocks=[],
+            in_block=in_block
+        )
 
         for part in commandline:
-            cursor += 1
+            ctx.cursor += 1
 
             # normalize - strip out spaces to be able to detect "-", "--" and ":" at the beginning of string
             part = part.strip()
@@ -70,59 +103,113 @@ class CommandlineParsingHelper(object):
             is_flag = part[0:1] == "-"
             is_task = part[0:1] in (':', '@')
             is_block = part.startswith(TOKEN_BLOCK_REFERENCE_OPENING) and part.endswith(TOKEN_BLOCK_REFERENCE_CLOSING)
-            previous_is_flag = commandline[cursor-1][0:1] == "-" if cursor >= 1 else False
+
+            previous_is_flag = commandline[ctx.cursor-1][0:1] == "-" if ctx.cursor >= 1 else False
 
             # option name or flag
+            # e.g. --help or --name="something"
             if is_flag:
-                current_group_elements.append(part)
+                self.io.internal(f'parse({part}), is_flag=True, cursor={ctx.cursor}')
+                ctx.current_group_elements.append(part)
 
             elif is_block:
+                self._close_current_task(ctx)
+                self.io.internal(f'parse({part}), is_block=True, cursor={ctx.cursor}')
+
                 if part not in blocks:
-                    raise Exception('Parser error. Cannot find block "{}"'.format(part))
+                    raise Exception(f'Parser error. Cannot find block "{part}". Block found in commandline, '
+                                    'but not parsed by parse_blocks() before')
 
                 block: ArgumentBlock = blocks[part]
+                self.io.internal(f'Constructing block from body {block.body}')
+
                 block = block.with_tasks_from_first_block(
-                    self.create_grouped_arguments(block.body)
+                    self.create_grouped_arguments(block.body, in_block=True)
                 )
 
-                parsed_into_blocks.append(block)
+                self.io.internal(f'Appending a block to the arguments in place of {part}')
+                self.io.internal(f'commandline={commandline}')
+                ctx.parsed_into_blocks.append(block)
 
             # option value
+            # e.g. "something" - in context of --name "something"
             elif not is_flag and previous_is_flag and not is_task:
-                current_group_elements.append(part)
+                self.io.internal(f'parse({part}), is_value=True, cursor={ctx.cursor}')
+                ctx.current_group_elements.append(part)
 
             # new task
             elif is_task:
-                if current_task_name != 'rkd:initialize':
-                    task_arguments = [TaskArguments(current_task_name, current_group_elements)]
+                self.io.internal(f'[Begin] parse({part}) is_task={is_task}, '
+                                 f'task_num={ctx.task_num}, cursor={ctx.cursor}')
 
-                    self.io.internal('Creating task with arguments {}'.format(task_arguments))
+                # at first close previous Task
+                if ctx.task_num > 0:
+                    self._close_current_task(ctx)
 
-                    # by default every task belongs to a block, even if the block for it was not defined
-                    parsed_into_blocks.append(ArgumentBlock([current_task_name] + current_group_elements)
-                                              .clone_with_tasks(task_arguments))
+                # then open a new Task parsing
+                ctx.task_num += 1
+                ctx.current_task_name = part
+                ctx.current_group_elements = []
 
-                current_task_name = part
-                current_group_elements = []
+                self.io.internal(
+                    f'[Finalize] parse({part}), is_task=True, cursor={ctx.cursor}, in_block={in_block} '
+                    f', Opened new task: current_task_name={ctx.current_task_name}'
+                )
 
             # is not an option (--some or -s) but a positional argument actually
             else:
-                current_group_elements.append(part)
+                self.io.internal('parse({part}): else')
+                ctx.current_group_elements.append(part)
 
-            if cursor + 1 == max_cursor:
-                task_arguments = [TaskArguments(current_task_name, current_group_elements)]
+            # we are at the end of block
+            if ctx.is_next_cursor_an_end():
+                self.io.internal('parse({part}): is_next_cursor_an_end=True')
+                self._close_current_task(ctx)
 
-                self.io.internal('End of commandline arguments, closing current task collection with {}'
-                                 .format(task_arguments))
+        self.io.internal_lifecycle(f'End of in_block={in_block} argument parsing')
 
-                parsed_into_blocks.append(ArgumentBlock([current_task_name] + current_group_elements)
-                                          .clone_with_tasks(task_arguments))
+        if in_block:
+            ctx.parsed_into_blocks = [
+                ArgumentBlock(ctx.in_block_current_body).clone_with_tasks(ctx.in_block_task_arguments)
+            ]
 
-        return self._parse_shared_arguments(self.parse_modifiers_in_blocks(parsed_into_blocks))
+        return self._parse_shared_arguments(self.parse_modifiers_in_blocks(ctx.parsed_into_blocks))
+
+    def _close_current_task(self, ctx: CommandlineParsingContext) -> None:
+        """
+        Join all task arguments, options, switches etc. and create TaskArguments() object
+
+        :param ctx:
+        :return:
+        """
+
+        self.io.internal(f'Trying to close Task parsing for {ctx.current_task_name}')
+
+        if ctx.current_task_name is None:
+            self.io.internal('current_task_name is None, not closing Task parsing')
+            return
+
+        self.io.internal(f'task_num={ctx.task_num}, in_block={ctx.in_block}')
+        task_arguments = [TaskArguments(ctx.current_task_name, ctx.current_group_elements)]
+
+        self.io.internal(f'Creating task with arguments {task_arguments}, cursor={ctx.cursor}')
+
+        if ctx.in_block:
+            ctx.in_block_current_body += [ctx.current_task_name] + ctx.current_group_elements
+            ctx.in_block_task_arguments += task_arguments
+        else:
+            # by default every task belongs to a block, even if the block for it was not defined
+            ctx.parsed_into_blocks.append(
+                ArgumentBlock([ctx.current_task_name] + ctx.current_group_elements).clone_with_tasks(task_arguments)
+            )
+
+        ctx.current_task_name = None
 
     def parse_modifiers_in_blocks(self, blocks: List[ArgumentBlock]) -> List[ArgumentBlock]:
-        """Parse list of tasks in blocks attributes eg.
-        @error :notify -m 'Failed' and resolve as Notify task with -m argument"""
+        """
+        Parse list of tasks in blocks attributes eg.
+        @error :notify -m 'Failed' and resolve as Notify task with -m argument
+        """
 
         for block in blocks:
             attributes = block.raw_attributes()
@@ -136,8 +223,7 @@ class CommandlineParsingHelper(object):
 
         return blocks
 
-    @classmethod
-    def _parse_shared_arguments(cls, blocks: List[ArgumentBlock]) -> List[ArgumentBlock]:
+    def _parse_shared_arguments(self, blocks: List[ArgumentBlock]) -> List[ArgumentBlock]:
         """Apply arguments from task "@" that is before a group of tasks
            "@" without any arguments is clearing previous "@" with arguments
         """
@@ -165,7 +251,11 @@ class CommandlineParsingHelper(object):
                 continue
 
             # replace all blocks with new blocks that contains the additional arguments
-            new_blocks.append(block.clone_with_tasks(block_tasks))
+            new_block = block.clone_with_tasks(block_tasks)
+
+            self.io.internal(f'Got finally a block {new_block.tasks()} from block body {new_block.body}')
+
+            new_blocks.append(new_block)
 
         return new_blocks
 
@@ -179,7 +269,7 @@ class CommandlineParsingHelper(object):
           - Formats description, including documentation of environment variables
 
         Returns:
-          Tuple of two dicts. First dict: arguments key=>value, Second dict: arguments definitions for advanced usae
+          Tuple of two dicts. First dict: arguments key=>value, Second dict: arguments definitions for advanced usage
         """
 
         argparse = TraceableArgumentParser(declaration.to_full_name(), formatter_class=RawTextHelpFormatter)
@@ -224,7 +314,7 @@ class CommandlineParsingHelper(object):
             argparse.description += ' -- No environment variables declared -- '
 
     @staticmethod
-    def preparse_args(args: List[str]):
+    def preparse_global_arguments_before_tasks(args: List[str]):
         """
         Parses commandline arguments which are not accessible on tasks level, but are accessible behind tasks
         Those arguments should decide about RKD core behavior on very early stage
@@ -235,22 +325,52 @@ class CommandlineParsingHelper(object):
 
         limited_args = []
 
-        for arg in args:
+        for arg in args[1:]:
             # parse everything before any task or block starts
             if arg.startswith(':') or arg.startswith('@') or arg.startswith('{@'):
                 break
 
             limited_args.append(arg)
 
-        argparse = ArgumentParser(add_help=False)
-        argparse.add_argument('--imports', '-ri')
+        argparse = ArgumentParser(add_help=True, prog='rkd', formatter_class=RawTextHelpFormatter)
+        argparse.description = '''
+Global environment variables:
+ - RKD_DEPTH (default: 0) (should not be touched - internal)
+ - RKD_PATH (default: )
+ - RKD_ALIAS_GROUPS (default: )
+ - RKD_UI (default: true)
+ - RKD_SYS_LOG_LEVEL (default: info)
+ - RKD_IMPORTS (default: )
+        '''
 
-        parsed = vars(argparse.parse_known_args(args=limited_args)[0])
+        argparse.add_argument('--imports', '-ri',
+                              help='Imports a task or list of tasks separated by ":". '
+                                   'Example: "rkt_utils.docker:rkt_ciutils.boatci:rkd_python". '
+                                   'Instead of switch there could be also environment variable "RKD_IMPORTS" used',
+                              default='')
+        argparse.add_argument('--log-level', '-rl',
+                              help='Global log level (can be overridden on task level)',
+                              default='info')
+        argparse.add_argument('--silent', '-s',
+                              help='Show only tasks stdout/stderr (during all tasks)',
+                              action='store_true')
+        argparse.add_argument('--no-ui', '-n',
+                              action='store_true',
+                              help='Do not display RKD interface (similar to --silent, '
+                                   'but applies only to beginning and end messages)')
+
+        parsed = vars(argparse.parse_args(args=limited_args))
+
+        imports = list(filter(
+            None,
+            (parsed['imports'] if parsed['imports'] else os.getenv('RKD_IMPORTS', '')).split(':')
+        ))
 
         return {
-            'imports': list(filter(None,
-                                   os.getenv('RKD_IMPORTS', parsed['imports'] if parsed['imports'] else '').split(':')
-                                   ))
+            'imports': imports,
+            'log_level': env.system_log_level() if env.system_log_level() else parsed['log_level'],
+            'silent': parsed['silent'],
+            'no_ui': env.no_ui() if env.no_ui() else parsed['no_ui']
         }
 
     @staticmethod

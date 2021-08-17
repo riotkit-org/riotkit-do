@@ -40,7 +40,6 @@ Example
     [global]
     :sh                                               # Executes shell scripts
     :exec                                             # Spawns a shell process
-    :init                                             # :init task is executing ALWAYS. That's a technical, core task.
     :tasks                                            # Lists all enabled tasks
     :version                                          # Shows version of RKD and of all loaded tasks
 

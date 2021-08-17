@@ -172,7 +172,7 @@ class IO:
     #
     def set_log_level(self, desired_level_name: str):
         if desired_level_name not in LOG_LEVELS:
-            raise Exception('Invalid log level name')
+            raise Exception(f'Invalid log level name "{desired_level_name}"')
 
         self.log_level = LOG_LEVELS[desired_level_name]
 

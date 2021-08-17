@@ -151,7 +151,7 @@ class ArgParsingTest(BasicTestingCase):
         then it works
         """
 
-        args = CommandlineParsingHelper.preparse_args(['--imports', 'rkd.pythonic', ':sh'])
+        args = CommandlineParsingHelper.preparse_global_arguments_before_tasks(['--imports', 'rkd.pythonic', ':sh'])
 
         self.assertIn('imports', args)
         self.assertEqual(['rkd.pythonic'], args['imports'])
@@ -161,7 +161,7 @@ class ArgParsingTest(BasicTestingCase):
         Arguments that could be preparsed should be placed behind any task
         """
 
-        args = CommandlineParsingHelper.preparse_args([':sh', '--imports', 'rkd_python'])
+        args = CommandlineParsingHelper.preparse_global_arguments_before_tasks([':sh', '--imports', 'rkd_python'])
 
         self.assertEqual([], args['imports'])
 
