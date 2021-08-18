@@ -188,7 +188,7 @@ class ContextTest(BasicTestingCase):
 
     def test_context_resolves_recursively_task_aliases(self):
         ctx = ApplicationContext([
-            TaskDeclaration(TaskForTesting())
+            TaskDeclaration(TaskForTesting(), name=':test')
         ], [
             TaskAliasDeclaration(':deeper', [':test', ':test']),
             TaskAliasDeclaration(':deep', [':test', ':deeper'])
