@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 from argparse import ArgumentParser
-from rkd.core.api.inputoutput import IO
+from rkd.core.api.inputoutput import IO, BufferedSystemIO
 from rkd.core.api.testing import BasicTestingCase
 from rkd.core.argparsing.parser import CommandlineParsingHelper
+from rkd.core.exception import CommandlineParsingError
 from rkd.core.test import get_test_declaration
 
 
@@ -192,3 +193,121 @@ class ArgParsingTest(BasicTestingCase):
 
         with self.subTest('Not used - non empty string - :tasks --print'):
             self.assertFalse(CommandlineParsingHelper.was_help_used([':tasks', '--print']))
+
+    def test_pre_parse_arguments_parses_arguments_before_first_task(self):
+        result = CommandlineParsingHelper.preparse_global_arguments_before_tasks([
+            '--log-level=debug', ':task1', '--something'
+        ])
+
+        self.assertEqual(
+            {'imports': [], 'log_level': 'debug', 'silent': False, 'no_ui': False},
+            result
+        )
+
+    def test_preparse_global_arguments_before_tasks_parses_imports_from_switch(self):
+        result = CommandlineParsingHelper.preparse_global_arguments_before_tasks([
+            '--imports', 'rkd.core.something1:something2'
+        ])
+
+        self.assertEqual(
+            ['rkd.core.something1', 'something2'],
+            result['imports']
+        )
+
+    def test_preparse_global_arguments_before_tasks_parses_imports_from_env(self):
+        with self.environment({'RKD_IMPORTS': 'bakunin:malatesta'}):
+            result = CommandlineParsingHelper.preparse_global_arguments_before_tasks([])
+
+        self.assertEqual(
+            ['bakunin', 'malatesta'],
+            result['imports']
+        )
+
+    def test_preparse_global_arguments_before_tasks_reacts_on_sys_log_level_env(self):
+        with self.environment({'RKD_SYS_LOG_LEVEL': 'internal'}):
+            result = CommandlineParsingHelper.preparse_global_arguments_before_tasks([])
+
+        self.assertEqual(
+            'internal',
+            result['log_level']
+        )
+
+    def test_pre_parse_arguments_parses_arguments_before_first_block(self):
+        result = CommandlineParsingHelper.preparse_global_arguments_before_tasks([
+            '--log-level=debug', '{@retry 3}', '--something', '{/@}'
+        ])
+
+        self.assertEqual(
+            {'imports': [], 'log_level': 'debug', 'silent': False, 'no_ui': False},
+            result
+        )
+
+    def test_parse_blocks_when_at_least_two_tasks_in_block_and_at_least_one_outside(self):
+        io = BufferedSystemIO()
+        result = CommandlineParsingHelper(io).create_grouped_arguments(
+            [
+                ':db:dump', '--file', 'db.sql',  # block 1
+                '{@retry 3 @rescue :db:rollback}', ':db:upgrade', ':db:test', '{/@}',  # block 2
+                ':db:restart'  # block 3
+            ]
+        )
+
+        self.assertEqual(3, len(result), msg='Expected 3 blocks')
+        self.assertEqual(':db:rollback', result[1].on_rescue[0].name())
+
+        self.assertEqual(
+            ["ArgumentBlock<[':db:dump', '--file', 'db.sql'], [TaskCall<:db:dump (['--file', 'db.sql'])>]>",
+             "ArgumentBlock<[':db:upgrade', ':db:test'], [TaskCall<:db:upgrade ([])>, TaskCall<:db:test ([])>]>",
+             "ArgumentBlock<[':db:restart'], [TaskCall<:db:restart ([])>]>"],
+            list(map(str, result)),
+            msg='Expected 3 blocks with scheduled tasks in order'
+        )
+
+    def test_create_grouped_arguments_keeps_commandline_switches_in_rescue_block(self):
+        """
+        Checks that commandline switches are not lost - e.g. {@rescue :db:rollback --version 1 --debug}
+        """
+
+        io = BufferedSystemIO()
+        result = CommandlineParsingHelper(io).create_grouped_arguments(
+            [
+                '{@retry 3 @rescue :db:rollback --version 1 --debug}', ':db:upgrade', '{/@}'
+            ]
+        )
+
+        self.assertEqual("TaskCall<:db:rollback (['--version', '1', '--debug'])>", str(result[0].on_rescue[0]))
+
+    def test_create_grouped_arguments_keeps_retry(self):
+        io = BufferedSystemIO()
+        result = CommandlineParsingHelper(io).create_grouped_arguments(
+            [
+                '{@retry 3}', ':flaky:task', '{/@}'
+            ]
+        )
+
+        self.assertEqual(0, result[0].retry_whole_block)
+        self.assertEqual(3, result[0].retry_per_task)
+
+    def test_create_grouped_arguments_keeps_retry_per_block(self):
+        io = BufferedSystemIO()
+        result = CommandlineParsingHelper(io).create_grouped_arguments(
+            [
+                '{@retry-block 3}', ':flaky:task', '{/@}'
+            ]
+        )
+
+        self.assertEqual(3, result[0].retry_whole_block)
+        self.assertEqual(0, result[0].retry_per_task)
+
+    def test_create_grouped_arguments_has_defined_unknown_modifier(self):
+        with self.assertRaises(CommandlineParsingError) as exc:
+            CommandlineParsingHelper(BufferedSystemIO()).create_grouped_arguments(
+                [
+                    '{@unknown :hehe}', ':flaky:task', '{/@}'
+                ]
+            )
+
+        self.assertEqual(
+            'Block "{@unknown :hehe" contains invalid modifier, raised error: Unknown modifier "unknown"',
+            str(exc.exception)
+         )
