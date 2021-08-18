@@ -16,7 +16,6 @@ from rkd.core.api.syntax import TaskAliasDeclaration
 from rkd.core.api.syntax import GroupDeclaration
 from rkd.core.api.testing import BasicTestingCase
 from rkd.core.test import TaskForTesting
-from rkd.core.standardlib import InitTask
 
 TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -189,10 +188,10 @@ class ContextTest(BasicTestingCase):
 
     def test_context_resolves_recursively_task_aliases(self):
         ctx = ApplicationContext([
-            TaskDeclaration(InitTask())
+            TaskDeclaration(TaskForTesting())
         ], [
-            TaskAliasDeclaration(':deeper', [':init', ':init']),
-            TaskAliasDeclaration(':deep', [':init', ':deeper'])
+            TaskAliasDeclaration(':deeper', [':test', ':test']),
+            TaskAliasDeclaration(':deep', [':test', ':deeper'])
         ], directory='',
             subprojects=[],
             workdir='',
@@ -205,15 +204,15 @@ class ContextTest(BasicTestingCase):
 
         # :deeper = :init
         # :deep = :init :deeper = :init :init :init
-        self.assertEqual(':init', task.get_declarations()[0].to_full_name())
-        self.assertEqual(':init', task.get_declarations()[1].to_full_name())
-        self.assertEqual(':init', task.get_declarations()[2].to_full_name())
+        self.assertEqual(':test', task.get_declarations()[0].to_full_name())
+        self.assertEqual(':test', task.get_declarations()[1].to_full_name())
+        self.assertEqual(':test', task.get_declarations()[2].to_full_name())
 
     def test_expand_contexts_expands_one_context(self) -> None:
         # MAIN PROJECT context
         ctx = ApplicationContext(
             tasks=[
-                TaskDeclaration(InitTask())
+                TaskDeclaration(TaskForTesting())
             ],
             aliases=[
                 TaskAliasDeclaration(':kropotkin', [':init', ':init']),
@@ -227,7 +226,7 @@ class ContextTest(BasicTestingCase):
         # SUBPROJECT context
         subproject_1_ctx = ApplicationContext(
             tasks=[
-                TaskDeclaration(InitTask())
+                TaskDeclaration(TaskForTesting())
             ],
             aliases=[
                 TaskAliasDeclaration(':book', [':init', ':init']),
@@ -255,7 +254,7 @@ class ContextTest(BasicTestingCase):
     def test_expand_contexts_ignores_subprojects_if_no_any(self):
         ctx = ApplicationContext(
             tasks=[
-                TaskDeclaration(InitTask())
+                TaskDeclaration(TaskForTesting())
             ],
             aliases=[
                 TaskAliasDeclaration(':malatesta', [':init', ':init']),

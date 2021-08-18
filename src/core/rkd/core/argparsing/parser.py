@@ -325,7 +325,7 @@ class CommandlineParsingHelper(object):
 
         limited_args = []
 
-        for arg in args[1:]:
+        for arg in args:
             # parse everything before any task or block starts
             if arg.startswith(':') or arg.startswith('@') or arg.startswith('{@'):
                 break

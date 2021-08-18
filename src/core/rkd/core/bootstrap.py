@@ -87,12 +87,13 @@ class RiotKitDoApplication(object):
         if not CommandlineParsingHelper.has_any_task(argv) and not CommandlineParsingHelper.was_help_used(argv):
             self.print_banner_and_exit()
 
+        self.increment_depth()
+
         # parse arguments that are before tasks e.g. rkd --help (in comparison to rkd :task1 --help)
-        pre_parsed_args = CommandlineParsingHelper.preparse_global_arguments_before_tasks(argv)
+        pre_parsed_args = CommandlineParsingHelper.preparse_global_arguments_before_tasks(argv[1:])
 
         # system wide IO instance with defaults
         io = self.setup_global_io(pre_parsed_args)
-        self.increment_depth()
 
         cmdline_parser = CommandlineParsingHelper(io)
 

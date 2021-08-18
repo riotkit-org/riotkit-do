@@ -8,32 +8,32 @@ from tempfile import NamedTemporaryFile
 from collections import OrderedDict
 from io import StringIO
 from rkd.core.api.testing import BasicTestingCase, OutputCapturingSafeTestCase
-from rkd.core.standardlib import InitTask
 from rkd.core.api.inputoutput import IO, BufferedSystemIO
 from rkd.core.taskutil import evaluate_code
+from rkd.core.test import TaskForTesting
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestTaskUtil(BasicTestingCase, OutputCapturingSafeTestCase):
     def test_sh_accepts_script_syntax(self):
-        task = InitTask()
+        task = TaskForTesting()
         task._io = IO()
         self.assertIn('__init__.py', task.sh("ls -la rkd/core\npwd", capture=True))
 
     def test_exec_spawns_process(self):
-        task = InitTask()
+        task = TaskForTesting()
         task._io = IO()
         self.assertIn('__init__.py', task.exec('ls rkd/core', capture=True))
 
     def test_sh_executes_in_background(self):
-        task = InitTask()
+        task = TaskForTesting()
         task._io = IO()
         task.exec('ls', background=True)
 
     def test_exec_background_capture_validation_raises_error(self):
         def test():
-            task = InitTask()
+            task = TaskForTesting()
             task._io = IO()
             task.exec('ls', background=True, capture=True)
 
@@ -47,7 +47,7 @@ class TestTaskUtil(BasicTestingCase, OutputCapturingSafeTestCase):
         """
         for i in range(1, 100):
             self.maxDiff = None  # unittest setting
-            task = InitTask()
+            task = TaskForTesting()
             task._io = IO()
 
             io = IO()
@@ -78,7 +78,7 @@ class TestTaskUtil(BasicTestingCase, OutputCapturingSafeTestCase):
         """
 
         self.maxDiff = None  # unittest setting
-        task = InitTask()
+        task = TaskForTesting()
         task._io = IO()
 
         io = IO()
@@ -109,7 +109,7 @@ for i in range(0, 1024 * 128):
 
         for i in range(1, 30):
             self.maxDiff = None  # unittest setting
-            task = InitTask()
+            task = TaskForTesting()
             task._io = IO()
 
             io = IO()
@@ -135,7 +135,7 @@ for i in range(0, 1024 * 128):
 
         for i in range(1, 5):
             for std_redirect in ['', '>&2']:
-                task = InitTask()
+                task = TaskForTesting()
                 task._io = IO()
                 io = IO()
                 out = StringIO()
@@ -159,7 +159,7 @@ for i in range(0, 1024 * 128):
         should be turned off for stdin
         """
 
-        task = InitTask()
+        task = TaskForTesting()
         task._io = IO()
         io = IO()
         out = StringIO()
@@ -175,7 +175,7 @@ for i in range(0, 1024 * 128):
         :return:
         """
 
-        task = InitTask()
+        task = TaskForTesting()
         task._io = IO()
         io = IO()
         out = StringIO()
@@ -201,7 +201,7 @@ for i in range(0, 1024 * 128):
     def test_dollar_symbols_are_escaped_in_shell_commands(self):
         """Check that in envrionment variable there can be defined a value that contains dollar symbols"""
 
-        task = InitTask()
+        task = TaskForTesting()
         task._io = IO()
         io = IO()
         out = StringIO()
@@ -216,7 +216,7 @@ for i in range(0, 1024 * 128):
         self.assertIn('TEST_ENV_NOT_ESCAPED=Hello Mikhail$1Bakunin$PATHtest', out.getvalue())
 
     def test_quotes_are_escaped_in_shell_commands(self):
-        task = InitTask()
+        task = TaskForTesting()
         task._io = IO()
         io = IO()
         out = StringIO()
@@ -233,7 +233,7 @@ for i in range(0, 1024 * 128):
         """
 
         for std_redirect in ['', '>&2']:
-            task = InitTask()
+            task = TaskForTesting()
             task._io = IO()
             io = IO()
             out = StringIO()
@@ -251,7 +251,7 @@ for i in range(0, 1024 * 128):
 
     @unittest.skip("Github issue #1")
     def test_sh_provides_stdout_and_stderr_in_exception(self):
-        task = InitTask()
+        task = TaskForTesting()
         task._io = IO()
 
         try:
@@ -269,7 +269,7 @@ for i in range(0, 1024 * 128):
         """Checks if built-in sh() method is registering variables in proper order
         """
 
-        task = InitTask()
+        task = TaskForTesting()
         task._io = IO()
 
         envs = OrderedDict()
@@ -285,7 +285,7 @@ for i in range(0, 1024 * 128):
     def test_py_executes_python_scripts_without_specifying_script_path(self):
         """Simply - check basic successful case - executing a Python code"""
 
-        task = InitTask()
+        task = TaskForTesting()
         task._io = IO()
         out = task.py('''
 import os
@@ -299,7 +299,7 @@ print(os)
         And the code will be passed to that script as stdin.
         """
 
-        task = InitTask()
+        task = TaskForTesting()
         task._io = IO()
 
         with NamedTemporaryFile() as temp_file:
@@ -313,7 +313,7 @@ print(os)
     def test_py_inherits_environment_variables(self):
         os.putenv('PY_INHERITS_ENVIRONMENT_VARIABLES', 'should')
 
-        task = InitTask()
+        task = TaskForTesting()
         task._io = IO()
         out = task.py(
             code='import os; print("ENV VALUE IS: " + str(os.environ["PY_INHERITS_ENVIRONMENT_VARIABLES"]))',
@@ -325,7 +325,7 @@ print(os)
     def test_py_uses_sudo_when_become_specified(self):
         """Expect that sudo with proper parameters is used"""
 
-        task = InitTask()
+        task = TaskForTesting()
         task._io = IO()
 
         with unittest.mock.patch('rkd.core.taskutil.check_output') as mocked_subprocess:

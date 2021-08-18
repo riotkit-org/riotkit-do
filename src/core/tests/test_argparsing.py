@@ -20,13 +20,6 @@ class ArgParsingTest(BasicTestingCase):
                          "\"ArgumentBlock<[':status'], [TaskCall<:status ([])>]>\"]",
                          str(self.list_to_str(parsed)))
 
-    def test_creates_grouped_arguments_into_tasks__no_task_defined_goes_to_rkd_initialization(self):
-        parsed = CommandlineParsingHelper(IO()).create_grouped_arguments([
-            '--help'
-        ])
-
-        self.assertEqual("[TaskCall<rkd:initialize (['--help'])>]", str(parsed[0].tasks()))
-
     def test_creates_grouped_arguments_into_tasks__tasks_only(self):
         parsed = CommandlineParsingHelper(IO()).create_grouped_arguments([
             ':harbor:start', ':harbor:status', ':harbor:stop'

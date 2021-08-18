@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-from rkd.core.standardlib import InitTask
 from rkd.core.api.contract import ExecutionContext
 from rkd.core.api.contract import ArgumentEnv
 from rkd.core.api.syntax import TaskDeclaration
 from rkd.core.api.inputoutput import IO
 from rkd.core.api.testing import BasicTestingCase
 from rkd.core.exception import MissingInputException
+from rkd.core.test import TaskForTesting
 
 
 class TestExecutionContext(BasicTestingCase):
@@ -104,7 +104,7 @@ class TestExecutionContext(BasicTestingCase):
         # Actual test code
         #
         def test(dataset_name, dataset):
-            task = InitTask()
+            task = TaskForTesting()
             task._io = IO()
             task.get_declared_envs = lambda: dataset['declared_envs']
 
