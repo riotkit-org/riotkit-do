@@ -74,7 +74,7 @@ class BasicTestingCase(TestCase):
 
     _envs = None
     _cwd = None
-    should_backup_env = True
+    should_backup_env = False
 
     def setUp(self) -> None:
         os.environ['RKD_PATH'] = ''

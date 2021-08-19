@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pytest
 from argparse import ArgumentParser
 from unittest import mock
 
@@ -10,6 +11,7 @@ from rkd.core.exception import CommandlineParsingError
 from rkd.core.test import get_test_declaration
 
 
+@pytest.mark.argparsing
 class ArgParsingTest(BasicTestingCase):
     should_backup_env = False
 
@@ -218,7 +220,7 @@ class ArgParsingTest(BasicTestingCase):
             result['imports']
         )
 
-    @mock.patch.dict(os.environ, {"RKD_IMPORTS": "bakunin:malatesta"}, clear=True)
+    @mock.patch.dict(os.environ, {"RKD_IMPORTS": "bakunin:malatesta"}, clear=False)
     def test_preparse_global_arguments_before_tasks_parses_imports_from_env(self):
         result = CommandlineParsingHelper.preparse_global_arguments_before_tasks([])
 

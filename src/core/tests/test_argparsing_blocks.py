@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
+import pytest
 from rkd.core.api.testing import BasicTestingCase
 from rkd.core.argparsing.blocks import parse_block_header, parse_blocks
 from rkd.core.argparsing.model import ArgumentBlock
 from rkd.core.exception import CommandlineParsingError
 
 
+@pytest.mark.argparsing
 class ArgParsingBlocksTest(BasicTestingCase):
     #
     # parse_block_header()
