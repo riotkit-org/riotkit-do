@@ -74,17 +74,22 @@ class BasicTestingCase(TestCase):
 
     _envs = None
     _cwd = None
+    should_backup_env = True
 
     def setUp(self) -> None:
         os.environ['RKD_PATH'] = ''
 
-        self._envs = deepcopy(os.environ)
+        if self.should_backup_env:
+            self._envs = deepcopy(os.environ)
+
         self._cwd = os.getcwd()
 
         super().setUp()
 
     def tearDown(self) -> None:
-        os.environ = self._envs
+        if self.should_backup_env:
+            os.environ = deepcopy(self._envs)
+
         os.chdir(self._cwd)
 
         super().tearDown()
@@ -110,7 +115,7 @@ class BasicTestingCase(TestCase):
             os.environ.update(environ)
             yield
         finally:
-            os.environ = backup
+            os.environ = deepcopy(backup)
 
     @staticmethod
     def satisfy_task_dependencies(task: TaskInterface, io: IO = None) -> TaskInterface:

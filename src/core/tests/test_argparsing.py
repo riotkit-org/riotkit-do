@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-
+import os
 from argparse import ArgumentParser
+from unittest import mock
+
 from rkd.core.api.inputoutput import IO, BufferedSystemIO
 from rkd.core.api.testing import BasicTestingCase
 from rkd.core.argparsing.parser import CommandlineParsingHelper
@@ -9,6 +11,8 @@ from rkd.core.test import get_test_declaration
 
 
 class ArgParsingTest(BasicTestingCase):
+    should_backup_env = False
+
     def test_creates_grouped_arguments_into_tasks__task_after_flag(self):
         """ Test parsing arguments """
 
@@ -214,18 +218,18 @@ class ArgParsingTest(BasicTestingCase):
             result['imports']
         )
 
+    @mock.patch.dict(os.environ, {"RKD_IMPORTS": "bakunin:malatesta"}, clear=True)
     def test_preparse_global_arguments_before_tasks_parses_imports_from_env(self):
-        with self.environment({'RKD_IMPORTS': 'bakunin:malatesta'}):
-            result = CommandlineParsingHelper.preparse_global_arguments_before_tasks([])
+        result = CommandlineParsingHelper.preparse_global_arguments_before_tasks([])
 
         self.assertEqual(
             ['bakunin', 'malatesta'],
             result['imports']
         )
 
+    @mock.patch.dict(os.environ, {"RKD_SYS_LOG_LEVEL": "internal"}, clear=True)
     def test_preparse_global_arguments_before_tasks_reacts_on_sys_log_level_env(self):
-        with self.environment({'RKD_SYS_LOG_LEVEL': 'internal'}):
-            result = CommandlineParsingHelper.preparse_global_arguments_before_tasks([])
+        result = CommandlineParsingHelper.preparse_global_arguments_before_tasks([])
 
         self.assertEqual(
             'internal',
