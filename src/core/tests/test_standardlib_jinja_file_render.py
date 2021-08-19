@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import pytest
 from rkd.core.standardlib.jinja import FileRendererTask
 from rkd.core.api.inputoutput import BufferedSystemIO
 from rkd.core.api.testing import BasicTestingCase
@@ -8,6 +9,7 @@ from rkd.core.api.testing import BasicTestingCase
 SAMPLES_PATH = os.path.dirname(os.path.realpath(__file__)) + '/internal-samples'
 
 
+@pytest.mark.e2e
 class TestFileRendererTask(BasicTestingCase):
     """Tests for a task that should render single JINJA2 file from SOURCE PATH to TARGET PATH
     """

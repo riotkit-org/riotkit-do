@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 import os
+import pytest
 from rkd.core.api.testing import BasicTestingCase
 from rkd.core.standardlib.jinja import RenderDirectoryTask
 
 TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
+@pytest.mark.e2e
 class TestRenderDirectoryTask(BasicTestingCase):
     """Tests for a task that should render JINJA2 files from DIRECTORY "A" to DIRECTORY "B"
     """

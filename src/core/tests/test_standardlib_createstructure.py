@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import pytest
 from tempfile import TemporaryDirectory
 from rkd.core.api.testing import BasicTestingCase
 from rkd.core.standardlib import CreateStructureTask
@@ -11,6 +12,8 @@ TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
 NAMESPACE_DIR = TESTS_DIR + '/../../'
 
 
+@pytest.mark.e2e
+@pytest.mark.long
 class CreateStructureTaskTest(BasicTestingCase):
     @staticmethod
     def _execute_mocked_task(params: dict, envs: dict = None, task: CreateStructureTask = None) -> BufferedSystemIO:

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import pytest
 import os
 import sys
 import tempfile
@@ -10,6 +11,7 @@ from rkd.core.api.testing import FunctionalTestingCase
 SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
+@pytest.mark.e2e
 class TestFunctional(FunctionalTestingCase):
     """
     Runs application like from the shell, captures output and performs assertions on the results.

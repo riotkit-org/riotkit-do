@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import pytest
 import os
 from rkd.core.api.testing import FunctionalTestingCase
 from rkd.process import switched_workdir
@@ -7,6 +8,7 @@ from rkd.process import switched_workdir
 TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
+@pytest.mark.e2e
 class TestFunctionalSubprojects(FunctionalTestingCase):
     def test_subproject_tasks_are_included(self):
         """
