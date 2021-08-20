@@ -9,7 +9,7 @@ Provides tools for easier testing of RKD-based workflows, tasks, plugins.
 
 import os
 import sys
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Union
 from unittest import TestCase
 from io import StringIO
 from copy import deepcopy
@@ -37,16 +37,20 @@ class OutputCapturingSafeTestCase(TestCase):
 
     _stdout = None
     _stderr = None
+    backup_stdout = True
 
     def setUp(self) -> None:
         os.environ['RKD_DEPTH'] = '0'
-        self._stdout = sys.stdout
-        self._stderr = sys.stderr
+
+        if self.backup_stdout:
+            self._stdout = sys.stdout
+            self._stderr = sys.stderr
 
         super().setUp()
 
     def tearDown(self) -> None:
-        self._restore_standard_out()
+        if self.backup_stdout:
+            self._restore_standard_out()
 
         super().tearDown()
 
@@ -143,7 +147,8 @@ class BasicTestingCase(TestCase):
         return task
 
     @staticmethod
-    def mock_execution_context(task: TaskInterface, args: Dict[str, str] = None, env: Dict[str, str] = None,
+    def mock_execution_context(task: TaskInterface, args: Dict[str, Union[str, bool]] = None,
+                               env: Dict[str, str] = None,
                                defined_args: Dict[str, dict] = None) -> ExecutionContext:
 
         """

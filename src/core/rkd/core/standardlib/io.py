@@ -84,32 +84,43 @@ class ArchivePackagingBaseTask(ExtendableTaskInterface):
         include_src_last_dir = not src_path.endswith('/')
         src_path = os.path.abspath(src_path)
 
+        if os.path.isfile(src_path):
+            include_src_last_dir = False
+            src_dir = os.path.dirname(src_path)
+            self._add(src_dir, os.path.basename(src_path), target_path, src_path, include_src_last_dir)
+
         for root, d_names, f_names in os.walk(src_path):
             for f in f_names:
-                current_file_path = os.path.abspath(os.path.join(root, f))
+                self._add(root, f, target_path, src_path, include_src_last_dir)
 
-                try:
-                    if not self._can_be_added(current_file_path):
-                        self.io().info(f'Ignoring "{current_file_path}"')
-                        continue
+    def _add(self, root, f, target_path, src_path, include_src_last_dir):
+        current_file_path = os.path.abspath(os.path.join(root, f))
 
-                except ValueError:
-                    # ValueError: 'X' is not in the subpath of 'Y'
-                    pass
+        try:
+            if not self._can_be_added(current_file_path):
+                self.io().info(f'Ignoring "{current_file_path}"')
+                return
 
-                if not target_path:
-                    current_file_target_path = current_file_path
-                else:
-                    current_file_target_path = target_path + '/' + current_file_path[len(src_path) + 1:]
+        except ValueError:
+            # ValueError: 'X' is not in the sub-path of 'Y'
+            pass
 
-                    # fix up paths like `.//vendor/composer/installed.json`
-                    current_file_target_path = current_file_target_path.replace('.//', '')
+        if not target_path:
+            current_file_target_path = current_file_path
+        else:
+            current_file_target_path = target_path
 
-                    # include last directory from source path if it did not end with "/"
-                    if include_src_last_dir:
-                        current_file_target_path = os.path.basename(src_path) + '/' + current_file_target_path
+            if "." not in os.path.basename(target_path):
+                current_file_target_path += '/' + current_file_path[len(src_path) + 1:]
 
-                self.sources[current_file_target_path] = current_file_path
+            # fix up paths like `.//vendor/composer/installed.json`
+            current_file_target_path = current_file_target_path.replace('.//', '')
+
+            # include last directory from source path if it did not end with "/"
+            if include_src_last_dir:
+                current_file_target_path = os.path.basename(src_path) + '/' + current_file_target_path
+
+        self.sources[current_file_target_path] = current_file_path
 
     def consider_gitignore(self, path: str = '.gitignore'):
         """
