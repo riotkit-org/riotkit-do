@@ -242,7 +242,9 @@ class ArchivePackagingBaseTask(IOBaseTask):
             if self.archive_type == ARCHIVE_TYPE_ZIP:
                 return ZipFile(temp_path, 'w')
             elif self.archive_type == ARCHIVE_TYPE_TARGZ:
-                return TarFile(temp_path, 'w:gz')
+                return TarFile.open(temp_path, 'w:gz')
+            else:
+                raise Exception('Unknown archive type')
 
     def _make_sure_destination_directory_exists(self, path: str) -> None:
         if not self.dry_run:

@@ -14,6 +14,60 @@ TEST_PATH = os.path.realpath(__file__)
 class ArchivePackagingTaskTest(FunctionalTestingCase):
     backup_stdout = False
 
+    def test_packs_into_tar(self):
+        io = BufferedSystemIO()
+        task = ArchivePackagingBaseTask()
+        self.satisfy_task_dependencies(task, io=io)
+
+        temp = TempManager()
+        archive_path = temp.create_tmp_file_path()[0]
+
+        # configure
+        task.archive_path = archive_path
+        task.archive_type = 'tar+gzip'
+        task.add('./tests/internal-samples')
+        task.add(TEST_PATH, 'test.py')
+
+        # execute
+        task.execute(self.mock_execution_context(
+            task,
+            {
+                "--dry-run": False,
+                "--allow-overwrite": False
+            },
+            {}
+        ))
+
+        self.assertTrue(os.path.isfile(archive_path))
+
+    def test_archive_type_validation_fails_on_unknown_value(self):
+        """
+        Checks if archive_type parameter is validated
+
+        :return:
+        """
+
+        io = BufferedSystemIO()
+        task = ArchivePackagingBaseTask()
+        self.satisfy_task_dependencies(task, io=io)
+
+        task.archive_path = '/tmp/archive.tar.gz'
+        task.archive_type = 'tar+wtf'
+        task.add('./tests/internal-samples')
+        task.add(TEST_PATH, 'test.py')
+
+        with self.assertRaises(Exception) as exc:
+            task.execute(self.mock_execution_context(
+                task,
+                {
+                    "--dry-run": False,
+                    "--allow-overwrite": False
+                },
+                {}
+            ))
+
+        self.assertIn('Unknown archive type', str(exc.exception))
+
     def test_dry_run_just_prints_messages(self):
         """
         Check two things:
