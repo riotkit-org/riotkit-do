@@ -1,4 +1,5 @@
 import os
+from abc import ABC
 from argparse import ArgumentParser
 from tarfile import TarFile
 from typing import Dict, Union, Callable, List
@@ -11,7 +12,65 @@ ARCHIVE_TYPE_ZIP = 'zip'
 ARCHIVE_TYPE_TARGZ = 'tar+gzip'
 
 
-class ArchivePackagingBaseTask(ExtendableTaskInterface):
+class IOBaseTask(ExtendableTaskInterface, ABC):
+    _ignore: List[Callable]
+
+    def __init__(self):
+        self._ignore = [lambda x: False]
+
+    def consider_ignore(self, path: str = '.gitignore'):
+        """
+        Load ignore rules from .gitignore or other file in gitignore format
+
+        :api: configure
+        :param path:
+        :return:
+        """
+
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f'Cannot find .gitignore at path "{path}"')
+
+        func = parse_gitignore(path)
+        func.path = path
+
+        self.io().debug(f'Loaded ignore from "{path}"')
+        self._ignore.append(func)
+
+    def consider_ignore_recursively(self, src_path: str, filename: str = '.gitignore'):
+        """
+        Recursively load rules from a gitignore-format file
+
+        :param src_path:
+        :param filename:
+        :return:
+        """
+
+        for root, d_names, f_names in os.walk(src_path):
+            if os.path.isfile(root + '/' + filename):
+                self.consider_ignore(root + '/' + filename)
+
+    def can_be_touched(self, path: str) -> bool:
+        """
+        Can file be touched? - Added to archive, copied, deleted etc.
+
+        :param path:
+        :return:
+        """
+
+        for callback in self._ignore:
+            if callback(path):
+                try:
+                    # noinspection PyUnresolvedReferences
+                    self.io().debug(f'can_be_touched({callback.path}) = blocked adding {path}')
+                except AttributeError:
+                    pass
+
+                return False
+
+        return True
+
+
+class ArchivePackagingBaseTask(IOBaseTask):
     """
     Packages files into a compressed archive.
     -----------------------------------------
@@ -20,9 +79,10 @@ class ArchivePackagingBaseTask(ExtendableTaskInterface):
       - dry-run mode (do not write anything to disk, just print messages)
       - copies directories recursively
       - .gitignore files support (manually added using API method)
+      - can work both as preconfigured and fully on runtime
 
 
-    Example:
+    Example (preconfigured):
 
         .. code:: python
 
@@ -36,10 +96,25 @@ class ArchivePackagingBaseTask(ExtendableTaskInterface):
                 return [configure]
 
 
+    Example (on runtime):
+
+        .. code:: python
+
+            @extends(ArchivePackagingBaseTask)
+            def PackIntoZipTask():
+                def configure(task: ArchivePackagingBaseTask, event: ConfigurationLifecycleEvent):
+                    task.archive_path = '/tmp/test-archive.zip'
+
+                def execute(task: ArchivePackagingBaseTask):
+                    task.consider_gitignore('.gitignore')
+                    task.add('tests/samples/', './')
+                    task.perform()
+
+                return [configure, execute]
+
     """
 
     sources: Dict[str, str]
-    _gitignore: List[Callable]
 
     dry_run: bool                     # Skip IO operations, just print messages
     allow_archive_overwriting: bool   # Allow overwriting if destination file already exists
@@ -49,15 +124,15 @@ class ArchivePackagingBaseTask(ExtendableTaskInterface):
     archive_type: str  # One of supported types (see io.ARCHIVE_TYPE_ZIP and io.ARCHIVE_TYPE_TARGZ), defaults to zip
 
     def __init__(self):
+        super().__init__()
         self.archive_type = ARCHIVE_TYPE_ZIP
         self.sources = {}
-        self._gitignore = [lambda x: True]
         self.dry_run = False
 
     def get_configuration_attributes(self) -> List[str]:
         return [
             'archive_path', 'archive_type', 'sources', 'dry_run',
-            'allow_archive_overwriting', 'add', 'consider_gitignore'
+            'allow_archive_overwriting', 'add', 'consider_ignore', 'consider_ignore_recursively'
         ]
 
     def get_name(self) -> str:
@@ -97,7 +172,7 @@ class ArchivePackagingBaseTask(ExtendableTaskInterface):
         current_file_path = os.path.abspath(os.path.join(root, f))
 
         try:
-            if not self._can_be_added(current_file_path):
+            if not self.can_be_touched(current_file_path):
                 self.io().info(f'Ignoring "{current_file_path}"')
                 return
 
@@ -121,20 +196,7 @@ class ArchivePackagingBaseTask(ExtendableTaskInterface):
                 current_file_target_path = os.path.basename(src_path) + '/' + current_file_target_path
 
         self.sources[current_file_target_path] = current_file_path
-
-    def consider_gitignore(self, path: str = '.gitignore'):
-        """
-        Load ignore rules from .gitignore
-
-        :api: configure
-        :param path:
-        :return:
-        """
-
-        if not os.path.isfile(path):
-            raise FileNotFoundError(f'Cannot find .gitignore at path "{path}"')
-
-        self._gitignore.append(parse_gitignore(path))
+        self.io().debug(f'Adding {current_file_path} as {current_file_target_path}')
 
     def execute(self, context: ExecutionContext) -> bool:
         self.dry_run = bool(context.get_arg('--dry-run'))
@@ -143,6 +205,11 @@ class ArchivePackagingBaseTask(ExtendableTaskInterface):
         if self.dry_run:
             self.io().warn('Dry run active, will not perform any disk operation')
 
+        self.perform(context)
+
+        return True
+
+    def perform(self, context: ExecutionContext):
         # prepare
         self._make_sure_destination_directory_exists(os.path.dirname(self.archive_path))
         self.archive = self._create_archive(self.archive_path)
@@ -152,15 +219,6 @@ class ArchivePackagingBaseTask(ExtendableTaskInterface):
 
         self.inner_execute(context)
         self._commit_changes(self.archive)
-
-        return True
-
-    def _can_be_added(self, path: str) -> bool:
-        for callback in self._gitignore:
-            if not callback(path):
-                return False
-
-        return True
 
     def _add_to_archive(self, archive: Union[ZipFile, TarFile], path: str, dest_path: str):
         self.io().info(f'Compressing "{path}" -> "{dest_path}"')
