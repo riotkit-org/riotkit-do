@@ -581,3 +581,13 @@ class ArgparseArgument(object):
 
         self.args = args
         self.kwargs = kwargs
+
+
+class PipelinePartInterface(object):
+    """
+    Partial element of a Pipeline - string that is being converted to GroupDeclaration
+    """
+
+    @abstractmethod
+    def to_pipeline_part(self) -> List[str]:
+        pass

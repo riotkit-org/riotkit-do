@@ -52,12 +52,17 @@ class ProgressObserver(object):
     def task_started(self, declaration: TaskDeclaration, parent: Union[GroupDeclaration, None], args: list):
         """ When task is just started """
 
-        self._executed_tasks[declaration.get_unique_id()] = TaskResult(declaration, STATUS_STARTED)
+        is_retry = declaration.get_unique_id() in self._executed_tasks
+        full_name = declaration.to_full_name()
 
-        self._io.info_msg(' >> Executing %s %s %s' % (
-            declaration.to_full_name(),
-            ' '.join(args),
-            self._format_parent_task(parent)
+        self._executed_tasks[declaration.get_unique_id()] = TaskResult(declaration, STATUS_STARTED)
+        self._io.internal(f'{full_name}, {declaration.get_unique_id()}')
+
+        self._io.info_msg(' >> {action} {full_name} {args} {parent}'.format(
+            action='Retrying' if is_retry else 'Executing',
+            full_name=full_name,
+            args=' '.join(args),
+            parent=self._format_parent_task(parent)
         ))
 
     def task_errored(self, declaration: TaskDeclaration, exception: Exception):
@@ -70,7 +75,7 @@ class ProgressObserver(object):
             declaration.to_full_name(),
             str(exception.__class__)
         ))
-        self._io.print_separator()
+        self._io.print_separator(status=False)
         self._io.print_opt_line()
 
     def task_failed(self, declaration: TaskDeclaration, parent: Union[GroupDeclaration, None]):
@@ -84,7 +89,7 @@ class ProgressObserver(object):
                 declaration.to_full_name(),
                 self._format_parent_task(parent)
             ))
-            self._io.print_separator()
+            self._io.print_separator(status=False)
             self._io.print_opt_line()
 
     def task_succeed(self, declaration: TaskDeclaration, parent: Union[GroupDeclaration, None]):
@@ -94,11 +99,11 @@ class ProgressObserver(object):
 
         if not declaration.get_task_to_execute().is_silent_in_observer():
             self._io.print_opt_line()
-            self._io.success_msg('The task "%s" %s succeed.' % (
-                declaration.to_full_name(),
-                self._format_parent_task(parent)
+            self._io.success_msg('The task "{current}"{parent} succeed.'.format(
+                current=declaration.to_full_name(),
+                parent=(' ' + self._format_parent_task(parent)).rstrip()
             ))
-            self._io.print_separator()
+            self._io.print_separator(status=True)
             self._io.print_opt_line()
 
     def execution_finished(self):
@@ -116,9 +121,12 @@ class ProgressObserver(object):
         self._io.print_opt_line()
 
     def _set_status(self, declaration: TaskDeclaration, status: str):
-        """Internally mark given task as done + save status"""
+        """
+        Internally mark given task as done + save status
+        """
 
-        self._io.internal('{} task, unique_id={}, status={}'.format(str(declaration), declaration.get_unique_id(), status))
+        self._io.internal('{} task, unique_id={}, status={}'.format(str(declaration),
+                                                                    declaration.get_unique_id(), status))
         self._executed_tasks[declaration.get_unique_id()] = TaskResult(declaration, status)
 
     def is_at_least_one_task_failing(self) -> bool:
@@ -134,17 +142,12 @@ class ProgressObserver(object):
         When a block failed and needs to be retried (even intermediate success steps)
         """
 
-        executed_tasks_that_belongs_to_block = {
-            k: v for k, v in self._executed_tasks.items() if v.task.block() is block
-        }
-
-        for declaration in executed_tasks_that_belongs_to_block.values():
-            self.task_retried(declaration)
+        self._io.warn_msg(f' >> Retrying block of tasks (retry {block.how_many_times_retried_block + 1})')
+        block.whole_block_retried()
 
     def task_retried(self, declaration: TaskDeclaration):
-        self._io.warn_msg('Task "{}" was retried'.format(declaration.to_full_name()))
         self._set_status(declaration, STATUS_STARTED)
 
     def task_rescue_attempt(self, declaration: TaskDeclaration):
-        self._io.warn_msg('Task "{}" rescue attempt started'.format(declaration.to_full_name()))
+        self._io.warn_msg(' >> Task "{}" rescue attempt started'.format(declaration.to_full_name()))
         self._set_status(declaration, STATUS_RESCUE_STATE)

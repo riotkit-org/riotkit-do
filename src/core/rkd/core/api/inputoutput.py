@@ -1,5 +1,6 @@
 import inspect
 import re
+import shutil
 import sys
 import os
 import subprocess
@@ -334,10 +335,19 @@ class IO:
 
         self.opt_outln('')
 
-    def print_separator(self):
-        """Prints a text separator (optional output)
+    def print_separator(self, status: bool = None):
         """
-        self.opt_outln("\x1B[37m%s\x1B[0m" % '-----------------------------------')
+        Prints a text separator (optional output)
+        """
+
+        color = '37m'
+
+        if status is True:
+            color = '92m'
+        elif status is False:
+            color = '91m'
+
+        self.opt_outln(f"\x1B[{color}%s\x1B[0m" % ("-" * get_terminal_width()))
 
     #
     #  Statuses
@@ -677,3 +687,14 @@ def get_environment_copy() -> dict:
     """
 
     return dict(deepcopy(os.environ))
+
+
+# reused from PyTest
+def get_terminal_width() -> int:
+    width, _ = shutil.get_terminal_size(fallback=(80, 24))
+
+    # The Windows get_terminal_size may be bogus, let's sanify a bit.
+    if width < 40:
+        width = 80
+
+    return width

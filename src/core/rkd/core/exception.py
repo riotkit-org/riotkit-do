@@ -1,7 +1,7 @@
 from types import FunctionType
 from typing import List, Type
 from jsonschema import ValidationError
-from .argparsing.model import TaskArguments
+from .argparsing.model import TaskArguments, ArgumentBlock
 
 
 class RiotKitDoException(Exception):
@@ -36,13 +36,29 @@ class InterruptExecution(TaskExecutionException):
 class ExecutionRetryException(TaskExecutionException):
     """Internal signal to retry a task"""
 
-    args: List[TaskArguments]
+    tasks: List['TaskDeclaration']
+    remaining_tasks: List['TaskDeclaration']
 
-    def __init__(self, args: List[TaskArguments] = None):
-        if args is None:
-            args = []
+    def __init__(self, tasks: List['TaskDeclaration'] = None, remaining_tasks: List['TaskDeclaration'] = None):
+        if tasks is None:
+            tasks = []
 
-        self.args = args
+        if remaining_tasks is None:
+            remaining_tasks = []
+
+        self.tasks = tasks
+        self.remaining_tasks = remaining_tasks
+
+
+class BlockExecutionRetryException(TaskExecutionException):
+    """
+    Internal signal to retry whole block with multiple tasks inside
+    """
+
+    block: ArgumentBlock
+
+    def __init__(self, block: ArgumentBlock):
+        self.block = block
 
 
 class TaskResolvingException(TaskExecutionException):
@@ -58,7 +74,9 @@ class AggregatedResolvingFailure(TaskExecutionException):
 # + EXECUTOR EXCEPTIONS -> Task rescheduling signals
 # +==================================================
 class ExecutionRescheduleException(TaskExecutionException):
-    """Internal signal to put extra task into resolve/schedule queue of TaskResolver"""
+    """
+    Internal signal to put extra task into resolve/schedule queue of TaskResolver
+    """
 
     tasks_to_schedule: List[TaskArguments]
 
@@ -67,11 +85,15 @@ class ExecutionRescheduleException(TaskExecutionException):
 
 
 class ExecutionRescueException(ExecutionRescheduleException):
-    """Internal signal to call a rescue set of tasks in case of given task fails"""
+    """
+    Internal signal to call a rescue set of tasks in case of given task fails
+    """
 
 
 class ExecutionErrorActionException(ExecutionRescheduleException):
-    """Internal signal to call an error notification in case when given task fails"""
+    """
+    Internal signal to call an error notification in case when given task fails
+    """
 
 
 # +=============================

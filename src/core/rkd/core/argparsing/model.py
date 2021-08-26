@@ -1,5 +1,6 @@
 from copy import deepcopy
 from typing import List, Dict
+from uuid import uuid4
 
 
 class TaskArguments(object):
@@ -55,15 +56,22 @@ class ArgumentBlock(object):
     retry_per_task: int = 0
 
     _tasks: List[TaskArguments]
+
+    # a helper registry that keeps relation between block and already resolved tasks
+    _resolved_tasks: List['TaskDeclaration']
+
     _raw_attributes: dict
     _retry_counter_per_task: Dict['TaskDeclaration', int]
     _retry_counter_on_whole_block: int
+    _debug_id: str
 
     def __init__(self, body: List[str] = None, rescue: str = '', error: str = '', retry: int = 0,
                  retry_block: int = 0):
         """
         :param body Can be empty - it means that block will have tasks filled up later
         """
+
+        self._debug_id = uuid4().hex
 
         if body is None:
             body = []
@@ -84,6 +92,9 @@ class ArgumentBlock(object):
         self.on_error = []
         self._retry_counter_per_task = {}
         self._retry_counter_on_whole_block = 0
+
+        # lazy-filled by TaskResolver on later stage
+        self._resolved_tasks = []
 
         # those attributes will be lazy-parsed on later processing stage
         self._raw_attributes = {
@@ -111,7 +122,46 @@ class ArgumentBlock(object):
         return cloned
 
     def tasks(self) -> List[TaskArguments]:
+        """
+        Tasks as text arguments - e.g. :sh -c "test 123"
+        :return:
+        """
+
         return self._tasks
+
+    def resolved_tasks(self) -> List['TaskDeclaration']:
+        """
+        Resolved tasks - instances of TaskDeclaration as a fact of resolved relation between Block <=> TaskDeclaration
+        by TaskResolver
+        :return:
+        """
+
+        return self._resolved_tasks
+
+    def get_remaining_tasks(self, after) -> List['TaskDeclaration']:
+        """
+        Gets all tasks that are after "starting_from" declaration on the list in the block
+
+        Given: A, B, C, D
+        We want all tasks after B
+        We expect to get C, D
+
+        :param after:
+        :return:
+        """
+
+        remaining = []
+        found = False
+
+        for declaration in self.resolved_tasks():
+            if declaration == after:
+                found = True
+                continue
+
+            if found:
+                remaining.append(declaration)
+
+        return remaining
 
     def with_tasks_from_first_block(self, blocks: List['ArgumentBlock']):
         try:
@@ -121,6 +171,14 @@ class ArgumentBlock(object):
 
     def raw_attributes(self) -> dict:
         return self._raw_attributes
+
+    def register_resolved_task(self, task: 'TaskDeclaration'):
+        """
+        Internal use only - TaskResolver needs this method to apply relation between Block and TaskDeclaration
+        :return:
+        """
+
+        self._resolved_tasks.append(task)
 
     def set_parsed_error_handler(self, tasks_arguments: List[TaskArguments]) -> None:
         self.on_error = tasks_arguments
@@ -140,15 +198,21 @@ class ArgumentBlock(object):
         return self._retry_counter_per_task[declaration] < self.retry_per_task
 
     def task_retried(self, declaration):
-        """Takes notification from external source to internally note that given task was retried"""
+        """
+        Takes notification from external source to internally note that given task was retried
+        """
 
         if declaration not in self._retry_counter_per_task:
             self._retry_counter_per_task[declaration] = 0
 
         self._retry_counter_per_task[declaration] += 1
 
-    def whole_block_retried(self, declaration):
-        pass
+    def whole_block_retried(self):
+        """
+        When all tasks from this block should be retried
+        :return:
+        """
+        self._retry_counter_on_whole_block += 1
 
     def should_rescue_task(self):
         """
@@ -175,6 +239,10 @@ class ArgumentBlock(object):
         # actual state < declared maximum
         return self._retry_counter_on_whole_block < self.retry_whole_block
 
+    @property
+    def how_many_times_retried_block(self):
+        return self._retry_counter_on_whole_block
+
     def __str__(self):
         text = str(self.body)
 
@@ -183,4 +251,7 @@ class ArgumentBlock(object):
         except AttributeError:
             pass
 
-        return 'ArgumentBlock<' + text + '>'
+        return f'ArgumentBlock<{text}, unique_id={self._debug_id}>'
+
+    def id(self) -> str:
+        return self._debug_id

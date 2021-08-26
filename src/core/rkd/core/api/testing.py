@@ -8,7 +8,9 @@ Provides tools for easier testing of RKD-based workflows, tasks, plugins.
 """
 
 import os
+import subprocess
 import sys
+from tempfile import TemporaryDirectory
 from typing import Tuple, Dict, List, Union
 from unittest import TestCase
 from io import StringIO
@@ -25,6 +27,7 @@ from rkd.core.api.inputoutput import IO
 from rkd.core.api.inputoutput import NullSystemIO
 from rkd.core.api.inputoutput import BufferedSystemIO
 from rkd.core.context import ApplicationContext
+from rkd.process import switched_workdir
 
 
 class OutputCapturingSafeTestCase(TestCase):
@@ -282,3 +285,29 @@ class FunctionalTestingCase(BasicTestingCase, OutputCapturingSafeTestCase):
                 raise
 
         return ctx.io.get_value() + "\n" + str_io.getvalue() + "\nTASK_EXIT_RESULT=" + str(result)
+
+    @contextmanager
+    def with_temporary_workspace_containing(self, files: Dict[str, str]):
+        """
+        Creates a temporary directory as a workspace
+        and fills up with files specified in "file" parameter
+
+        :param files: Dict of [filename: contents to write to a file]
+        :return:
+        """
+
+        with TemporaryDirectory() as tempdir:
+            with switched_workdir(tempdir):
+
+                # create files from a predefined content
+                for filename, content in files.items():
+                    directory = os.path.dirname(filename)
+
+                    if directory:
+                        subprocess.check_call(['mkdir', '-p', directory])
+
+                    with open(filename, 'w') as f:
+                        f.write(content)
+
+                # execute code
+                yield

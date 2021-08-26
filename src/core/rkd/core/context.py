@@ -174,6 +174,8 @@ class ApplicationContext(ContextInterface):
         """
 
         cmdline_parser = CommandlineParsingHelper(self.io)
+
+        self.io.internal(f'Resolving pipeline {pipeline}')
         args = cmdline_parser.create_grouped_arguments(pipeline.get_arguments())
         resolved_tasks = []
 
@@ -200,6 +202,8 @@ class ApplicationContext(ContextInterface):
                             pipeline.get_user_overridden_envs() + resolved_declaration.get_list_of_user_overridden_envs()
                         ) \
                         .with_connected_block(block)
+
+                    self.io.internal(f'Resolved pipeline {new_task} inside {block}')
 
                     if pipeline.is_part_of_subproject():
                         new_task = new_task.as_part_of_subproject(

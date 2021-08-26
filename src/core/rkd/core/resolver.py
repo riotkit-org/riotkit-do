@@ -3,12 +3,9 @@ from typing import List, Callable, Union, Optional
 from .argparsing.model import TaskArguments, ArgumentBlock
 from .api.syntax import TaskDeclaration, GroupDeclaration
 from .context import ApplicationContext
-# todo: verfiy if ExecutionErrorActionException and ExecutionRescueException were properly implemented/handled
-#       and if we have tests for that case
 from .exception import InterruptExecution, \
     ExecutionRetryException, \
-    ExecutionErrorActionException, \
-    TaskNotFoundException, ExecutionRescueException, ExecutionRescheduleException, AggregatedResolvingFailure
+    TaskNotFoundException, ExecutionRescheduleException, AggregatedResolvingFailure
 from .aliasgroups import AliasGroup
 
 
@@ -111,6 +108,12 @@ class TaskResolver(object):
         declaration_num = 0
         for declaration in declarations:
             declaration: TaskDeclaration
+
+            # do not overwrite already connected declarations (task resolver is invoked multiple times)
+            if declaration.block():
+                continue
+
+            self._ctx.io.internal(f'Attaching declaration={declaration} to block={block}')
             declarations[declaration_num] = declaration.with_connected_block(block)
             declaration_num += 1
 
@@ -119,10 +122,19 @@ class TaskResolver(object):
     def _iterate_over_declarations(self, callback: CALLBACK_DEF, declarations: list, task_num: int,
                                    parent: Optional[GroupDeclaration], task_request: TaskArguments):
 
-        """Recursively go through all tasks in correct order, executing a callable on each"""
+        """
+        Recursively go through all tasks in correct order, executing a callable on each
+        """
+
+        declarations_to_ignore = []
 
         for declaration in declarations:
             declaration: TaskDeclaration
+
+            if declaration in declarations_to_ignore:
+                self._ctx.io.internal(f'Skipping {declaration} after Block failed')
+                declarations_to_ignore.remove(declaration)
+                continue
 
             if isinstance(declaration, GroupDeclaration):
                 self._iterate_over_declarations(
@@ -152,16 +164,25 @@ class TaskResolver(object):
             # resolving and scheduling tasks, not deciding about results
             #
 
-            except ExecutionRetryException as exc:
+            except ExecutionRetryException as retry:
+                self._ctx.io.internal('Handling ExecutionRetryException')
+
                 # multiple tasks to resolve, then retry
-                if exc.args:
-                    self._resolve_elements(
-                        requests=exc.args,
+                if retry.tasks:
+                    self._ctx.io.internal(f'Declarations to retry: {retry.tasks}')
+                    self._iterate_over_declarations(
                         callback=callback,
+                        declarations=retry.tasks,
                         task_num=task_num,
-                        block=ArgumentBlock.from_empty()
+                        parent=parent,
+                        task_request=task_request
                     )
-                    return
+
+                    # Given block have tasks A, B, C, D
+                    # And "B" fails
+                    # Then we interrupt "C" and "D"
+                    declarations_to_ignore += retry.remaining_tasks
+                    continue
 
                 # single task to retry
                 self._iterate_over_declarations(

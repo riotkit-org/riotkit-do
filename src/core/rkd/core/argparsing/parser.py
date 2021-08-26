@@ -215,10 +215,12 @@ class CommandlineParsingHelper(object):
             attributes = block.raw_attributes()
 
             if attributes['error']:
+                self.io.internal(f'Parsing @error in {block}')
                 block.set_parsed_error_handler(
                     self.create_grouped_arguments(split_argv(attributes['error']))[0].tasks())
 
             if attributes['rescue']:
+                self.io.internal(f'Parsing @rescue in {block}')
                 block.set_parsed_rescue(self.create_grouped_arguments(split_argv(attributes['rescue']))[0].tasks())
 
         return blocks
@@ -253,7 +255,8 @@ class CommandlineParsingHelper(object):
             # replace all blocks with new blocks that contains the additional arguments
             new_block = block.clone_with_tasks(block_tasks)
 
-            self.io.internal(f'Got finally a block {new_block.tasks()} from block body {new_block.body}')
+            self.io.internal(f'Got finally a block {new_block.tasks()} from block body {new_block.body}, '
+                             f'id={new_block.id()}')
 
             new_blocks.append(new_block)
 

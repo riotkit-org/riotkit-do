@@ -514,6 +514,26 @@ This task is designed to be extended, see methods marked as "interface methods".
         return self.sh('git diff --stat || true', capture=True).strip() == ''
 
 
+class DummyTask(TaskInterface):
+    """
+    Dummy task, use for testing
+    """
+
+    def get_name(self) -> str:
+        return ':dummy'
+
+    def get_group_name(self) -> str:
+        return ''
+
+    def configure_argparse(self, parser: ArgumentParser):
+        parser.add_argument('--test', action='store_true', required=False, help='Just a test boolean parameter')
+
+    def execute(self, context: ExecutionContext) -> bool:
+        self.io().info_msg(f'Hello from dummy task, test={context.get_arg("--test")}')
+
+        return True
+
+
 def imports() -> List[TaskDeclaration]:
     return [
         TaskDeclaration(TasksListingTask()),

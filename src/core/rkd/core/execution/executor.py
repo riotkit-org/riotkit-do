@@ -18,7 +18,7 @@ from ..inputoutput import output_formatted_exception
 from ..exception import InterruptExecution, \
     ExecutionRetryException, \
     ExecutionRescueException, \
-    ExecutionErrorActionException
+    ExecutionErrorActionException, TaskExecutionException
 from .results import ProgressObserver
 from ..audit import decide_about_target_log_files
 from ..api.temp import TempManager
@@ -111,17 +111,30 @@ class OneByOneTaskExecutor(ExecutorInterface):
     def _on_failure(self, declaration: TaskDeclaration, keep_going: bool,
                     exception: Optional[Exception] = None,
                     parent: Union[GroupDeclaration, None] = None):
-
         """
         Executed when task fails - regardless of if it is an Exception raised or just a False returned
 
-        Roles:
-            - Block: a domain logic, tracks TaskDeclaration execution
+        NOTE on signals: Executor signals errors using exceptions like ExecutionRetryException,
+                         to allow retry, retry block and other error & rescue actions.
+                         Parent TaskResolver is handling those errors and resolving additional tasks as a part of
+                         error & rescue operation. The TaskExecutor itself does not have a role to resolve any tasks.
+
+
+        Separated responsibilities:
+            - Block: a domain logic, tracks TaskDeclaration execution. Decides if task should be retried, or rescued
               (only those declarations that are declared in that block)
             - Observer: Observes execution RESULTS to notify user, the console (to set exit code for example).
                         Needs also to be notified, when tasks are retried and when those retried tasks are passing
-                        eg. second time ater failing first time
+                        eg. second time after failing first time
         """
+
+        # validation: Do not allow to create hacky mechanisms that uses internal RKD signals
+        if isinstance(exception, TaskExecutionException):
+            self.io.error(f'Exception "{type(exception)}" thrown from inside of a Task will not be handled. '
+                          f'Internal exceptions are not a part of API and should not be used in Tasks.')
+            self._notify_error(declaration, parent, exception)
+
+            return
 
         # block modifiers (issue #50): @retry a task up to X times
         if declaration.block().should_task_be_retried(declaration):
@@ -131,11 +144,11 @@ class OneByOneTaskExecutor(ExecutorInterface):
             raise ExecutionRetryException() from exception
 
         elif declaration.block().should_block_be_retried():
-            declaration.block().whole_block_retried(declaration)
-
+            self.io.internal(f'Got block to retry: {declaration.block()}')
             self._observer.group_of_tasks_retried(declaration.block())
 
-            raise ExecutionRetryException(declaration.block().tasks()) from exception
+            raise ExecutionRetryException(list(declaration.block().resolved_tasks()), declaration.block()
+                                          .get_remaining_tasks(declaration)) from exception
 
         # regardless of @error & @rescue there should be a visible information that task failed
         self._notify_error(declaration, parent, exception)
@@ -157,7 +170,9 @@ class OneByOneTaskExecutor(ExecutorInterface):
                       parent: Union[GroupDeclaration, None] = None,
                       exception: Optional[Exception] = None):
 
-        """Write to console, notify observers"""
+        """
+        Write to console, notify observers
+        """
 
         # distinct between error and failure, first has a stacktrace, second is a logical task failure
         if not exception:

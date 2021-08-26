@@ -6,12 +6,12 @@ SYNTAX (part of API)
 Classes used in a declaration syntax in makefile.py
 
 """
+from dataclasses import dataclass
 from types import FunctionType
 from typing import List, Dict, Optional, Union
 from copy import deepcopy
 from uuid import uuid4
-
-from .contract import TaskDeclarationInterface, ExtendableTaskInterface
+from .contract import TaskDeclarationInterface, ExtendableTaskInterface, PipelinePartInterface
 from .contract import GroupDeclarationInterface
 from .contract import TaskInterface
 from .inputoutput import get_environment_copy, ReadableStreamType
@@ -158,12 +158,14 @@ class TaskDeclaration(TaskDeclarationInterface):
         return copy
 
     def with_connected_block(self, block: ArgumentBlock):
-        """Immutable arguments setter. Produces new object each time
-           Block should be a REFERENCE to an object, not a copy
+        """
+        Immutable arguments setter. Produces new object each time
+        Block should be a REFERENCE to an object, not a copy
         """
 
         copy = self._clone()
         copy._block = block
+        block.register_resolved_task(copy)  # register a both side relation
 
         return copy
 
@@ -282,7 +284,7 @@ class TaskDeclaration(TaskDeclarationInterface):
         return None
 
     def __str__(self):
-        return 'TaskDeclaration<%s>' % self.get_task_to_execute().get_full_name()
+        return 'TaskDeclaration<%s>' % self.to_full_name()
 
 
 class ExtendedTaskDeclaration(object):
@@ -391,8 +393,12 @@ class GroupDeclaration(GroupDeclarationInterface):
         return False
 
 
-class TaskAliasDeclaration(object):
-    """ Allows to define a custom task name that triggers other tasks in proper order """
+class Pipeline(object):
+    """
+    Task Caller
+
+    Has a name like a Task, but itself does not do anything than calling other tasks in selected order
+    """
 
     _name: str
     _arguments: List[str]
@@ -402,12 +408,14 @@ class TaskAliasDeclaration(object):
     _workdir: str
     _project_name: str
 
-    def __init__(self, name: str, to_execute: List[str], env: Dict[str, str] = None, description: str = ''):
+    def __init__(self, name: str, to_execute: List[Union[str, PipelinePartInterface]],
+                 env: Dict[str, str] = None, description: str = ''):
+
         if env is None:
             env = {}
 
         self._name = name
-        self._arguments = to_execute
+        self._arguments = self._resolve_pipeline_parts(to_execute)
         self._env = merge_env(env)
         self._user_defined_env = list(env.keys())
         self._description = description
@@ -434,12 +442,12 @@ class TaskAliasDeclaration(object):
     def get_description(self) -> str:
         return self._description
 
-    def _clone(self) -> 'TaskAliasDeclaration':
+    def _clone(self) -> 'Pipeline':
         """Clone securely the object. There fields shared across objects as references could be kept"""
 
         return deepcopy(self)
 
-    def as_part_of_subproject(self, workdir: str, subproject_name: str) -> 'TaskAliasDeclaration':
+    def as_part_of_subproject(self, workdir: str, subproject_name: str) -> 'Pipeline':
         copy = self._clone()
 
         copy._workdir = merge_workdir(copy._workdir, workdir)
@@ -458,9 +466,121 @@ class TaskAliasDeclaration(object):
     def is_part_of_subproject(self) -> bool:
         return isinstance(self._project_name, str) and len(self._project_name) > 1
 
+    @staticmethod
+    def _resolve_pipeline_parts(parts: List[Union[str, PipelinePartInterface]]) -> List[str]:
+        resolved = []
+
+        for part in parts:
+            if isinstance(part, PipelinePartInterface):
+                resolved += part.to_pipeline_part()
+            else:
+                resolved += part
+
+        return resolved
+
+    def __str__(self) -> str:
+        return f'Pipeline<{self.get_name()}>'
+
+
+class TaskAliasDeclaration(Pipeline):
+    """
+    Deprecated: Name will be removed in RKD 6.0
+    """
+
+
+class PipelineTask(PipelinePartInterface):
+    """
+    Represents a single task in a Pipeline
+
+    .. code:: python
+
+        from rkd.core.api.syntax import Pipeline
+
+        PIPELINES = [
+            Pipeline(
+                name=':build',
+                to_execute=[
+                    Task(':server:build'),
+                    Task(':client:build')
+                ]
+            )
+        ]
+    """
+
+    task_args: List[str]
+
+    def __init__(self, *task_args):
+        self.task_args = task_args
+
+    def to_pipeline_part(self) -> List[str]:
+        return self.task_args
+
+
+@dataclass
+class PipelineBlock(PipelinePartInterface):
+    """
+    Represents block of tasks
+
+    Example of generated block:
+        {@retry 3} :some-task {/@}
+
+
+    .. code:: python
+
+        from rkd.core.api.syntax import Pipeline, PipelineTask as Task, PipelineBlock as Block, TaskDeclaration
+
+        Pipeline(
+            name=':error-handling-example',
+            description=':notify should be invoked after "doing exit" task, and execution of a BLOCK should be interrupted',
+            to_execute=[
+                Task(':server:build'),
+                Block(error=':notify -c "echo \'Build failed\'"', retry=3, tasks=[
+                    Task(':docs:build', '--test'),
+                    Task(':sh', '-c', 'echo "doing exit"; exit 1'),
+                    Task(':client:build')
+                ]),
+                Task(':server:clear')
+            ]
+        )
+
+    """
+
+    tasks: List[PipelineTask]
+    retry: Optional[int] = None
+    retry_block: Optional[int] = None
+    error: Optional[str] = None
+    rescue: Optional[str] = None
+
+    def to_pipeline_part(self) -> List[str]:
+        partial = []
+        block_body = ['{']
+
+        if self.error:
+            block_body.append(f'@error {self.error} ')
+
+        if self.rescue:
+            block_body.append(f'@rescue {self.rescue} ')
+
+        if self.retry:
+            block_body.append(f'@retry {self.retry} ')
+
+        if self.retry_block:
+            block_body.append(f'@retry-block {self.retry_block} ')
+
+        block_body.append('} ')
+        partial.append(''.join(block_body))
+
+        for task in self.tasks:
+            partial += task.to_pipeline_part()
+
+        partial.append('{/@}')
+
+        return partial
+
 
 def merge_env(env: Dict[str, str]):
-    """Merge custom environment variables set per-task with system environment
+    """
+    Merge custom environment variables set per-task with system environment
     """
 
     merged_dict = deepcopy(env)
