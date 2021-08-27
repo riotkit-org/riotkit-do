@@ -135,7 +135,9 @@ There exists actually three available syntax styles.
 
 --------------
 
-1. Python Class: Classic syntax \*******************************\*
+1. Python Class: Classic syntax
+
+--------------
 
 Classic syntax has no limits, it’s main purpose is to define Base Tasks,
 that could be extended later **due to its native construct could be
@@ -172,7 +174,9 @@ packaged as PyPI/PIP package.**
 
 --------------
 
-2. Simplified Python syntax \**************************\*
+2. Simplified Python syntax
+
+--------------
 
 Allows writing Tasks that extends Base Tasks in a very easy and short
 manner.
@@ -209,7 +213,9 @@ manner.
 
 --------------
 
-3. Document/YAML syntax \**********************\*
+3. Document/YAML syntax
+
+--------------
 
 Has similar purpose as ``Simplified Python syntax``, but should be
 simpler for non-programmers like System Administrators, or just for

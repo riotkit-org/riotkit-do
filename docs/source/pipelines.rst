@@ -225,3 +225,14 @@ Works similar as **@error**, but with difference that **@rescue** changes the re
 **Example workflow:**
 
 .. image:: rkd-pipeline-rescue.png
+
+
+Python syntax reference (API)
+-----------------------------
+
+.. autoclass:: rkd.core.api.syntax.Pipeline
+
+.. autoclass:: rkd.core.api.syntax.PipelineTask
+
+.. autoclass:: rkd.core.api.syntax.PipelineBlock
+
