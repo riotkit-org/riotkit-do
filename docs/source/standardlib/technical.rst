@@ -35,7 +35,7 @@ to create a task by defining a simple method as a callback.
 
 .. literalinclude:: ../../examples/callback/.rkd/makefile.py
 
-.. autoclass:: rkd.standardlib.CallableTask
+.. autoclass:: rkd.core.standardlib.CallableTask
    :members:
 
 :rkd:create-structure
@@ -57,7 +57,7 @@ It was designed to allow to create customized installers for tools based on RKD 
 
 Look for "interface methods" in class code, those methods are guaranteed to not change from minor version to minor version.
 
-.. autoclass:: rkd.standardlib.CreateStructureTask
+.. autoclass:: rkd.core.standardlib.CreateStructureTask
    :members:
 
 :file:line-in-file

@@ -97,6 +97,7 @@ Keep learning
    syntax
    usage/importing-tasks
    extending-tasks
+   pipelines
    project-structure
    usage/index
    standardlib/index
