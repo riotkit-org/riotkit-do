@@ -100,6 +100,7 @@ Keep learning
    pipelines
    project-structure
    standardlib/index
+   environment
    usage/index
    rts/index
 

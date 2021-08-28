@@ -115,3 +115,6 @@ To coexist parent and new method in place of :code:`inner_execute` just use one 
 .. include:: ../../src/php/rkd/php/script.py
    :start-after: <sphinx:extending-tasks>
    :end-before: # </sphinx:extending-tasks>
+
+
+.. include:: syntax-reference.rst
