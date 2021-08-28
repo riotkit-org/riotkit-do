@@ -11,7 +11,7 @@ from rkd.core.context import distinct_imports
 from rkd.core.api.inputoutput import NullSystemIO, IO, SystemIO
 from rkd.core.dto import StaticFileContextParsingResult
 from rkd.core.exception import ContextException
-from rkd.core.api.syntax import TaskDeclaration
+from rkd.core.api.syntax import TaskDeclaration, Pipeline
 from rkd.core.api.syntax import TaskAliasDeclaration
 from rkd.core.api.syntax import GroupDeclaration
 from rkd.core.api.testing import BasicTestingCase
@@ -190,8 +190,8 @@ class ContextTest(BasicTestingCase):
         ctx = ApplicationContext([
             TaskDeclaration(TaskForTesting(), name=':test')
         ], [
-            TaskAliasDeclaration(':deeper', [':test', ':test']),
-            TaskAliasDeclaration(':deep', [':test', ':deeper'])
+            Pipeline(':deeper', [':test', ':test']),
+            Pipeline(':deep', [':test', ':deeper'])
         ], directory='',
             subprojects=[],
             workdir='',

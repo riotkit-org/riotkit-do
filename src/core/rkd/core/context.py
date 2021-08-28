@@ -12,7 +12,7 @@ from importlib.machinery import SourceFileLoader
 from traceback import print_exc
 from uuid import uuid4
 from . import env
-from .api.syntax import TaskDeclaration, parse_path_into_subproject_prefix, ExtendedTaskDeclaration
+from .api.syntax import TaskDeclaration, parse_path_into_subproject_prefix, ExtendedTaskDeclaration, Pipeline
 from .api.syntax import TaskAliasDeclaration
 from .api.syntax import GroupDeclaration
 from .api.contract import ContextInterface
@@ -51,7 +51,7 @@ class ApplicationContext(ContextInterface):
     """
 
     _imported_tasks: Dict[str, TaskDeclaration]
-    _task_aliases: Dict[str, TaskAliasDeclaration]
+    _task_aliases: Dict[str, Pipeline]
     _compiled: Dict[str, Union[TaskDeclaration, GroupDeclaration]]
     _created_at: datetime
     _directory: str
@@ -63,7 +63,7 @@ class ApplicationContext(ContextInterface):
     id: str
 
     def __init__(self, tasks: List[TaskDeclaration],
-                 aliases: List[TaskAliasDeclaration],
+                 aliases: List[Pipeline],
                  directory: str,
                  subprojects: List[str],
                  workdir: str,
@@ -152,7 +152,7 @@ class ApplicationContext(ContextInterface):
 
         self._imported_tasks[task.to_full_name()] = task
 
-    def _add_pipeline(self, pipeline: TaskAliasDeclaration, parent_ctx: Optional['ApplicationContext'] = None) -> None:
+    def _add_pipeline(self, pipeline: Pipeline, parent_ctx: Optional['ApplicationContext'] = None) -> None:
         if not parent_ctx:
             parent_ctx = self
 
@@ -161,7 +161,7 @@ class ApplicationContext(ContextInterface):
 
         self._task_aliases[pipeline.get_name()] = pipeline
 
-    def _resolve_pipeline(self, name: str, pipeline: TaskAliasDeclaration) -> GroupDeclaration:
+    def _resolve_pipeline(self, name: str, pipeline: Pipeline) -> GroupDeclaration:
         """
         Parse commandline args to fetch list of tasks to join into a group
 

@@ -474,7 +474,7 @@ class Pipeline(object):
             if isinstance(part, PipelinePartInterface):
                 resolved += part.to_pipeline_part()
             else:
-                resolved += part
+                resolved.append(part)
 
         return resolved
 
