@@ -7,6 +7,7 @@ All includes and extends are by default looking in current working directory pat
 
 :j2:render
 ~~~~~~~~~~
+
 .. jinja:: j2_render
    :file: source/templates/package-usage.rst
 
@@ -20,11 +21,20 @@ Renders a single file from JINJA2.
     rkd :j2:render -s SOURCE-FILE.yaml.j2 -o OUTPUT-FILE.yaml
 
 
+.. TIP::
+
+    This Task is ready to be imported and executed, but can be also easily extended.
+
+
 .. autoclass:: rkd.core.standardlib.jinja.FileRendererTask
 
 
 Jinja2Language
 ~~~~~~~~~~~~~~
+
+.. TIP::
+
+    This class was designed especially with MultiStepLanguageAgnosticTask in mind, but can be easily used without it.
 
 .. autoclass:: rkd.core.standardlib.jinja.Jinja2Language
 
