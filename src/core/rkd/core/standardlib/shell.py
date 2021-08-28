@@ -3,13 +3,14 @@ from argparse import ArgumentParser
 from copy import copy
 from subprocess import CalledProcessError
 from typing import Callable, List, Optional
+
 from ..api.syntax import TaskDeclaration
-from ..api.contract import TaskInterface, ExtendableTaskInterface
+from ..api.contract import TaskInterface, ExtendableTaskInterface, MultiStepLanguageExtensionInterface
 from ..api.contract import ExecutionContext
 
 
 # <sphinx=shell-command>
-class ShellCommandTask(ExtendableTaskInterface):
+class ShellCommandTask(ExtendableTaskInterface, MultiStepLanguageExtensionInterface):
     """
     Executes shell commands and scripts
 

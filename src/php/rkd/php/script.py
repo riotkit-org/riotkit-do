@@ -2,9 +2,11 @@ import os
 import subprocess
 import tempfile
 from argparse import ArgumentParser
+from copy import copy
 from typing import Dict, Union, Optional, List
 
-from rkd.core.api.contract import ExecutionContext, ArgumentEnv
+from rkd.core.api.inputoutput import ReadableStreamType
+from rkd.core.api.contract import ExecutionContext, ArgumentEnv, MultiStepLanguageExtensionInterface
 from rkd.core.api.syntax import TaskDeclaration
 from rkd.core.execution.lifecycle import ConfigurationLifecycleEvent
 from rkd.core.standardlib.docker import RunInContainerBaseTask
@@ -18,19 +20,18 @@ class PhpScriptTask(RunInContainerBaseTask):
 
     Inherits settings from `RunInContainerBaseTask`.
 
-    Configuration:
+    **Configuration:**
 
         - script: Path to script to load instead of stdin (could be a relative path)
         - version: PHP version. Leave None to use default 8.0-alpine version
 
-    Example of usage:
+    **Example of usage:**
 
         .. code:: yaml
 
-            version: org.riotkit.rkd/yaml/v1
+            version: org.riotkit.rkd/yaml/v2
             imports:
                 - rkd.php.script.PhpScriptTask
-
             tasks:
                 :yaml:test:php:
                     extends: rkd.php.script.PhpScriptTask
@@ -44,11 +45,27 @@ class PhpScriptTask(RunInContainerBaseTask):
                         var_dump(getcwd());
                         var_dump(phpversion());
 
+    **Example of usage with MultiStepLanguageAgnosticTask:**
+
+        .. code:: yaml
+
+            version: org.riotkit.rkd/yaml/v1
+            tasks:
+                :exec:
+                    environment:
+                        PHP: '7.4'
+                        IMAGE: 'php'
+                    steps: |
+                        #!rkd.php.script.PhpLanguage
+                        phpinfo();
+
     # </sphinx:extending-tasks>
     """
 
     script: Optional[str]
     version: Optional[str]
+    name: Optional[str]
+    input: Optional[callable]
 
     def __init__(self):
         super().__init__()
@@ -57,9 +74,11 @@ class PhpScriptTask(RunInContainerBaseTask):
         self.command = '9999999'
         self.script = None
         self.version = None
+        self.name = None
+        self.input = None
 
     def get_name(self) -> str:
-        return ':php'
+        return ':php' if not self.name else self.name
 
     def get_group_name(self) -> str:
         return ''
@@ -91,8 +110,8 @@ class PhpScriptTask(RunInContainerBaseTask):
 
         try:
             # takes a RKD task input as input file, stdin is interactive
-            if not self.script and context.get_input():
-                input_php_code = context.get_input().read()
+            if not self.script and self.get_input(context):
+                input_php_code = self.get_input(context).read()
 
                 if "<?php" not in input_php_code:
                     input_php_code = "<?php\n" + input_php_code
@@ -119,6 +138,38 @@ class PhpScriptTask(RunInContainerBaseTask):
     def configure_argparse(self, parser: ArgumentParser):
         parser.add_argument('--php', help='PHP version ("php" docker image tag)', default='8.0-alpine')
         parser.add_argument('--image', help='Docker image name', default='php')
+
+    def get_input(self, ctx: ExecutionContext):
+        if self.input:
+            return self.input
+
+        return ctx.get_input()
+
+
+class PhpLanguage(PhpScriptTask, MultiStepLanguageExtensionInterface):
+    """
+    Language extension for MultiStepLanguageAgnosticTask
+
+    .. code:: yaml
+
+        version: org.riotkit.rkd/yaml/v1
+        tasks:
+            :exec:
+                environment:
+                    PHP: '7.4'
+                    IMAGE: 'php'
+                steps: |
+                    #!rkd.php.script.PhpLanguage
+                    phpinfo();
+
+    """
+
+    def with_predefined_details(self, code: str, name: str, step_num: int) -> 'PhpScriptTask':
+        clone = copy(self)
+        clone.name = name
+        clone.input = ReadableStreamType(code)
+
+        return clone
 
 
 def imports() -> List[TaskDeclaration]:

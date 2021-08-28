@@ -193,6 +193,7 @@ class StaticFileSyntaxInterpreter(object):
 
         parsed_task_declaration_kwargs = {}
         parsed_decorators = {}
+        overridden = []
 
         # resolve all configuration that is defined
         for attribute, value in document_attributes.items():
@@ -205,6 +206,7 @@ class StaticFileSyntaxInterpreter(object):
                 decorator = None
 
             yaml_key = yaml_key_without_decorator + ('@' + decorator if decorator else '')
+            overridden.append(yaml_key_without_decorator)
 
             #
             # Special attributes - are not mapped, but handled manually
@@ -253,7 +255,7 @@ class StaticFileSyntaxInterpreter(object):
             yaml_key, default_value, casting, is_method = mapped_var
 
             # value already defined
-            if yaml_key in document_attributes:
+            if yaml_key in overridden:
                 continue
 
             if casting:

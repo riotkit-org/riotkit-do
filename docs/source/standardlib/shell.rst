@@ -37,8 +37,12 @@ Executes a Bash script. Can be multi-line. Script can read from stdin instead of
 
 Works identically as **:sh**, but for spawns a single process. Does not allow a multi-line script syntax.
 
-Class to import: BaseShellCommandWithArgumentParsingTask
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BaseShellCommandWithArgumentParsingTask
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. WARNING::
+
+    To be used only in Python syntax
 
 Creates a command that executes bash script and provides argument parsing using Python's argparse.
 Parsed arguments are registered as ARG_{{argument_name}} eg. --activity-type would be exported as ARG_ACTIVITY_TYPE.
@@ -60,3 +64,11 @@ Parsed arguments are registered as ARG_{{argument_name}} eg. --activity-type wou
     ]
 
 
+MultiStepLanguageAgnosticTask
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Used by default in YAML syntax (if "extends" is not specified). Allows to execute multiple steps in various languages.
+
+It has very similar behavior to the GNU Makefile - each step is ran in a separate shell.
+
+.. autoclass:: rkd.core.standardlib.syntax.MultiStepLanguageAgnosticTask

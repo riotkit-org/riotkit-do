@@ -82,9 +82,11 @@ class BasicTestingCase(TestCase):
     _envs = None
     _cwd = None
     should_backup_env = False
+    temp: TempManager
 
     def setUp(self) -> None:
         os.environ['RKD_PATH'] = ''
+        self.temp = TempManager()
 
         if self.should_backup_env:
             self._envs = deepcopy(os.environ)
@@ -99,6 +101,7 @@ class BasicTestingCase(TestCase):
 
         os.chdir(self._cwd)
 
+        self.temp.finally_clean_up()
         super().tearDown()
 
     @contextmanager

@@ -22,3 +22,9 @@ PhpScriptTask
 .. autoclass:: rkd.php.script.PhpScriptTask
    :exclude-members: get_name, get_group_name
    :members:
+
+
+PhpLanguage
+~~~~~~~~~~~
+
+.. autoclass:: rkd.php.script.PhpLanguage

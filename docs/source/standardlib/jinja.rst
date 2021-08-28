@@ -20,6 +20,15 @@ Renders a single file from JINJA2.
     rkd :j2:render -s SOURCE-FILE.yaml.j2 -o OUTPUT-FILE.yaml
 
 
+.. autoclass:: rkd.core.standardlib.jinja.FileRendererTask
+
+
+Jinja2Language
+~~~~~~~~~~~~~~
+
+.. autoclass:: rkd.core.standardlib.jinja.Jinja2Language
+
+
 :j2:directory-to-directory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. jinja:: j2_render

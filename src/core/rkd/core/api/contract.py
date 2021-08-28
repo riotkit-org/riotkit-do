@@ -290,6 +290,9 @@ class ExecutionContext(object):
 
         return self._allow_mutating_globals
 
+    def get_args(self) -> Dict[str, str]:
+        return self.args
+
 
 class TaskInterface(TaskUtilities):
     _io: IO
@@ -590,4 +593,10 @@ class PipelinePartInterface(object):
 
     @abstractmethod
     def to_pipeline_part(self) -> List[str]:
+        pass
+
+
+class MultiStepLanguageExtensionInterface(ABC):
+    @abstractmethod
+    def with_predefined_details(self, code: str, name: str, step_num: int):
         pass

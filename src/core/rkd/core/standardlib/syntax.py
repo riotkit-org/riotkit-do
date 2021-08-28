@@ -1,4 +1,3 @@
-import ast
 from textwrap import dedent
 from traceback import format_exc
 from typing import Dict, Type
@@ -7,7 +6,9 @@ from argparse import ArgumentParser
 from typing import Callable
 from typing import Optional
 from copy import deepcopy, copy
-from ..api.contract import TaskInterface, ExtendableTaskInterface
+
+from rkd.core.api.parsing import SyntaxParsing
+from ..api.contract import TaskInterface, ExtendableTaskInterface, MultiStepLanguageExtensionInterface
 from ..api.contract import ExecutionContext
 from ..api.contract import ArgparseArgument
 from ..api.syntax import TaskDeclaration
@@ -75,7 +76,7 @@ class CallableTask(TaskInterface):
         return self._envs
 
 
-class PythonSyntaxTask(ExtendableTaskInterface):
+class PythonSyntaxTask(ExtendableTaskInterface, MultiStepLanguageExtensionInterface):
     code: str
     name: Optional[str]
     step_num: int
@@ -131,6 +132,66 @@ class PythonSyntaxTask(ExtendableTaskInterface):
 class MultiStepLanguageAgnosticTask(ExtendableTaskInterface):
     """
     Allows to define multiple shell/other language steps
+    In YAML syntax it is a default task type (notice: there is no need to specify extends attribute)
+
+    **Bash example**
+
+    .. code:: yaml
+
+        version: org.riotkit.rkd/yaml/v2
+        tasks:
+            :example:
+                steps: |
+                    echo "Hello from the Bash"
+
+
+    **Python example**
+
+    .. code:: yaml
+
+        version: org.riotkit.rkd/yaml/v2
+        tasks:
+            :example:
+                steps: |
+                    #!python
+                    print('Hello')
+
+
+    **Multiple languages and steps example**
+
+    .. code:: yaml
+
+        version: org.riotkit.rkd/yaml/v2
+        tasks:
+            :example:
+                steps:
+                    - |
+                        #!python
+                        print('Hello from Python')
+                    - ps aux
+                    - echo "Hello from Bash"
+
+
+    **Non-standard languages support**
+
+    .. code:: yaml
+
+        version: org.riotkit.rkd/yaml/v2
+        imports:
+            - rkd.php.script.PhpLanguage
+        environment:
+            PHP: '8.0'
+            IMAGE: 'php'
+        tasks:
+            :example:
+                steps:
+                    - |
+                        #!rkd.php.script.PhpLanguage
+                        phpinfo();
+
+                    - |
+                        #!rkd.core.standardlib.jinja.Jinja2Language
+                        The used shell is {{ SHELL }}
     """
 
     PREDEFINED_STEP_TYPES = {
@@ -192,7 +253,11 @@ class MultiStepLanguageAgnosticTask(ExtendableTaskInterface):
         )
 
     def _try_to_import_type(self, type_name: str) -> Type:
-        # @todo: better exception
+        as_type = SyntaxParsing.parse_import_as_type(type_name)
+
+        if as_type:
+            return as_type
+
         raise Exception(f'Language {type_name} not supported in task {self.get_name()}')
 
     def _create_task(self, step_type: Type, code: str, step_num: int, name_prefix: str) -> ExtendableTaskInterface:
@@ -220,7 +285,7 @@ class MultiStepLanguageAgnosticTask(ExtendableTaskInterface):
         # code that begin with a hashbang will have hashbang cut off
         # #!bash
         # #!python
-        # #!rkd.php.script
+        # #!rkd.php.script.PhpScriptTask
         as_lines = code.lstrip().split("\n")
         first_line = as_lines[0]
 
