@@ -9,7 +9,7 @@ Provides tasks for shell commands execution - mostly used in YAML syntax and in 
 .. jinja:: shell
    :file: source/templates/package-usage.rst
 
-Executes a Bash script. Can be multi-line.
+Executes a Bash script. Can be multi-line. Script can read from stdin instead of :code:`-c` switch, if configured with :code:`is_cmd_required = True` during configuration stage.
 
 .. HINT::
     Phrase %RKD% is replaced with an rkd binary name
@@ -22,7 +22,6 @@ Executes a Bash script. Can be multi-line.
 .. code:: bash
 
     rkd :sh -c "ps aux"
-    rkd :sh --background -c "some-heavy-task"
 
 
 **Example of task alias usage:**

@@ -99,7 +99,7 @@ Keep learning
    extending-tasks
    pipelines
    project-structure
-   usage/index
    standardlib/index
+   usage/index
    rts/index
 
