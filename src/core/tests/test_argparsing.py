@@ -16,26 +16,29 @@ class ArgParsingTest(BasicTestingCase):
     should_backup_env = False
 
     def test_creates_grouped_arguments_into_tasks__task_after_flag(self):
-        """ Test parsing arguments """
-
         parsed = CommandlineParsingHelper(IO()).create_grouped_arguments([
             ':harbor:start', '--profile=test', '--fast-fail', ':status'
         ])
 
-        self.assertEqual("[\"ArgumentBlock<[':harbor:start', '--profile=test', '--fast-fail'], "
-                         "[TaskCall<:harbor:start (['--profile=test', '--fast-fail'])>]>\", "
-                         "\"ArgumentBlock<[':status'], [TaskCall<:status ([])>]>\"]",
-                         str(self.list_to_str(parsed)))
+        self.assertEqual(':harbor:start', parsed[0].tasks()[0].name())
+        self.assertEqual(['--profile=test', '--fast-fail'], parsed[0].tasks()[0].args())
+
+        self.assertEqual(':status', parsed[1].tasks()[0].name())
+        self.assertEqual([], parsed[1].tasks()[0].args())
 
     def test_creates_grouped_arguments_into_tasks__tasks_only(self):
         parsed = CommandlineParsingHelper(IO()).create_grouped_arguments([
             ':harbor:start', ':harbor:status', ':harbor:stop'
         ])
 
-        self.assertEqual("[\"ArgumentBlock<[':harbor:start'], [TaskCall<:harbor:start ([])>]>\", "
-                         "\"ArgumentBlock<[':harbor:status'], [TaskCall<:harbor:status ([])>]>\", "
-                         "\"ArgumentBlock<[':harbor:stop'], [TaskCall<:harbor:stop ([])>]>\"]",
-                         str(list(map(lambda a: str(a), parsed))))
+        self.assertEqual(':harbor:start', parsed[0].tasks()[0].name())
+        self.assertEqual([], parsed[0].tasks()[0].args())
+
+        self.assertEqual(':harbor:status', parsed[1].tasks()[0].name())
+        self.assertEqual([], parsed[1].tasks()[0].args())
+
+        self.assertEqual(':harbor:stop', parsed[2].tasks()[0].name())
+        self.assertEqual([], parsed[2].tasks()[0].args())
 
     def test_add_env_variables_to_argparse(self):
         parser = ArgumentParser(':test')
@@ -62,8 +65,12 @@ class ArgParsingTest(BasicTestingCase):
             ':strike:start', 'now'
         ])
 
-        self.assertEqual("[\"ArgumentBlock<[':strike:start', 'now'], [TaskCall<:strike:start (['now'])>]>\"]",
-                         str(self.list_to_str(parsed)))
+        # there is one block with 1 task
+        self.assertEqual(1, len(parsed[0].tasks()))
+        self.assertEqual(1, len(parsed))
+
+        # assert that "now" is recognized as an argument of first task
+        self.assertEqual(['now'], parsed[0].tasks()[0].args())
 
     def test_arguments_usage_with_switch_before(self):
         """Check that arguments are recognized - variant with an additional switch"""
@@ -72,10 +79,7 @@ class ArgParsingTest(BasicTestingCase):
             ':strike:start', '--general', 'now'
         ])
 
-        self.assertEqual(
-            "[\"ArgumentBlock<[':strike:start', '--general', 'now'], "
-            "[TaskCall<:strike:start (['--general', 'now'])>]>\"]",
-            str(self.list_to_str(parsed)))
+        self.assertEqual(['--general', 'now'], parsed[0].tasks()[0].args())
 
     def test_global_arguments_are_shared_for_all_tasks(self):
         """When we define a "@" task, then it is not present as a task (removed from tasks list), but its arguments
@@ -88,11 +92,11 @@ class ArgParsingTest(BasicTestingCase):
             ':picket:start', '--at', 'exploiters-shop'
         ])
 
-        self.assertEqual(
-            "[\"ArgumentBlock<[':strike:start', '--general', 'now'], [TaskCall<:strike:start (['--general', 'now', '--grassroot'])>]>\", "
-            "\"ArgumentBlock<[':picket:start', '--at', 'exploiters-shop'], [TaskCall<:picket:start (['--at', 'exploiters-shop', '--grassroot'])>]>\"]",
-            str(self.list_to_str(parsed))
-        )
+        # first task - :strike:start
+        self.assertEqual(['--general', 'now', '--grassroot'], parsed[0].tasks()[0].args())
+
+        # second task - :picket:start
+        self.assertEqual(['--at', 'exploiters-shop', '--grassroot'], parsed[1].tasks()[0].args())
 
     def test_global_arguments_are_cleared_after_inserting_alone_at_symbol(self):
         """When we define a "@" task, then it is not present as a task (removed from tasks list), but its arguments
@@ -108,11 +112,12 @@ class ArgParsingTest(BasicTestingCase):
             ':picket:start', '--at', 'exploiters-shop'
         ])
 
-        self.assertEqual(
-            "[\"ArgumentBlock<[':strike:start', '--general', 'now'], [TaskCall<:strike:start (['--general', 'now', '--duration=30d'])>]>\", "
-            "\"ArgumentBlock<[':picket:start', '--at', 'exploiters-shop'], [TaskCall<:picket:start (['--at', 'exploiters-shop'])>]>\"]",
-            str(self.list_to_str(parsed))
-        )
+        # --duration=30d is inherited
+        self.assertEqual(['--general', 'now', '--duration=30d'], parsed[0].tasks()[0].args())
+
+        # --duration=30d is not present as just "@" was used,
+        # then a task happened - this means that global switches are cleared
+        self.assertEqual(['--at', 'exploiters-shop'], parsed[1].tasks()[0].args())
 
     def test_global_arguments_are_changed_when_using_at_symbol_twice(self):
         """When we define a "@" task, then it is not present as a task (removed from tasks list), but its arguments
@@ -136,14 +141,16 @@ class ArgParsingTest(BasicTestingCase):
             ':send:mail'
         ])
 
-        self.assertEqual(
-            "[\"ArgumentBlock<[':join:activism', '--organization', 'black-lives-matter'], "
-            "[TaskCall<:join:activism (['--organization', 'black-lives-matter', '--type', 'human-rights'])>]>\", "
-            "\"ArgumentBlock<[':join:activism', '--organization', 'international-workers-association'], "
-            "[TaskCall<:join:activism (['--organization', 'international-workers-association', '--type', 'working-class-rights'])>]>\", "
-            "\"ArgumentBlock<[':send:mail'], [TaskCall<:send:mail ([])>]>\"]",
-            str(self.list_to_str(parsed))
-        )
+        # :join:activism - first call
+        self.assertEqual(['--organization', 'black-lives-matter', '--type', 'human-rights'],
+                         parsed[0].tasks()[0].args())
+
+        # :join:activism - second call
+        self.assertEqual(['--organization', 'international-workers-association', '--type', 'working-class-rights'],
+                         parsed[1].tasks()[0].args())
+
+        # :send:mail
+        self.assertEqual([], parsed[2].tasks()[0].args())
 
     def test_preparse_args_tolerates_not_recognized_args(self):
         """
@@ -258,16 +265,14 @@ class ArgParsingTest(BasicTestingCase):
             ]
         )
 
+        # 3 separate blocks
         self.assertEqual(3, len(result), msg='Expected 3 blocks')
+
+        # there is @rescue parsed
         self.assertEqual(':db:rollback', result[1].on_rescue[0].name())
 
-        self.assertEqual(
-            ["ArgumentBlock<[':db:dump', '--file', 'db.sql'], [TaskCall<:db:dump (['--file', 'db.sql'])>]>",
-             "ArgumentBlock<[':db:upgrade', ':db:test'], [TaskCall<:db:upgrade ([])>, TaskCall<:db:test ([])>]>",
-             "ArgumentBlock<[':db:restart'], [TaskCall<:db:restart ([])>]>"],
-            list(map(str, result)),
-            msg='Expected 3 blocks with scheduled tasks in order'
-        )
+        # there are multiple tasks inside a defined block
+        self.assertEqual("[TaskCall<:db:upgrade ([])>, TaskCall<:db:test ([])>]", str(result[1].tasks()))
 
     def test_create_grouped_arguments_keeps_commandline_switches_in_rescue_block(self):
         """
