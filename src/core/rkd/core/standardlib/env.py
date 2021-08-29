@@ -6,6 +6,7 @@ from ..api.syntax import TaskDeclaration
 from ..api.contract import TaskInterface, ExecutionContext
 
 
+# <sphinx:getenv>
 class GetEnvTask(TaskInterface):
     """Gets environment variable value"""
 
@@ -19,10 +20,10 @@ class GetEnvTask(TaskInterface):
         parser.add_argument('--name', '-e', help='Environment variable name', required=True)
 
     def execute(self, context: ExecutionContext) -> bool:
-        # @todo: test for case, when None then ''
         self.io().out(os.getenv(context.get_arg('--name'), ''))
 
         return True
+# <sphinx:/getenv>
 
 
 class SetEnvTask(TaskInterface):

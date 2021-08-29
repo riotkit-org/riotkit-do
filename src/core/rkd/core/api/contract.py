@@ -320,25 +320,31 @@ class TaskInterface(TaskUtilities):
 
     @abstractmethod
     def get_name(self) -> str:
-        """Task name  eg. ":sh"
+        """
+        Task name  eg. ":sh"
         """
         pass
 
     @abstractmethod
     def get_group_name(self) -> str:
-        """Group name where the task belongs eg. ":publishing", can be empty.
+        """
+        Group name where the task belongs eg. ":publishing", can be empty.
         """
 
         pass
 
     def get_become_as(self) -> str:
-        """User name in UNIX/Linux system, optional.
-        When defined, then current task will be executed as this user (WARNING: a forked process would be started)"""
+        """
+        User name in UNIX/Linux system, optional.
+        When defined, then current task will be executed as this user (WARNING: a forked process would be started)
+        """
 
         return ''
 
     def should_fork(self) -> bool:
-        """Decides if task should be ran in a separate Python process (be careful with it)"""
+        """
+        Decides if task should be ran in a separate Python process (be careful with it)
+        """
 
         return self.get_become_as() != ''
 
@@ -349,25 +355,51 @@ class TaskInterface(TaskUtilities):
 
     @abstractmethod
     def execute(self, context: ExecutionContext) -> bool:
-        """ Executes a task. True/False should be returned as return """
+        """
+        Executes a task. True/False should be returned as return
+        """
         pass
 
     @abstractmethod
     def configure_argparse(self, parser: ArgumentParser):
-        """ Allows a task to configure ArgumentParser (argparse) """
+        """
+        Allows a task to configure ArgumentParser (argparse)
+
+        .. code:: python
+
+            def configure_argparse(self, parser: ArgumentParser):
+                parser.add_argument('--php', help='PHP version ("php" docker image tag)', default='8.0-alpine')
+                parser.add_argument('--image', help='Docker image name', default='php')
+        """
 
         pass
 
     # ====== LIFECYCLE METHODS ENDS
 
     def get_full_name(self):
-        """ Returns task full name, including group name """
+        """
+        Returns task full name, including group name
+        """
 
         return self.get_group_name() + self.get_name()
 
     @classmethod
     def get_declared_envs(cls) -> Dict[str, Union[str, ArgumentEnv]]:
-        """ Dictionary of allowed envs to override: KEY -> DEFAULT VALUE """
+        """
+        Dictionary of allowed envs to override: KEY -> DEFAULT VALUE
+
+        All environment variables fetched from the ExecutionContext needs to be defined there.
+        Declared values there are automatically documented in --help
+
+        .. code:: python
+
+            @classmethod
+            def get_declared_envs(cls) -> Dict[str, Union[str, ArgumentEnv]]:
+                return {
+                    'PHP': ArgumentEnv('PHP', '--php', '8.0-alpine'),
+                    'IMAGE': ArgumentEnv('IMAGE', '--image', 'php')
+                }
+        """
         return {}
 
     def internal_normalized_get_declared_envs(self) -> Dict[str, ArgumentEnv]:
@@ -486,8 +518,6 @@ class TaskInterface(TaskUtilities):
         return super().silent_sh(cmd=cmd, verbose=verbose, strict=strict, env=env)
 
     def __str__(self):
-
-
         return 'Task<{name}, object_id={id}, extended_from={extends}>'.format(
             name=self.get_full_name(),
             id=id(self),
@@ -531,6 +561,12 @@ class TaskInterface(TaskUtilities):
         return False
 
     def extends_task(self):
+        """
+        Provides information if this Task has a Parent Task
+
+        :return:
+        """
+
         try:
             extends_from = self._extended_from.__module__ + '.' + self._extended_from.__name__
         except AttributeError:
@@ -551,6 +587,17 @@ class TaskInterface(TaskUtilities):
 
 class ExtendableTaskInterface(TaskInterface, ABC):
     def inner_execute(self, ctx: ExecutionContext) -> bool:
+        """
+        Method that can be executed inside execute() - if implemented.
+
+        Use cases:
+           - Allow child Task to inject code between e.g. database startup and database shutdown to execute some
+             operations on the database
+
+        :param ctx:
+        :return:
+        """
+
         pass
 
     def get_configuration_attributes(self) -> List[str]:

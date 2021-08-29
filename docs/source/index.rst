@@ -101,6 +101,7 @@ Keep learning
    project-structure
    standardlib/index
    environment
+   writing-tasks
    usage/index
    rts/index
 
