@@ -166,10 +166,12 @@ class VersionTask(TaskInterface):
                 except ValueError:
                     table_body.append([name, 'UNKNOWN (local module?)', module, class_name, task.extends_task()])
 
-        self.io().outln(self.table(
-            header=['Name', 'Version', 'Imported from', 'Representation', 'Extends'],
-            body=table_body
-        ))
+        self.io().outln(
+            self.io().format_table(
+                header=['Name', 'Version', 'Imported from', 'Representation', 'Extends'],
+                body=table_body
+            )
+        )
 
         return True
 

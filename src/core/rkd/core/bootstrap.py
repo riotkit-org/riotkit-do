@@ -127,21 +127,24 @@ class RiotKitDoApplication(object):
             sys.exit(1)
 
         try:
+            io.internal_lifecycle('Resolving tasks')
+            resolved_tasks_to_execute = task_resolver.resolve(requested_tasks)
+
             # resolve configuration
             io.internal_lifecycle('Resolving configurations')
-            task_resolver.resolve(requested_tasks, config_resolver.run_event, fail_fast=False)
+            config_resolver.iterate(resolved_tasks_to_execute)
 
-            # validate all tasks, it's input arguments
+            # # validate all tasks, it's input arguments
             io.internal_lifecycle('Validating tasks')
-            task_resolver.resolve(requested_tasks, TaskDeclarationValidator.assert_declaration_is_valid)
+            TaskDeclarationValidator(io).iterate(resolved_tasks_to_execute)
 
-            # execute all tasks
+            # # execute all tasks
             io.internal_lifecycle('Executing tasks')
-            task_resolver.resolve(requested_tasks, executor.execute)
+            executor.iterate(resolved_tasks_to_execute)
 
         except AggregatedResolvingFailure as aggregated:
             io.print_opt_line()
-            io.error_msg('Cannot resolve tasks, at least one of scheduled tasks has invalid '
+            io.error_msg('Cannot resolve, configure or execute tasks, at least one of scheduled tasks has invalid '
                          'initialization, configuration, or it does not exist. '
                          'Try to re-run with RKD_SYS_LOG_LEVEL=debug')
 
@@ -162,6 +165,9 @@ class RiotKitDoApplication(object):
             sys.exit(1)
 
         executor.get_observer().execution_finished()
+
+        if pre_parsed_args['print_event_history']:
+            executor.get_observer().print_event_history()
 
         sys.exit(1 if executor.get_observer().is_at_least_one_task_failing() else 0)
 
@@ -184,6 +190,9 @@ class RiotKitDoApplication(object):
         if err.__cause__:
             io.error("HandledExitException occurred, original traceback:\n" +
                      "\n".join(traceback.format_tb(err.__cause__.__traceback__)))
+
+        if io.is_log_level_at_least(LEVEL_DEBUG):
+            io.error("\n".join(traceback.format_tb(err.__traceback__)))
 
 
 def main():

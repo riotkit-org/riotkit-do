@@ -22,6 +22,10 @@ class TaskNotFoundException(ContextException):
     pass
 
 
+class BlockAlreadyConnectedException(RiotKitDoException):
+    pass
+
+
 # +=================================
 # + EXECUTOR and RESOLVER EXCEPTIONS
 # +=================================
@@ -33,34 +37,6 @@ class InterruptExecution(TaskExecutionException):
     pass
 
 
-class ExecutionRetryException(TaskExecutionException):
-    """Internal signal to retry a task"""
-
-    tasks: List['TaskDeclaration']
-    remaining_tasks: List['TaskDeclaration']
-
-    def __init__(self, tasks: List['TaskDeclaration'] = None, remaining_tasks: List['TaskDeclaration'] = None):
-        if tasks is None:
-            tasks = []
-
-        if remaining_tasks is None:
-            remaining_tasks = []
-
-        self.tasks = tasks
-        self.remaining_tasks = remaining_tasks
-
-
-class BlockExecutionRetryException(TaskExecutionException):
-    """
-    Internal signal to retry whole block with multiple tasks inside
-    """
-
-    block: ArgumentBlock
-
-    def __init__(self, block: ArgumentBlock):
-        self.block = block
-
-
 class TaskResolvingException(TaskExecutionException):
     pass
 
@@ -68,32 +44,6 @@ class TaskResolvingException(TaskExecutionException):
 class AggregatedResolvingFailure(TaskExecutionException):
     def __init__(self, exceptions: List[Exception]):
         self.exceptions = exceptions
-
-
-# +==================================================
-# + EXECUTOR EXCEPTIONS -> Task rescheduling signals
-# +==================================================
-class ExecutionRescheduleException(TaskExecutionException):
-    """
-    Internal signal to put extra task into resolve/schedule queue of TaskResolver
-    """
-
-    tasks_to_schedule: List[TaskArguments]
-
-    def __init__(self, tasks_to_schedule: List[TaskArguments]):
-        self.tasks_to_schedule = tasks_to_schedule
-
-
-class ExecutionRescueException(ExecutionRescheduleException):
-    """
-    Internal signal to call a rescue set of tasks in case of given task fails
-    """
-
-
-class ExecutionErrorActionException(ExecutionRescheduleException):
-    """
-    Internal signal to call an error notification in case when given task fails
-    """
 
 
 # +=============================
@@ -167,9 +117,8 @@ class UserInputException(RiotKitDoException):
 
 class BlockDefinitionLogicError(RiotKitDoException):
     @staticmethod
-    def from_both_rescue_and_error_defined(task):
-        return BlockDefinitionLogicError('Block "{0:s}" cannot define both @rescue and @error'
-                                         .format(task.block().body))
+    def from_both_rescue_and_error_defined(block):
+        return BlockDefinitionLogicError('Block "{0:s}" cannot define both @rescue and @error'.format(block.body))
 
 
 class NotSupportedEnvVariableError(UserInputException):

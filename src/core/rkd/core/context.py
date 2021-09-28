@@ -12,14 +12,15 @@ from importlib.machinery import SourceFileLoader
 from traceback import print_exc
 from uuid import uuid4
 from . import env
-from .api.syntax import TaskDeclaration, parse_path_into_subproject_prefix, ExtendedTaskDeclaration, Pipeline
+from .api.syntax import TaskDeclaration, parse_path_into_subproject_prefix, ExtendedTaskDeclaration, Pipeline, \
+    DeclarationBelongingToPipeline
 from .api.syntax import TaskAliasDeclaration
 from .api.syntax import GroupDeclaration
 from .api.contract import ContextInterface
 from .api.parsing import SyntaxParsing
 from .argparsing.parser import CommandlineParsingHelper
 from .api.inputoutput import SystemIO
-from .exception import TaskNotFoundException
+from .exception import TaskNotFoundException, BlockAlreadyConnectedException
 from .exception import ContextFileNotFoundException
 from .exception import PythonContextFileNotFoundException
 from .exception import NotImportedClassException
@@ -161,12 +162,15 @@ class ApplicationContext(ContextInterface):
 
         self._task_aliases[pipeline.get_name()] = pipeline
 
-    def _resolve_pipeline(self, name: str, pipeline: Pipeline) -> GroupDeclaration:
+    def _resolve_pipeline(self, name: str, pipeline: Pipeline, depth: int = 0) -> GroupDeclaration:
         """
         Parse commandline args to fetch list of tasks to join into a group
 
         Produced result will be available to fetch via find_task_by_name()
         This brings a support for "Pipelines" (also called Task Aliases)
+
+        Pipelines inherited in Pipelines will be resolved as one long set of tasks with merged
+        blocks, arguments and environment.
 
         Scenario:
             Given as input a list of chained tasks eg. ":task1 :task2 --arg1=value :task3"
@@ -175,62 +179,59 @@ class ApplicationContext(ContextInterface):
 
         cmdline_parser = CommandlineParsingHelper(self.io)
 
-        self.io.internal(f'Resolving pipeline {pipeline}')
+        self.io.internal(f'Resolving pipeline {pipeline} (depth={depth})')
         args = cmdline_parser.create_grouped_arguments(pipeline.get_arguments())
         resolved_tasks = []
 
         for block in args:
             for argument_group in block.tasks():
-                # single TaskDeclaration
-                resolved_declarations = [self.find_task_by_name(argument_group.name())]
+                is_a_sub_pipeline = argument_group.name() in self._task_aliases
 
-                # or GroupDeclaration (multiple)
-                if isinstance(resolved_declarations[0], GroupDeclaration):
-                    resolved_declarations = self._resolve_recursively(resolved_declarations[0])
+                # inherit tasks from Pipeline defined inside currently processed Pipeline (do a recursion)
+                if is_a_sub_pipeline:
+                    inherited_pipeline = self._resolve_pipeline(
+                        argument_group.name(),
+                        self._task_aliases[argument_group.name()],
+                        depth=depth + 1
+                    )
+                    resolved_declarations = inherited_pipeline.get_declarations()
 
+                # just include Tasks for this Pipeline
+                else:
+                    resolved_declarations = [self.find_task_by_name(argument_group.name())]
+
+                # create wrappers that will contain inherited environment, arguments etc.
                 for resolved_declaration in resolved_declarations:
-                    resolved_declaration: TaskDeclaration
+                    resolved_declaration: Union[TaskDeclaration, DeclarationBelongingToPipeline]
 
-                    # preserve original task env, and append alias env in priority
-                    merged_env = resolved_declaration.get_env()
-                    merged_env.update(pipeline.get_env())
+                    pipeline_env = pipeline.get_env()
+                    pipeline_env['RKD_PIPELINE_DEPTH'] = str(depth)
 
-                    new_task = resolved_declaration \
-                        .with_env(merged_env) \
-                        .with_args(argument_group.args() + resolved_declaration.get_args()) \
-                        .with_user_overridden_env(
-                            pipeline.get_user_overridden_envs() + resolved_declaration.get_list_of_user_overridden_envs()
-                        ) \
-                        .with_connected_block(block)
-
-                    self.io.internal(f'Resolved pipeline {new_task} inside {block}')
-
-                    if pipeline.is_part_of_subproject():
-                        new_task = new_task.as_part_of_subproject(
-                            workdir=pipeline.workdir,
-                            subproject_name=pipeline.project_name
+                    if isinstance(resolved_declaration, TaskDeclaration):
+                        pipeline_partial = DeclarationBelongingToPipeline(
+                            declaration=resolved_declaration,
+                            runtime_arguments=argument_group.args(),
+                            parent=None,
+                            env=pipeline_env,
+                            user_overridden_env=pipeline.get_user_overridden_envs()
+                        )
+                    else:
+                        # we have a Pipeline in Pipeline that needs to have Tasks merged
+                        resolved_declaration.append(
+                            runtime_arguments=argument_group.args(),
+                            env=pipeline_env,
+                            user_overridden_env=pipeline.get_user_overridden_envs()
                         )
 
-                    resolved_tasks.append(new_task)
+                        pipeline_partial = resolved_declaration
 
+                    pipeline_partial.connect_block(block)
+
+                    self.io.internal(f'Resolved pipeline {pipeline_partial} inside {block} (depth={depth})')
+                    resolved_tasks.append(pipeline_partial)
+
+        # release all collected Tasks as a group with blocks connected, environment and arguments merged
         return GroupDeclaration(name, resolved_tasks, pipeline.get_description())
-
-    def _resolve_recursively(self, group: GroupDeclaration) -> List[TaskDeclaration]:
-        """
-        Returns:
-            List[Tuple[bool, TaskDeclaration]] - the "bool" means if task was resolved from a group
-        """
-
-        tasks = []
-
-        for declaration in group.get_declarations():
-            if isinstance(declaration, GroupDeclaration):
-                tasks += self._resolve_recursively(declaration)
-                continue
-
-            tasks.append(declaration)
-
-        return tasks
 
     def __str__(self):
         return 'ApplicationContext<id={id}, workdir={workdir},prefix={prefix}>'.format(
@@ -508,8 +509,8 @@ def unpack_extended_task_declarations(declarations: List[Union[TaskDeclaration, 
     return list(map(lambda x: unpack_declaration(x, task_factory), declarations))
 
 
-def distinct_imports(file_path: str, imported: List[Union[TaskDeclaration, TaskAliasDeclaration]]) \
-        -> Tuple[List[TaskDeclaration], List[TaskAliasDeclaration]]:
+def distinct_imports(file_path: str, imported: List[Union[TaskDeclaration, TaskAliasDeclaration, Pipeline]]) \
+        -> Tuple[List[TaskDeclaration], List[Union[Pipeline, TaskAliasDeclaration]]]:
 
     """Separates TaskDeclaration and TaskAliasDeclaration into separate lists, doing validation by the way
 
@@ -520,7 +521,7 @@ def distinct_imports(file_path: str, imported: List[Union[TaskDeclaration, TaskA
     imports = []
 
     for declaration in imported:
-        if isinstance(declaration, TaskAliasDeclaration):
+        if isinstance(declaration, TaskAliasDeclaration) or isinstance(declaration, Pipeline):
             aliases.append(declaration)
         elif isinstance(declaration, TaskDeclaration):
             imports.append(declaration)

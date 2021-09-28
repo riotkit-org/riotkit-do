@@ -14,12 +14,13 @@ only allowed methods can be executed.
 
 from copy import copy
 from typing import Dict, Union, List
-from rkd.core.api.contract import ExecutionContext, ExtendableTaskInterface
-from rkd.core.api.inputoutput import IO
-from rkd.core.api.syntax import TaskDeclaration, GroupDeclaration
-from rkd.core.argparsing.parser import CommandlineParsingHelper
-from rkd.core.exception import LifecycleConfigurationException, HandledExitException
-from rkd.core.execution.analysis import analyze_allowed_usages
+from ..api.contract import ExecutionContext, ExtendableTaskInterface
+from ..api.inputoutput import IO
+from ..iterator import TaskIterator
+from ..api.syntax import TaskDeclaration, GroupDeclaration, DeclarationScheduledToRun
+from ..argparsing.parser import CommandlineParsingHelper
+from ..exception import LifecycleConfigurationException, HandledExitException
+from ..execution.analysis import analyze_allowed_usages
 
 
 class CompilationLifecycleEvent(object):
@@ -59,6 +60,8 @@ class CompilationLifecycleEvent(object):
         :param:source_last Add source task at end of pipeline
         :param:rename_to Rename original task to
         """
+
+        # todo: Fix pipeline support after introducing DeclarationScheduledToRun and DeclarationBelongingToPipeline
 
         self.io.internal(f'Expanding task {self._current_task} into a group')
 
@@ -127,7 +130,7 @@ class ConfigurationLifecycleEvent(object):
         self.ctx = ctx
 
 
-class ConfigurationResolver(object):
+class ConfigurationResolver(TaskIterator):
     """
     Goes through task-by-task and calls configure() ONLY WHEN method implements ConfigurationLifecycleEventAware
     interface.
@@ -141,20 +144,26 @@ class ConfigurationResolver(object):
     def __init__(self, io: IO):
         self.io = io
 
-    def run_event(self, declaration: TaskDeclaration, task_num: int, parent: Union[GroupDeclaration, None] = None,
-                  args: list = None):
+    def iterate_blocks(self) -> bool:
+        return True
 
-        if not isinstance(declaration, TaskDeclaration):
+    # see TaskIterator interface
+    def process_task(self, scheduled: DeclarationScheduledToRun, task_num: int):
+        self.run_event(scheduled)
+
+    def run_event(self, scheduled: DeclarationScheduledToRun):
+
+        if not isinstance(scheduled.declaration, TaskDeclaration):
             self.io.internal('configuration skipped, not a TaskDeclaration')
             return
 
-        if not isinstance(declaration.get_task_to_execute(), ExtendableTaskInterface):
+        if not isinstance(scheduled.declaration.get_task_to_execute(), ExtendableTaskInterface):
             self.io.internal('configuration skipped, task does not implement ExtendableTaskInterface')
             return
 
-        self.io.internal(f'configuring {declaration}')
+        self.io.internal(f'configuring {scheduled.debug()}')
 
-        task: ExtendableTaskInterface = declaration.get_task_to_execute()
+        task: ExtendableTaskInterface = scheduled.declaration.get_task_to_execute()
 
         try:
             # perform a static analysis first
@@ -162,17 +171,19 @@ class ConfigurationResolver(object):
 
             if usage_report.has_any_not_allowed_usage():
                 raise LifecycleConfigurationException.from_invalid_method_used(
-                    task_full_name=declaration.to_full_name(),
+                    task_full_name=scheduled.declaration.to_full_name(),
                     method_names=str(usage_report)
                 )
 
             # call configuration
             task.internal_inject_dependencies(self.io)
-            task.configure(ConfigurationLifecycleEvent(ctx=self._create_ctx(declaration, parent, args)))
+            task.configure(ConfigurationLifecycleEvent(
+                ctx=self._create_ctx(scheduled.declaration, scheduled.parent, scheduled.args))
+            )
 
         except Exception as err:
             self.io.error_msg('{exc_type}: {msg}'.format(exc_type=str(err.__class__.__name__), msg=str(err)))
-            self.io.error_msg(f'Task "{declaration}" cannot be configured')
+            self.io.error_msg(f'Task "{scheduled}" cannot be configured')
 
             raise HandledExitException() from err
 

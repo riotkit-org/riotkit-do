@@ -4,10 +4,11 @@ from copy import deepcopy
 from pwd import getpwnam
 from pickle import dumps as pickle_dumps
 from pickle import loads as pickle_loads
-from typing import Union, Optional
+from typing import Optional
 from rkd.process import switched_workdir
+from ..argparsing.model import ArgumentBlock
 from ..argparsing.parser import CommandlineParsingHelper
-from ..api.syntax import TaskDeclaration, GroupDeclaration
+from ..api.syntax import DeclarationScheduledToRun
 from ..api.contract import TaskInterface
 from ..api.contract import ExecutorInterface
 from ..api.contract import ExecutionContext
@@ -15,18 +16,16 @@ from ..context import ApplicationContext
 from ..inputoutput import IO
 from ..inputoutput import SystemIO
 from ..inputoutput import output_formatted_exception
-from ..exception import InterruptExecution, \
-    ExecutionRetryException, \
-    ExecutionRescueException, \
-    ExecutionErrorActionException, TaskExecutionException
+from ..exception import InterruptExecution
 from .results import ProgressObserver
 from ..audit import decide_about_target_log_files
 from ..api.temp import TempManager
 from .serialization import FORKED_EXECUTOR_TEMPLATE
 from .serialization import get_unpicklable
+from ..iterator import TaskIterator
 
 
-class OneByOneTaskExecutor(ExecutorInterface):
+class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
     """ Executes tasks one-by-one, providing a context that includes eg. parsed arguments """
 
     _ctx: ApplicationContext
@@ -38,21 +37,25 @@ class OneByOneTaskExecutor(ExecutorInterface):
         self.io = ctx.io
         self._observer = observer
 
-    def execute(self, declaration: TaskDeclaration, task_num: int, parent: Union[GroupDeclaration, None] = None,
-                args: list = None):
+    def fail_fast(self) -> bool:
+        return True
 
+    def process_task(self, scheduled: DeclarationScheduledToRun, task_num: int):
+        self.execute(scheduled, task_num)
+
+    def execute(self, scheduled_declaration: DeclarationScheduledToRun, task_num: int):
         """
-        Executes a single task passing the arguments, redirecting/capturing the output and handling the errors
+        Prepares all dependencies, then triggers execution
         """
 
-        if args is None:
-            args = []
+        args = scheduled_declaration.args
+        declaration = scheduled_declaration.declaration
 
         # 1. notify
-        self._observer.task_started(declaration, parent, args)
+        self._observer.task_started(scheduled_declaration)
 
         # 2. parse arguments
-        parsed_args, defined_args = CommandlineParsingHelper.parse(declaration, args)
+        parsed_args, defined_args = CommandlineParsingHelper.parse(scheduled_declaration.declaration, args)
         log_level: str = parsed_args['log_level']
         log_to_file: str = parsed_args['log_to_file']
         is_silent: bool = parsed_args['silent']
@@ -72,21 +75,21 @@ class OneByOneTaskExecutor(ExecutorInterface):
             else:
                 io.inherit_silent(self.io)  # fallback to system-wide
 
-            where_to_store_logs = decide_about_target_log_files(self._ctx, log_to_file, declaration, task_num)
+            where_to_store_logs = decide_about_target_log_files(self._ctx, log_to_file, scheduled_declaration)
 
             with io.capture_descriptors(target_files=where_to_store_logs):
 
-                task = declaration.get_task_to_execute()
+                task = scheduled_declaration.declaration.get_task_to_execute()
                 task.internal_inject_dependencies(io, self._ctx, self, temp)
 
                 with switched_workdir(workdir):
                     result = self._execute_directly_or_forked(cmdline_become, task, temp, ExecutionContext(
-                            declaration=declaration,
-                            parent=parent,
-                            args=parsed_args,
-                            env=declaration.get_env(),
-                            defined_args=defined_args
-                        ))
+                        declaration=scheduled_declaration.declaration,
+                        parent=scheduled_declaration.parent,
+                        args=parsed_args,
+                        env=scheduled_declaration.declaration.get_env(),
+                        defined_args=defined_args
+                    ))
 
         # 4. capture result
         except Exception as e:
@@ -94,7 +97,7 @@ class OneByOneTaskExecutor(ExecutorInterface):
             # When: Task has a failure
             #
             temp.finally_clean_up()
-            self._on_failure(declaration, keep_going, e, parent)
+            self._on_failure(scheduled_declaration, keep_going, task_num, e)
 
             return
 
@@ -104,21 +107,14 @@ class OneByOneTaskExecutor(ExecutorInterface):
         temp.finally_clean_up()
 
         if result is True:
-            self._observer.task_succeed(declaration, parent)
+            self._observer.task_succeed(scheduled_declaration)
         else:
-            self._on_failure(declaration, keep_going, None, parent)
+            self._on_failure(scheduled_declaration, keep_going, task_num, None)
 
-    def _on_failure(self, declaration: TaskDeclaration, keep_going: bool,
-                    exception: Optional[Exception] = None,
-                    parent: Union[GroupDeclaration, None] = None):
+    def _on_failure(self, scheduled_declaration: DeclarationScheduledToRun, keep_going: bool, task_num: int,
+                    exception: Optional[Exception] = None):
         """
-        Executed when task fails - regardless of if it is an Exception raised or just a False returned
-
-        NOTE on signals: Executor signals errors using exceptions like ExecutionRetryException,
-                         to allow retry, retry block and other error & rescue actions.
-                         Parent TaskResolver is handling those errors and resolving additional tasks as a part of
-                         error & rescue operation. The TaskExecutor itself does not have a role to resolve any tasks.
-
+        Executed when task fails: Goes through all nested blocks and tries to rescue the situation or notify an error
 
         Separated responsibilities:
             - Block: a domain logic, tracks TaskDeclaration execution. Decides if task should be retried, or rescued
@@ -128,58 +124,95 @@ class OneByOneTaskExecutor(ExecutorInterface):
                         eg. second time after failing first time
         """
 
-        # validation: Do not allow to create hacky mechanisms that uses internal RKD signals
-        if isinstance(exception, TaskExecutionException):
-            self.io.error(f'Exception "{type(exception)}" thrown from inside of a Task will not be handled. '
-                          f'Internal exceptions are not a part of API and should not be used in Tasks.')
-            self._notify_error(declaration, parent, exception)
+        # todo: blocks should be in DeclarationScheduledToRun?
+        blocks = scheduled_declaration.get_blocks_ordered_by_children_to_parent()
+        last_block: ArgumentBlock = blocks[0]
+        block_num = 0
 
-            return
+        self.io.internal(f'declaration={scheduled_declaration}')
+        self.io.internal(f'last_block={last_block}')
 
-        # block modifiers (issue #50): @retry a task up to X times
-        if declaration.block().should_task_be_retried(declaration):
-            declaration.block().task_retried(declaration)
-            self._observer.task_retried(declaration)
+        for block in blocks:
+            block_num += 1
+            self.io.internal(f'Handling failure of {scheduled_declaration} in block #{block_num} {block}')
 
-            raise ExecutionRetryException() from exception
+            if block.is_default_empty_block:
+                self.io.internal('Skipping default empty block')
+                continue
 
-        elif declaration.block().should_block_be_retried():
-            self.io.internal(f'Got block to retry: {declaration.block()}')
-            self._observer.group_of_tasks_retried(declaration.block())
+            # NOTE: we need to mark blocks as resolved to avoid loops, as the execution process is triggered by
+            #       upper layer - TaskResolver, that may not be aware of what is done there
 
-            raise ExecutionRetryException(list(declaration.block().resolved_tasks()), declaration.block()
-                                          .get_remaining_tasks(declaration)) from exception
+            if block.is_already_failed_for(scheduled_declaration.declaration):
+                self.io.internal(f'{scheduled_declaration} already failed in {block}')
+                continue
 
-        # regardless of @error & @rescue there should be a visible information that task failed
-        self._notify_error(declaration, parent, exception)
+            self._handle_failure_in_specific_block(
+                scheduled_declaration, exception, block,
+                allow_retrying_single_task=block == last_block,  # @retry works only for latest block
+                task_num=task_num
+            )
 
-        # block modifiers (issue #50): @error and @rescue
-        if declaration.block().should_rescue_task():
-            self._observer.task_rescue_attempt(declaration)
-
-            raise ExecutionRescueException(declaration.block().on_rescue) from exception
-
-        elif declaration.block().has_action_on_error():
-            raise ExecutionErrorActionException(declaration.block().on_error) from exception
+            self.io.internal(f'Marking {scheduled_declaration} as failed in {block}')
+            block.mark_as_failed_for(scheduled_declaration)
 
         # break the whole pipeline only if not --keep-going
         if not keep_going:
             raise InterruptExecution() from exception
 
-    def _notify_error(self, declaration: TaskDeclaration,
-                      parent: Union[GroupDeclaration, None] = None,
-                      exception: Optional[Exception] = None):
+    def _handle_failure_in_specific_block(self, scheduled_declaration: DeclarationScheduledToRun,
+                                          exception: Exception,
+                                          block: ArgumentBlock,
+                                          allow_retrying_single_task: bool,
+                                          task_num: int):
 
+        if allow_retrying_single_task and block.should_task_be_retried(scheduled_declaration.declaration):
+            block.task_retried(scheduled_declaration.declaration)
+            self._observer.task_retried(scheduled_declaration)
+            self.execute(scheduled_declaration, task_num)
+
+            return
+
+        elif block.should_block_be_retried():
+            self.io.internal(f'Got block to retry: {block}')
+            self._observer.group_of_tasks_retried(block)
+
+            for task in block.resolved_body_tasks():
+                self.execute(task, task_num)
+
+            return
+
+        # regardless of @error & @rescue there should be a visible information that task failed
+        self._notify_error(scheduled_declaration, exception)
+
+        # block modifiers (issue #50): @error and @rescue
+        if block.should_rescue_task():
+            self._observer.task_rescue_attempt(scheduled_declaration)
+
+            for resolved in block.resolved_rescue_tasks():
+                resolved: DeclarationScheduledToRun
+                self.execute(resolved, resolved.created_task_num)
+
+        elif block.has_action_on_error():
+            for resolved in block.resolved_error_tasks():
+                resolved: DeclarationScheduledToRun
+                self.execute(resolved, resolved.created_task_num)
+
+    def _notify_error(self, scheduled_to_run: DeclarationScheduledToRun,
+                      exception: Optional[Exception] = None):
         """
         Write to console, notify observers
         """
 
         # distinct between error and failure, first has a stacktrace, second is a logical task failure
         if not exception:
-            self._observer.task_failed(declaration, parent)
+            self._observer.task_failed(scheduled_to_run)
         else:
-            output_formatted_exception(exception, str(declaration.get_task_to_execute().get_full_name()), self.io)
-            self._observer.task_errored(declaration, exception)
+            output_formatted_exception(
+                exception,
+                str(scheduled_to_run.declaration.get_task_to_execute().get_full_name()), self.io
+            )
+            self._observer.task_errored(scheduled_to_run, exception)
 
     def _execute_directly_or_forked(self, cmdline_become: str, task: TaskInterface, temp: TempManager,
                                     ctx: ExecutionContext):

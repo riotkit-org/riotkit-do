@@ -4,6 +4,7 @@ import shutil
 import sys
 import os
 import subprocess
+from tabulate import tabulate
 from io import StringIO
 from traceback import format_exc as py_format_exception
 from json import dumps as json_encode
@@ -446,6 +447,38 @@ class IO:
                 pass
 
         return text
+
+    @staticmethod
+    def format_table(header: list, body: list, tablefmt: str = "simple",
+                     floatfmt: str = 'g',
+                     numalign: str = "decimal",
+                     stralign: str = "left",
+                     missingval: str = '',
+                     showindex: str = "default",
+                     disable_numparse: bool = False,
+                     colalign: str = None):
+
+        """Renders a table
+
+        Parameters:
+            header:
+            body:
+            tablefmt:
+            floatfmt:
+            numalign:
+            stralign:
+            missingval:
+            showindex:
+            disable_numparse:
+            colalign:
+
+        Returns:
+            Formatted table as string
+        """
+
+        return tabulate(body, headers=header, floatfmt=floatfmt, numalign=numalign, tablefmt=tablefmt,
+                        stralign=stralign, missingval=missingval, showindex=showindex,
+                        disable_numparse=disable_numparse, colalign=colalign)
 
 
 class SystemIO(IO):

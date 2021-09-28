@@ -51,19 +51,25 @@ class ArgumentBlock(object):
     """
 
     body: List[str]
+
     on_rescue: List[TaskArguments]
     on_error: List[TaskArguments]
     retry_per_task: int = 0
 
     _tasks: List[TaskArguments]
 
-    # a helper registry that keeps relation between block and already resolved tasks
-    _resolved_tasks: List['TaskDeclaration']
+    # Tasks ready to be used, resolved on the TaskResolver stage
+    _on_rescue_tasks: List['TaskDeclaration']
+    _on_error_tasks: List['TaskDeclaration']
+    _body_tasks: List['TaskDeclaration']
 
+    # the state
     _raw_attributes: dict
     _retry_counter_per_task: Dict['TaskDeclaration', int]
     _retry_counter_on_whole_block: int
     _debug_id: str
+    _failed_tasks: List['TaskDeclaration']
+    _is_default_block: bool
 
     def __init__(self, body: List[str] = None, rescue: str = '', error: str = '', retry: int = 0,
                  retry_block: int = 0):
@@ -92,9 +98,11 @@ class ArgumentBlock(object):
         self.on_error = []
         self._retry_counter_per_task = {}
         self._retry_counter_on_whole_block = 0
+        self._failed_tasks = []
+        self._is_default_block = False
 
         # lazy-filled by TaskResolver on later stage
-        self._resolved_tasks = []
+        self._body_tasks = []
 
         # those attributes will be lazy-parsed on later processing stage
         self._raw_attributes = {
@@ -112,8 +120,16 @@ class ArgumentBlock(object):
 
         instance.set_parsed_rescue([])
         instance.set_parsed_error_handler([])
+        # instance._is_default_block = True
 
         return instance
+
+    @classmethod
+    def create_default_block(cls, body: List[str], tasks: List[TaskArguments]) -> 'ArgumentBlock':
+        new_block = cls(body).clone_with_tasks(tasks)
+        new_block._is_default_block = True
+
+        return new_block
 
     def clone_with_tasks(self, tasks_arguments: List[TaskArguments]):
         cloned = deepcopy(self)
@@ -129,16 +145,22 @@ class ArgumentBlock(object):
 
         return self._tasks
 
-    def resolved_tasks(self) -> List['TaskDeclaration']:
+    def resolved_body_tasks(self) -> List['DeclarationScheduledToRun']:
         """
         Resolved tasks - instances of TaskDeclaration as a fact of resolved relation between Block <=> TaskDeclaration
         by TaskResolver
         :return:
         """
 
-        return self._resolved_tasks
+        return self._body_tasks
 
-    def get_remaining_tasks(self, after) -> List['TaskDeclaration']:
+    def resolved_error_tasks(self) -> List['DeclarationScheduledToRun']:
+        return self._on_error_tasks
+
+    def resolved_rescue_tasks(self) -> List['DeclarationScheduledToRun']:
+        return self._on_rescue_tasks
+
+    def get_remaining_tasks(self, after) -> List['DeclarationScheduledToRun']:
         """
         Gets all tasks that are after "starting_from" declaration on the list in the block
 
@@ -153,7 +175,7 @@ class ArgumentBlock(object):
         remaining = []
         found = False
 
-        for declaration in self.resolved_tasks():
+        for declaration in self.resolved_body_tasks():
             if declaration == after:
                 found = True
                 continue
@@ -172,19 +194,17 @@ class ArgumentBlock(object):
     def raw_attributes(self) -> dict:
         return self._raw_attributes
 
-    def register_resolved_task(self, task: 'TaskDeclaration'):
+    def register_resolved_task(self, task: 'DeclarationScheduledToRun'):
         """
         Internal use only - TaskResolver needs this method to apply relation between Block and TaskDeclaration
+                            through DeclarationScheduledToRun
         :return:
         """
 
-        self._resolved_tasks.append(task)
+        if task in self._body_tasks:
+            return
 
-    def set_parsed_error_handler(self, tasks_arguments: List[TaskArguments]) -> None:
-        self.on_error = tasks_arguments
-
-    def set_parsed_rescue(self, tasks_arguments: List[TaskArguments]) -> None:
-        self.on_rescue = tasks_arguments
+        self._body_tasks.append(task)
 
     def should_task_be_retried(self, declaration):
         # no retry available at all
@@ -255,3 +275,60 @@ class ArgumentBlock(object):
 
     def id(self) -> str:
         return self._debug_id
+
+    def mark_as_failed_for(self, declaration):
+        """
+        Marks that Task already failed for this block, after all retries, etc.
+
+        :param declaration:
+        :return:
+        """
+
+        self._failed_tasks.append(declaration)
+
+    def set_parsed_error_handler(self, tasks_arguments: List[TaskArguments]) -> None:
+        """
+        Stage 1: Parsing
+
+        :param tasks_arguments:
+        :return:
+        """
+
+        self.on_error = tasks_arguments
+
+    def set_parsed_rescue(self, tasks_arguments: List[TaskArguments]) -> None:
+        """
+        Stage 1: Parsing
+
+        :param tasks_arguments:
+        :return:
+        """
+
+        self.on_rescue = tasks_arguments
+
+    def set_resolved_on_rescue(self, on_rescue: List['TaskDeclaration']):
+        """
+        Stage 2: Execution
+
+        :param on_rescue:
+        :return:
+        """
+
+        self._on_rescue_tasks = on_rescue
+
+    def set_resolved_on_error(self, on_error: List['TaskDeclaration']):
+        """
+        Stage 2: Execution
+
+        :param on_error:
+        :return:
+        """
+
+        self._on_error_tasks = on_error
+
+    def is_already_failed_for(self, declaration):
+        return declaration in self._failed_tasks
+
+    @property
+    def is_default_empty_block(self):
+        return self._is_default_block

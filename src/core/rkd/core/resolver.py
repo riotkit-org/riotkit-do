@@ -1,15 +1,10 @@
-
-from typing import List, Callable, Union, Optional
+from typing import List, Optional, Tuple, Union
 from .argparsing.model import TaskArguments, ArgumentBlock
-from .api.syntax import TaskDeclaration, GroupDeclaration
+from .api.syntax import TaskDeclaration, GroupDeclaration, DeclarationBelongingToPipeline
 from .context import ApplicationContext
-from .exception import InterruptExecution, \
-    ExecutionRetryException, \
-    TaskNotFoundException, ExecutionRescheduleException, AggregatedResolvingFailure
+from .exception import TaskNotFoundException
 from .aliasgroups import AliasGroup
-
-
-CALLBACK_DEF = Callable[[TaskDeclaration, int, Union[GroupDeclaration, None], list], None]
+from .resolver_result import ResolvedTaskBag
 
 
 class TaskResolver(object):
@@ -23,43 +18,60 @@ class TaskResolver(object):
     _ctx: ApplicationContext
     _alias_groups: List[AliasGroup]
 
+    # allows to not resolve Blocks twice
+    _cache_resolved_blocks: List[ArgumentBlock]
+
     def __init__(self, ctx: ApplicationContext, alias_groups: List[AliasGroup]):
         self._ctx = ctx
         self._alias_groups = alias_groups
+        self._cache_resolved_blocks = []
 
-    def resolve(self, requested_blocks: List[ArgumentBlock], callback: CALLBACK_DEF, fail_fast: bool = True):
+    def resolve(self, requested_blocks: List[ArgumentBlock]) -> ResolvedTaskBag:
         """
-        Iterate over flatten list of tasks, one by one and call a callback for each task
+        Resolve selected blocks-of-tasks into TaskDeclaration and filled up ArgumentBlock with TaskDeclaration objects
 
         :param requested_blocks:
-        :param callback:
-        :param fail_fast: Fail immediately - throw exception? Or throw an aggregated exception later?
 
         :return:
         """
 
-        task_num = 0
-        aggregated_exceptions = []
+        resolved_tasks = ResolvedTaskBag()
 
         for block in requested_blocks:
+            self._resolve_block_details(block)
+
             for task_request in block.tasks():
-                task_num += 1
+                self._resolve_element(task_request, block, resolved_tasks)
 
-                try:
-                    self._resolve_element(task_request, callback, task_num, block)
-                except InterruptExecution:
-                    return
-                except Exception as err:
-                    if fail_fast is False:
-                        aggregated_exceptions.append(err)
-                    else:
-                        raise err
+        return resolved_tasks
 
-        if aggregated_exceptions:
-            raise AggregatedResolvingFailure(aggregated_exceptions)
+    def _resolve_block_details(self, block: ArgumentBlock):
+        """
+        Resolve Tasks in @error and @rescue modifiers in Block
+
+        :param block:
+        :return:
+        """
+
+        if block in self._cache_resolved_blocks:
+            return
+
+        # @rescue
+        rescue_bag = ResolvedTaskBag()
+        self._resolve_elements(block.on_rescue, ArgumentBlock.from_empty(), rescue_bag)
+        block.set_resolved_on_rescue(rescue_bag.scheduled_declarations_to_run)
+
+        # @error
+        error_bag = ResolvedTaskBag()
+        self._resolve_elements(block.on_error, ArgumentBlock.from_empty(), error_bag)
+        block.set_resolved_on_error(error_bag.scheduled_declarations_to_run)
+
+        self._cache_resolved_blocks.append(block)
 
     def _resolve_name_from_alias(self, task_name: str) -> Optional[str]:
-        """Resolves task group's shortcuts eg. :hb -> :harbor"""
+        """
+        Resolves task group's shortcuts eg. :hb -> :harbor
+        """
 
         for alias in self._alias_groups:
             resolved = alias.append_alias_to_task(task_name)
@@ -67,26 +79,52 @@ class TaskResolver(object):
             if resolved:
                 return resolved
 
-    def _resolve_elements(self, requests: List[TaskArguments], callback: CALLBACK_DEF, task_num: int,
-                          block: ArgumentBlock) -> None:
-
+    def _resolve_elements(self, requests: List[TaskArguments], block: ArgumentBlock, bag: ResolvedTaskBag):
         for request in requests:
-            self._resolve_element(request, callback, task_num, block)
+            self._resolve_element(request, block, bag)
 
-    def _resolve_element(self, task_request: TaskArguments, callback: CALLBACK_DEF, task_num: int,
-                         block: ArgumentBlock) -> None:
-
-        """Checks task by name if it was defined in context, if yes then unpacks declarations and prepares callbacks"""
+    def _resolve_element(self, task_request: TaskArguments, block: ArgumentBlock, bag: ResolvedTaskBag) -> list:
+        """
+        Checks task by name if it was defined in context, if yes then unpacks declarations and prepares callbacks
+        """
 
         self._ctx.io.internal('Resolving {}'.format(task_request))
 
+        declarations, parent = self._find_tasks_by_name(task_request.name())
+
+        # connect TaskDeclaration to blocks for context
+        for declaration in declarations:
+            declaration: Union[TaskDeclaration, DeclarationBelongingToPipeline]
+
+            self._ctx.io.internal(f'Attaching declaration={declaration} to block={block}')
+
+            if isinstance(declaration, TaskDeclaration):
+                scheduled = bag.add(declaration.clone(), task_request.args(), block, parent)
+            else:
+                scheduled = bag.add(declaration, task_request.args(), block, parent)
+
+            for block in scheduled.blocks:
+                self._resolve_block_details(block)
+
+            self._ctx.io.internal(f'Created {scheduled.debug()}')
+
+        return declarations
+
+    def _find_tasks_by_name(self, name: str) \
+            -> Tuple[List[Union[TaskDeclaration, DeclarationBelongingToPipeline]], Optional[TaskDeclaration]]:
+        """
+        Find a Task - regardless if it is a Pipeline (GroupDeclaration) or just a TaskDeclaration
+
+        :param name:
+        :return:
+        """
+
         try:
-            # @todo: Possibly clone required - shell summary shows only 2 tasks executed, when there were executed more but of same type
-            ctx_declaration = self._ctx.find_task_by_name(task_request.name())
+            ctx_declaration = self._ctx.find_task_by_name(name)
 
         # maybe a task name is an alias to other task defined by alias groups
         except TaskNotFoundException:
-            task_from_alias = self._resolve_name_from_alias(task_request.name())
+            task_from_alias = self._resolve_name_from_alias(name)
 
             if not task_from_alias:
                 raise
@@ -98,105 +136,13 @@ class TaskResolver(object):
         if isinstance(ctx_declaration, TaskDeclaration):
             declarations: List[TaskDeclaration] = ctx_declaration.to_list()
             parent = None
+
+        # Pipeline support: unpack multiple TaskDeclaration from GroupDeclaration
         elif isinstance(ctx_declaration, GroupDeclaration):
-            declarations: List[TaskDeclaration] = ctx_declaration.get_declarations()
+            declarations: List[DeclarationBelongingToPipeline] = ctx_declaration.get_declarations()
             parent = ctx_declaration
         else:
             raise Exception('Cannot resolve task - unknown type "%s"' % str(ctx_declaration))
 
-        # connect TaskDeclaration to blocks for context
-        declaration_num = 0
-        for declaration in declarations:
-            declaration: TaskDeclaration
+        return declarations, parent
 
-            # do not overwrite already connected declarations (task resolver is invoked multiple times)
-            if declaration.block():
-                continue
-
-            self._ctx.io.internal(f'Attaching declaration={declaration} to block={block}')
-            declarations[declaration_num] = declaration.with_connected_block(block)
-            declaration_num += 1
-
-        self._iterate_over_declarations(callback, declarations, task_num, parent, task_request)
-
-    def _iterate_over_declarations(self, callback: CALLBACK_DEF, declarations: list, task_num: int,
-                                   parent: Optional[GroupDeclaration], task_request: TaskArguments):
-
-        """
-        Recursively go through all tasks in correct order, executing a callable on each
-        """
-
-        declarations_to_ignore = []
-
-        for declaration in declarations:
-            declaration: TaskDeclaration
-
-            if declaration in declarations_to_ignore:
-                self._ctx.io.internal(f'Skipping {declaration} after Block failed')
-                declarations_to_ignore.remove(declaration)
-                continue
-
-            if isinstance(declaration, GroupDeclaration):
-                self._iterate_over_declarations(
-                    callback, declaration.get_declarations(),
-                    task_num, declaration, task_request
-                )
-                continue
-
-            try:
-                callback(
-                    declaration,
-                    task_num,
-                    parent,
-                    # the arguments there will be mixed in order:
-                    #  - first: defined in Makefile
-                    #  - second: commandline arguments
-                    #
-                    #  The argparse in Python will take the second one as priority.
-                    #  We do not try to remove duplications there to not increase complexity
-                    #  of the solution - it works now.
-                    declaration.get_args() + task_request.args()
-                )
-
-            #
-            # Resolver is able to resolve dynamically additional fallback tasks on-demand
-            # The status of the overall pipeline depends on decision of ProgressObserver, the resolver is only
-            # resolving and scheduling tasks, not deciding about results
-            #
-
-            except ExecutionRetryException as retry:
-                self._ctx.io.internal('Handling ExecutionRetryException')
-
-                # multiple tasks to resolve, then retry
-                if retry.tasks:
-                    self._ctx.io.internal(f'Declarations to retry: {retry.tasks}')
-                    self._iterate_over_declarations(
-                        callback=callback,
-                        declarations=retry.tasks,
-                        task_num=task_num,
-                        parent=parent,
-                        task_request=task_request
-                    )
-
-                    # Given block have tasks A, B, C, D
-                    # And "B" fails
-                    # Then we interrupt "C" and "D"
-                    declarations_to_ignore += retry.remaining_tasks
-                    continue
-
-                # single task to retry
-                self._iterate_over_declarations(
-                    callback=callback,
-                    declarations=[declaration],
-                    task_num=task_num,
-                    parent=parent,
-                    task_request=task_request
-                )
-
-            except ExecutionRescheduleException as reschedule_action:
-                self._resolve_elements(
-                    requests=reschedule_action.tasks_to_schedule,
-                    callback=callback,
-                    task_num=task_num,
-                    block=ArgumentBlock.from_empty()
-                )

@@ -145,8 +145,7 @@ class ContextInterface(AbstractClass):
 
 class ExecutorInterface(AbstractClass):
     @abstractmethod
-    def execute(self, task: TaskDeclarationInterface, task_num: int,
-                parent: Union[GroupDeclarationInterface, None] = None, args: list = []):
+    def execute(self, scheduled_declaration, task_num: int):
         pass
 
 
@@ -523,38 +522,6 @@ class TaskInterface(TaskUtilities):
             id=id(self),
             extends=self.extends_task()
         )
-
-    @staticmethod
-    def table(header: list, body: list, tablefmt: str = "simple",
-              floatfmt: str = 'g',
-              numalign: str = "decimal",
-              stralign:str = "left",
-              missingval: str = '',
-              showindex: str = "default",
-              disable_numparse: bool = False,
-              colalign: str = None):
-
-        """Renders a table
-
-        Parameters:
-            header:
-            body:
-            tablefmt:
-            floatfmt:
-            numalign:
-            stralign:
-            missingval:
-            showindex:
-            disable_numparse:
-            colalign:
-
-        Returns:
-            Formatted table as string
-        """
-
-        return tabulate(body, headers=header, floatfmt=floatfmt, numalign=numalign, tablefmt=tablefmt,
-                        stralign=stralign, missingval=missingval, showindex=showindex,
-                        disable_numparse=disable_numparse, colalign=colalign)
 
     @property
     def is_internal(self) -> bool:

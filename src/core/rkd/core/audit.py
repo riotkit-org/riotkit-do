@@ -9,13 +9,15 @@ Allows to keep activity logs for future analysis
 import re
 
 from . import env
-from .api.syntax import TaskDeclaration
+from .api.syntax import DeclarationScheduledToRun, TaskDeclaration
 from .context import ApplicationContext
 
 
-def decide_about_target_log_files(ctx: ApplicationContext, log_to_file: str, declaration: TaskDeclaration,
-                                  task_num: int):
-    """Decides where to save logs"""
+def decide_about_target_log_files(ctx: ApplicationContext, log_to_file: str,
+                                  scheduled_declaration: DeclarationScheduledToRun):
+    """
+    Decides where to save logs
+    """
 
     log_files = []
     session_log: bool = env.audit_session_log_enabled()
@@ -31,8 +33,11 @@ def decide_about_target_log_files(ctx: ApplicationContext, log_to_file: str, dec
         log_files.append(
             template.replace('%DATE-DAY%', date.strftime('%Y-%m-%d'))
                     .replace('%DATE-SECOND%', time_with_seconds)
-                    .replace('%TASKNUM%', str(task_num))
-                    .replace('%NORMALIZED_TASKNAME%', normalize_task_name_to_filename(declaration))
+                    .replace('%TASKNUM%', str(scheduled_declaration.created_task_num))
+                    .replace(
+                        '%NORMALIZED_TASKNAME%',
+                        normalize_task_name_to_filename(scheduled_declaration.declaration)
+                    )
         )
 
     return log_files

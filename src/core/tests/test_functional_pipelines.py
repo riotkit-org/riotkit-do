@@ -287,3 +287,236 @@ class TestFunctionalPipelines(FunctionalTestingCase):
 
             with open('exec.log') as result:
                 self.assertEqual(result.read().strip(), expected.strip())
+
+    def test_yaml_written_pipeline_parses_list_of_tasks_correctly(self):
+        makefile = dedent('''
+            version: org.riotkit.rkd/yaml/v1
+            
+            pipelines:
+                :example:
+                    description: "This is an example pipeline"
+                    tasks:
+                        - task: [':sh', '-c', 'echo "Bakunin"']
+                        - task: [':sh', '-c', 'echo "Kropotkin"']
+                        - task: [':sh', '-c', 'echo "Malatesta"']
+        ''')
+
+        with self.with_temporary_workspace_containing({'.rkd/makefile.yaml': makefile}):
+            out, exit_code = self.run_and_capture_output([':example'])
+
+        self.assertIn('Executing :sh -c echo "Bakunin" [part of :example]', out)
+        self.assertIn('Executing :sh -c echo "Kropotkin" [part of :example]', out)
+        self.assertIn('Executing :sh -c echo "Malatesta" [part of :example]', out)
+
+    def test_yaml_written_block_is_parsed_as_block(self):
+        makefile = dedent('''
+            version: org.riotkit.rkd/yaml/v1
+            pipelines:
+                :example:
+                    description: "This is an example pipeline"
+                    tasks:
+                        - task: [':sh', '-c', 'echo "Rocker"']
+                        - block:
+                              retry: 3
+                              tasks:
+                                  - task: :sh -c 'echo Kropotkin'
+        ''')
+
+        with self.with_temporary_workspace_containing({'.rkd/makefile.yaml': makefile}):
+            out, exit_code = self.run_and_capture_output([':example'])
+
+        self.assertIn('Executing :sh -c echo "Rocker" [part of :example]', out)
+        self.assertIn('Executing :sh -c echo Kropotkin [part of :example]', out)
+
+    def test_pipeline_in_pipeline_retry_attribute_inheritance(self):
+        """
+        Given I call :example pipeline
+        And :books pipeline is inside :example pipeline
+        And ":sh -c 'echo "The Conquest of Bread"; exit 1'" inside :books pipeline should fail
+        And :books have defined @retry 1 and @rescue :sh -c 'exit 0'
+
+        And :example has a @retry 5 defined
+
+        Then the @retry should be considered from :books not from :example, because :books is in :example and has priority
+        And this should result in 2x execution of 'The Conquest of Bread' then a resuce task 'exit 0'
+        And additionally 'Modern Science and Anarchism' should be printed
+
+        :return:
+        """
+
+        makefile = dedent('''
+            version: org.riotkit.rkd/yaml/v1
+            pipelines:
+                :books:
+                    description: "List books"
+                    tasks:
+                        - block:
+                            retry: 1
+                            rescue: ":sh -c 'exit 0'"
+                            tasks:
+                                - task: :sh -c 'echo "The Conquest of Bread"; exit 1'
+                                - task: :sh -c 'echo "Modern Science and Anarchism";'
+            
+                :example:
+                    description: "This is an example pipeline"
+                    tasks:
+                        - task: :sh -c "echo 'Rocker'"
+                        - block:
+                              retry: 5
+                              tasks:
+                                  - task: :sh -c "echo 'Kropotkin'"
+                                  - task: :books
+        ''')
+
+        with self.with_temporary_workspace_containing({'.rkd/makefile.yaml': makefile}):
+            out, exit_code = self.run_and_capture_output([':example'])
+
+        parsed_log = self.filter_out_task_events_from_log(out)
+
+        self.assertEqual(
+            [
+                # todo: Fix: Conquest of Bread" and "Modern Science and Anarchism" should be as a part of :books
+                ">> Executing :sh -c echo 'Rocker' [part of :example]",
+                'The task ":sh" [part of :example] succeed.',
+                ">> Executing :sh -c echo 'Kropotkin' [part of :example]",
+                'The task ":sh" [part of :example] succeed.',
+                '>> Executing :sh -c echo "The Conquest of Bread"; exit 1 [part of :example]',
+                '>> Retrying :sh -c echo "The Conquest of Bread"; exit 1 [part of :example]',
+                'The task ":sh" [part of :example] ended with a failure',
+                '>> Task ":sh" rescue attempt started',
+                '>> Executing :sh -c exit 0',
+                'The task ":sh" succeed.',
+                '>> Executing :sh -c echo "Modern Science and Anarchism"; [part of :example]',
+                'The task ":sh" [part of :example] succeed.'
+             ],
+            parsed_log
+        )
+
+    def test_pipeline_in_pipeline_parent_rescue_block_works(self):
+        """
+        Single depth @rescue block test
+
+        Given a child block does not define @rescue
+        And parent block defines @rescue
+        Then parent block @rescue should be called
+
+        :return:
+        """
+
+        makefile = dedent('''
+            version: org.riotkit.rkd/yaml/v1
+            pipelines:
+                :books:
+                    description: "List books"
+                    tasks:
+                        - block:
+                            retry: 1
+                            tasks:
+                                - task: :sh -c 'echo "First book";'
+                                - task: :sh -c 'echo "The Conquest of Bread"; exit 1'
+
+                :example:
+                    description: "This is an example pipeline"
+                    tasks:
+                        - task: :sh -c "echo 'Rocker'"
+                        - block:
+                              retry: 2  # this should be not used for :books
+                              rescue: ":sh -c 'echo \\"Rescue from :example\\"; exit 0'"
+                              tasks:
+                                  - task: :sh -c "echo 'Kropotkin'"
+                                  - task: :books
+                                  - task: :sh -c "echo 'Bakunin. Rescued'"
+                        - task: :sh -c "echo 'After rescued block'"
+        ''')
+
+        with self.with_temporary_workspace_containing({'.rkd/makefile.yaml': makefile}):
+            out, exit_code = self.run_and_capture_output([':example'])
+
+        parsed_log = self.filter_out_task_events_from_log(out)
+
+        self.assertEqual(
+            [
+                ">> [1] Executing `:sh -c echo 'Rocker'` [part of :example]",
+                "The task `:sh -c echo 'Rocker'` [part of :example] succeed.",
+                ">> [2] Executing `:sh -c echo 'Kropotkin'` [part of :example]",
+                "The task `:sh -c echo 'Kropotkin'` [part of :example] succeed.",
+                '>> [3] Executing `:sh -c echo "First book";` [part of :example]',
+                'The task `:sh -c echo "First book";` [part of :example] succeed.',
+
+                # @retry from the inherited block
+                '>> [4] Executing `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
+                '>> [4] Retrying `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
+                'The task `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example] ended with a failure',
+                'The task `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example] ended with a failure',
+                '>> [4] Task ":sh -c echo "The Conquest of Bread"; exit 1" rescue attempt started',
+
+                # @rescue from parent block
+                '>> [5] Executing `:sh -c echo "Rescue from :example"; exit 0`',
+                'The task `:sh -c echo "Rescue from :example"; exit 0` succeed.',
+                ">> [6] Executing `:sh -c echo 'Bakunin. Rescued'` [part of :example]",
+                "The task `:sh -c echo 'Bakunin. Rescued'` [part of :example] succeed.",
+
+                # after rescued action
+                ">> [7] Executing `:sh -c echo 'After rescued block'` [part of :example]",
+                "The task `:sh -c echo 'After rescued block'` [part of :example] succeed."
+            ],
+            parsed_log
+        )
+
+        self.assertEqual(0, exit_code)
+
+    def test_simple_pipeline_in_pipeline(self):
+        makefile = dedent('''
+            version: org.riotkit.rkd/yaml/v1
+            pipelines:
+                :books:
+                    description: "List books"
+                    tasks:
+                        - task: :sh -c 'echo "The Conquest of Bread";'
+                        - task: :chapters
+                        
+                :chapters:
+                    tasks:
+                        - task: ":sh -c 'echo \\"Chapter 2: Well-Being for All\\";'"
+
+                :example:
+                    description: "This is an example pipeline"
+                    tasks:
+                        - task: :sh -c "echo 'Kropotkin'"
+                        - task: :books
+                        - task: :sh -c "echo 'Rocker'"
+        ''')
+
+        with self.with_temporary_workspace_containing({'.rkd/makefile.yaml': makefile}):
+            out, exit_code = self.run_and_capture_output([':example'])
+
+        parsed_log = self.filter_out_task_events_from_log(out)
+
+        self.assertEqual(
+            [
+                # outside: before
+                ">> [1] Executing `:sh -c echo 'Kropotkin'` [part of :example]",
+                "The task `:sh -c echo 'Kropotkin'` [part of :example] succeed.",
+
+                # pipeline depth: +1
+                '>> [2] Executing `:sh -c echo "The Conquest of Bread";` [part of :example]',
+                'The task `:sh -c echo "The Conquest of Bread";` [part of :example] succeed.',
+
+                # pipeline depth: +2
+                '>> [3] Executing `:sh -c echo "Chapter 2: Well-Being for All";` [part of :example]',
+                'The task `:sh -c echo "Chapter 2: Well-Being for All";` [part of :example] succeed.',
+
+                # outside: after
+                ">> [4] Executing `:sh -c echo 'Rocker'` [part of :example]",
+                "The task `:sh -c echo 'Rocker'` [part of :example] succeed."
+            ],
+            parsed_log
+        )
+
+    def test_both_task_and_pipeline_with_same_name_defined_ends_with_error(self):
+        pass
+
+    def test_arguments_merging(self):
+        pass
+
+    # python -m rkd.core -p '{@error 2}' :example {/@} -> IndexError: list index out of range

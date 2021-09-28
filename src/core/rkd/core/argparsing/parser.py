@@ -200,7 +200,7 @@ class CommandlineParsingHelper(object):
         else:
             # by default every task belongs to a block, even if the block for it was not defined
             ctx.parsed_into_blocks.append(
-                ArgumentBlock([ctx.current_task_name] + ctx.current_group_elements).clone_with_tasks(task_arguments)
+                ArgumentBlock.create_default_block([ctx.current_task_name] + ctx.current_group_elements, task_arguments)
             )
 
         ctx.current_task_name = None
@@ -357,6 +357,9 @@ Global environment variables:
         argparse.add_argument('--silent', '-s',
                               help='Show only tasks stdout/stderr (during all tasks)',
                               action='store_true')
+        argparse.add_argument('--print-event-history',
+                              help='Print execution history at the end',
+                              action='store_true')
         argparse.add_argument('--no-ui', '-n',
                               action='store_true',
                               help='Do not display RKD interface (similar to --silent, '
@@ -373,7 +376,8 @@ Global environment variables:
             'imports': imports,
             'log_level': env.system_log_level() if env.system_log_level() else parsed['log_level'],
             'silent': parsed['silent'],
-            'no_ui': env.no_ui() if env.no_ui() else parsed['no_ui']
+            'no_ui': env.no_ui() if env.no_ui() else parsed['no_ui'],
+            'print_event_history': parsed['print_event_history']
         }
 
     @staticmethod

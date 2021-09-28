@@ -8,6 +8,7 @@ Provides tools for easier testing of RKD-based workflows, tasks, plugins.
 """
 
 import os
+import re
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
@@ -23,7 +24,7 @@ from rkd.core.api.contract import ExecutionContext
 from rkd.core.api.contract import TaskInterface
 from rkd.core.api.syntax import TaskDeclaration
 from rkd.core.api.temp import TempManager
-from rkd.core.api.inputoutput import IO
+from rkd.core.api.inputoutput import IO, clear_formatting
 from rkd.core.api.inputoutput import NullSystemIO
 from rkd.core.api.inputoutput import BufferedSystemIO
 from rkd.core.context import ApplicationContext
@@ -314,3 +315,45 @@ class FunctionalTestingCase(BasicTestingCase, OutputCapturingSafeTestCase):
 
                 # execute code
                 yield
+
+    @classmethod
+    def filter_out_task_events_from_log(cls, out: str):
+        """
+        Produces an array of events unformatted
+
+        .. code:: python
+
+            [
+                "Executing :sh -c echo 'Rocker' [part of :example]",
+                "Executing :sh -c echo 'Kropotkin' [part of :example]",
+                'Executing :sh -c echo "The Conquest of Bread"; exit 1 [part of :example]',
+                'Retrying :sh -c echo "The Conquest of Bread"; exit 1 [part of :example]',
+                'Executing :sh -c exit 0 ',
+                'Executing :sh -c echo "Modern Science and Anarchism"; [part of :example]'
+            ]
+
+        :param out:
+        :return:
+        """
+
+        allowed_patterns = [
+            'The task `',
+            ">> \[([0-9]+)\] ",
+        ]
+
+        def is_line_to_be_output(line: str) -> bool:
+            for pattern in allowed_patterns:
+                if re.findall(pattern, line):
+                    return True
+
+            return False
+
+        return list(
+            map(
+                lambda x: clear_formatting(x).strip(),
+                filter(
+                    is_line_to_be_output,
+                    out.split("\n")
+                )
+            )
+        )

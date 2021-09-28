@@ -8,7 +8,7 @@ On later stage there are tasks created from StaticFileContextParsingResult()
 
 import yaml
 import os
-from typing import List
+from typing import List, Dict, Union
 from dotenv import dotenv_values
 from collections import OrderedDict, namedtuple
 from .api.decorators import SUPPORTED_DECORATORS
@@ -16,8 +16,8 @@ from .api.parsing import SyntaxParsing
 from .dto import ParsedTaskDeclaration, StaticFileContextParsingResult
 from .exception import StaticFileParsingException, ParsingException
 from .exception import EnvironmentVariablesFileNotFound
-from .api.syntax import TaskDeclaration
-from .api.contract import ArgparseArgument
+from .api.syntax import TaskDeclaration, Pipeline, PipelineTask, PipelineBlock
+from .api.contract import ArgparseArgument, PipelinePartInterface
 from .api.inputoutput import IO
 from .yaml_parser import YamlFileLoader
 
@@ -64,6 +64,9 @@ class StaticFileSyntaxInterpreter(object):
 
         if "subprojects" in parsed:
             subprojects = self.parse_subprojects(parsed['subprojects'])
+
+        if "pipelines" in parsed:
+            imports += self.parse_pipelines(parsed['pipelines'])
 
         return StaticFileContextParsingResult(
             imports=imports,
@@ -127,6 +130,53 @@ class StaticFileSyntaxInterpreter(object):
             envs.update(parent['environment'])
 
         return envs
+
+    def parse_pipelines(self, pipelines: Dict[str, dict]) -> List[Pipeline]:
+        """
+        Parse pipelines in the document
+
+        :param pipelines:
+        :return:
+        """
+
+        parsed = []
+
+        for name, options in pipelines.items():
+            parsed.append(self._parse_pipeline(name, options))
+
+        return parsed
+
+    def _parse_pipeline(self, name: str, pipeline: dict) -> Pipeline:
+        return Pipeline(
+            name=name,
+            description=pipeline.get('description'),
+            to_execute=self._parse_pipeline_task_list(pipeline.get('tasks'))
+        )
+
+    def _parse_entry_on_task_list(self, task: dict):
+        if "task" in task:
+            if isinstance(task['task'], str):
+                return PipelineTask(task['task'])
+
+            return PipelineTask(*task['task'])
+
+        elif "block" in task:
+            task = task['block']
+            tasks: List[PipelineTask] = self._parse_pipeline_task_list(task.get('tasks'))
+
+            return PipelineBlock(
+                tasks=tasks,   # recursion
+                retry=int(task.get('retry')) if 'retry' in task else None,
+                retry_block=int(task.get('retry-block')) if 'retry-block' in task else None,
+                error=str(task.get('error')) if 'error' in task else None,
+                rescue=str(task.get('rescue')) if 'rescue' in task else None
+            )
+        else:
+            # todo: better exception
+            raise Exception(f'A Task on the "tasks" list needs to have "task" or "block" defined. Body: {task}')
+
+    def _parse_pipeline_task_list(self, tasks: list) -> Union[List[PipelinePartInterface], List[PipelineTask]]:
+        return list(map(lambda task: self._parse_entry_on_task_list(task), tasks))
 
     @staticmethod
     def _load_env_from_file(path: str, makefile_path: str) -> dict:
