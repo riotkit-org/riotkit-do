@@ -156,6 +156,9 @@ class RiotKitDoApplication(object):
                 num += 1
                 self.print_err(io, err, num)
 
+            if pre_parsed_args['print_event_history']:
+                executor.get_observer().print_event_history()
+
             sys.exit(1)
 
         except HandledExitException as err:

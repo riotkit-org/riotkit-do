@@ -1,5 +1,5 @@
 import abc
-from typing import List
+from typing import List, Tuple
 from .api.syntax import DeclarationScheduledToRun
 from .argparsing.model import ArgumentBlock
 from .exception import AggregatedResolvingFailure, InterruptExecution
@@ -14,29 +14,31 @@ class TaskIterator(abc.ABC):
 
         for scheduled in tasks.scheduled_declarations_to_run:
             task_num += 1
-            aggregated_exceptions += self._handle_task(scheduled, task_num)
+
+            try:
+                aggregated_exceptions += self._handle_task(scheduled, task_num, aggregated_exceptions)
+
+            except InterruptExecution:
+                raise AggregatedResolvingFailure(aggregated_exceptions)
 
             if self.iterate_blocks:
                 for block in scheduled.blocks:
                     if block not in blocks_collected:
                         blocks_collected.append(block)
 
-        # iterate over @error and @rescue
+        # OPTIONALLY iterate over @error and @rescue
         if self.iterate_blocks:
             for block in blocks_collected:
-                try:
-                    tasks: List[DeclarationScheduledToRun] = block.resolved_error_tasks() + block.resolved_rescue_tasks()
-                except:
-                    raise Exception("\n".join(block.trace))
+                tasks: List[DeclarationScheduledToRun] = block.resolved_error_tasks() + block.resolved_rescue_tasks()
 
                 for scheduled in tasks:
                     task_num += 1
-                    aggregated_exceptions += self._handle_task(scheduled, task_num)
+                    aggregated_exceptions += self._handle_task(scheduled, task_num, aggregated_exceptions)
 
         if aggregated_exceptions:
             raise AggregatedResolvingFailure(aggregated_exceptions)
 
-    def _handle_task(self, scheduled: DeclarationScheduledToRun, task_num: int):
+    def _handle_task(self, scheduled: DeclarationScheduledToRun, task_num: int, aggregated_exceptions: list):
         """
         Provides error handling for process_task()
 
@@ -45,13 +47,11 @@ class TaskIterator(abc.ABC):
         :return:
         """
 
-        aggregated_exceptions = []
-
         try:
             self.process_task(scheduled, task_num)
 
         except InterruptExecution:
-            return aggregated_exceptions
+            raise
 
         except Exception as err:
             if self.fail_fast is False:

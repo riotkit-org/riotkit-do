@@ -304,9 +304,9 @@ class TestFunctionalPipelines(FunctionalTestingCase):
         with self.with_temporary_workspace_containing({'.rkd/makefile.yaml': makefile}):
             out, exit_code = self.run_and_capture_output([':example'])
 
-        self.assertIn('Executing :sh -c echo "Bakunin" [part of :example]', out)
-        self.assertIn('Executing :sh -c echo "Kropotkin" [part of :example]', out)
-        self.assertIn('Executing :sh -c echo "Malatesta" [part of :example]', out)
+        self.assertIn('[1] Executing `:sh -c echo "Bakunin"` [part of :example]', out)
+        self.assertIn('[2] Executing `:sh -c echo "Kropotkin"` [part of :example]', out)
+        self.assertIn('[3] Executing `:sh -c echo "Malatesta"` [part of :example]', out)
 
     def test_yaml_written_block_is_parsed_as_block(self):
         makefile = dedent('''
@@ -325,8 +325,8 @@ class TestFunctionalPipelines(FunctionalTestingCase):
         with self.with_temporary_workspace_containing({'.rkd/makefile.yaml': makefile}):
             out, exit_code = self.run_and_capture_output([':example'])
 
-        self.assertIn('Executing :sh -c echo "Rocker" [part of :example]', out)
-        self.assertIn('Executing :sh -c echo Kropotkin [part of :example]', out)
+        self.assertIn('[1] Executing `:sh -c echo "Rocker"` [part of :example]', out)
+        self.assertIn('[2] Executing `:sh -c echo Kropotkin` [part of :example]', out)
 
     def test_pipeline_in_pipeline_retry_attribute_inheritance(self):
         """
@@ -375,22 +375,30 @@ class TestFunctionalPipelines(FunctionalTestingCase):
 
         self.assertEqual(
             [
-                # todo: Fix: Conquest of Bread" and "Modern Science and Anarchism" should be as a part of :books
-                ">> Executing :sh -c echo 'Rocker' [part of :example]",
-                'The task ":sh" [part of :example] succeed.',
-                ">> Executing :sh -c echo 'Kropotkin' [part of :example]",
-                'The task ":sh" [part of :example] succeed.',
-                '>> Executing :sh -c echo "The Conquest of Bread"; exit 1 [part of :example]',
-                '>> Retrying :sh -c echo "The Conquest of Bread"; exit 1 [part of :example]',
-                'The task ":sh" [part of :example] ended with a failure',
-                '>> Task ":sh" rescue attempt started',
-                '>> Executing :sh -c exit 0',
-                'The task ":sh" succeed.',
-                '>> Executing :sh -c echo "Modern Science and Anarchism"; [part of :example]',
-                'The task ":sh" [part of :example] succeed.'
+                # before block
+                ">> [1] Executing `:sh -c echo 'Rocker'` [part of :example]",
+                "The task `:sh -c echo 'Rocker'` [part of :example] succeed.",
+
+                # first task in block succeeds
+                ">> [2] Executing `:sh -c echo 'Kropotkin'` [part of :example]",
+                "The task `:sh -c echo 'Kropotkin'` [part of :example] succeed.",
+
+                # task inside :books is failing, and is going to be retried 1 times, not 5 times
+                # (@retry importance = closest block decides if retry is defined in it)
+                '>> [3] Executing `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
+                '>> [3] Retrying `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
+
+                # rescue from inside :books is called
+                'The task `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example] ended with a failure',
+                '>> [3] Task ":sh -c echo "The Conquest of Bread"; exit 1" rescue attempt started',
+                '>> [4] Executing `:sh -c exit 0`',
+                'The task `:sh -c exit 0` succeed.',
+                'The task `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example] ended with a failure'
              ],
             parsed_log
         )
+
+        self.assertEqual(0, exit_code)
 
     def test_pipeline_in_pipeline_parent_rescue_block_works(self):
         """

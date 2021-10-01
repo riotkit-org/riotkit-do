@@ -1,7 +1,6 @@
 from types import FunctionType
 from typing import List, Type
 from jsonschema import ValidationError
-from .argparsing.model import TaskArguments, ArgumentBlock
 
 
 class RiotKitDoException(Exception):

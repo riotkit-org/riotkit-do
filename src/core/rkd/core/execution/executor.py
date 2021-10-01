@@ -26,7 +26,9 @@ from ..iterator import TaskIterator
 
 
 class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
-    """ Executes tasks one-by-one, providing a context that includes eg. parsed arguments """
+    """
+    Executes tasks one-by-one, providing a context that includes eg. parsed arguments
+    """
 
     _ctx: ApplicationContext
     _observer: ProgressObserver
@@ -43,7 +45,7 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
     def process_task(self, scheduled: DeclarationScheduledToRun, task_num: int):
         self.execute(scheduled, task_num)
 
-    def execute(self, scheduled_declaration: DeclarationScheduledToRun, task_num: int):
+    def execute(self, scheduled_declaration: DeclarationScheduledToRun, task_num: int, inherited: bool = False):
         """
         Prepares all dependencies, then triggers execution
         """
@@ -97,7 +99,7 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
             # When: Task has a failure
             #
             temp.finally_clean_up()
-            self._on_failure(scheduled_declaration, keep_going, task_num, e)
+            self._on_failure(scheduled_declaration, keep_going, task_num, e, inherited=inherited)
 
             return
 
@@ -109,10 +111,10 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
         if result is True:
             self._observer.task_succeed(scheduled_declaration)
         else:
-            self._on_failure(scheduled_declaration, keep_going, task_num, None)
+            self._on_failure(scheduled_declaration, keep_going, task_num, None, inherited=inherited)
 
     def _on_failure(self, scheduled_declaration: DeclarationScheduledToRun, keep_going: bool, task_num: int,
-                    exception: Optional[Exception] = None):
+                    exception: Optional[Exception] = None, inherited: bool = False):
         """
         Executed when task fails: Goes through all nested blocks and tries to rescue the situation or notify an error
 
@@ -124,7 +126,6 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
                         eg. second time after failing first time
         """
 
-        # todo: blocks should be in DeclarationScheduledToRun?
         blocks = scheduled_declaration.get_blocks_ordered_by_children_to_parent()
         last_block: ArgumentBlock = blocks[0]
         block_num = 0
@@ -132,29 +133,35 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
         self.io.internal(f'declaration={scheduled_declaration}')
         self.io.internal(f'last_block={last_block}')
 
-        for block in blocks:
-            block_num += 1
-            self.io.internal(f'Handling failure of {scheduled_declaration} in block #{block_num} {block}')
+        if not inherited:
+            for block in blocks:
+                block_num += 1
 
-            if block.is_default_empty_block:
-                self.io.internal('Skipping default empty block')
-                continue
+                self.io.internal(f'Handling failure of {scheduled_declaration} in block #{block_num} {block}')
 
-            # NOTE: we need to mark blocks as resolved to avoid loops, as the execution process is triggered by
-            #       upper layer - TaskResolver, that may not be aware of what is done there
+                if block.is_default_empty_block:
+                    self.io.internal('Skipping default empty block')
+                    continue
 
-            if block.is_already_failed_for(scheduled_declaration.declaration):
-                self.io.internal(f'{scheduled_declaration} already failed in {block}')
-                continue
+                # NOTE: we need to mark blocks as resolved to avoid loops, as the execution process is triggered by
+                #       upper layer - TaskResolver, that may not be aware of what is done there
 
-            self._handle_failure_in_specific_block(
-                scheduled_declaration, exception, block,
-                allow_retrying_single_task=block == last_block,  # @retry works only for latest block
-                task_num=task_num
-            )
+                if block.is_already_failed_for(scheduled_declaration.declaration):
+                    self.io.internal(f'{scheduled_declaration} already failed in {block}')
+                    continue
 
-            self.io.internal(f'Marking {scheduled_declaration} as failed in {block}')
-            block.mark_as_failed_for(scheduled_declaration)
+                is_failure_repaired = self._handle_failure_in_specific_block(
+                    scheduled_declaration, exception, block,
+                    task_num=task_num
+                )
+
+                # if Block modifiers worked, and the Task result is repaired, then do not raise exception at the end
+                # also do not process next blocks
+                if is_failure_repaired:
+                    return
+
+                self.io.internal(f'Marking {scheduled_declaration} as failed in {block}')
+                block.mark_as_failed_for(scheduled_declaration)
 
         # break the whole pipeline only if not --keep-going
         if not keep_going:
@@ -163,40 +170,87 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
     def _handle_failure_in_specific_block(self, scheduled_declaration: DeclarationScheduledToRun,
                                           exception: Exception,
                                           block: ArgumentBlock,
-                                          allow_retrying_single_task: bool,
-                                          task_num: int):
+                                          task_num: int) -> bool:
 
-        if allow_retrying_single_task and block.should_task_be_retried(scheduled_declaration.declaration):
+        # ==============================================================================
+        #  @retry: Repeat a Task multiple times, until it hits the maximum repeat count
+        #          or the repeated Task will end with success
+        # ==============================================================================
+        while block.should_task_be_retried(scheduled_declaration.declaration):
             block.task_retried(scheduled_declaration.declaration)
             self._observer.task_retried(scheduled_declaration)
-            self.execute(scheduled_declaration, task_num)
 
-            return
+            try:
+                self.execute(scheduled_declaration, task_num, inherited=True)
 
-        elif block.should_block_be_retried():
+            except InterruptExecution:
+                continue
+
+            # if not "continue" then it is a success (no exception)
+            return True
+
+        # ==============================================================================
+        #  @retry-block: Repeat all Tasks in current Block until success, or
+        # ==============================================================================
+        while block.should_block_be_retried():
             self.io.internal(f'Got block to retry: {block}')
             self._observer.group_of_tasks_retried(block)
 
-            for task in block.resolved_body_tasks():
-                self.execute(task, task_num)
+            succeed_count = 0
+            expected_tasks_to_succeed = len(block.resolved_body_tasks())
 
-            return
+            for task_in_block in block.resolved_body_tasks():
+                try:
+                    self.execute(task_in_block, task_num, inherited=True)
+
+                except InterruptExecution:
+                    continue
+
+                # if not raised the exception, then continue not worked
+                succeed_count += 1
+
+            if succeed_count == expected_tasks_to_succeed:
+                return True
 
         # regardless of @error & @rescue there should be a visible information that task failed
         self._notify_error(scheduled_declaration, exception)
 
-        # block modifiers (issue #50): @error and @rescue
+        # ===================================================================================================
+        #  @error: Send an error notification, execute something in case of a failure
+        # ===================================================================================================
+        if block.has_action_on_error():
+            for resolved in block.resolved_error_tasks():
+                resolved: DeclarationScheduledToRun
+
+                try:
+                    self.execute(resolved, resolved.created_task_num, inherited=True)
+
+                except InterruptExecution:
+                    # immediately exit, when any of @on-error Task will fail
+                    return False
+
+        # ===================================================================================================
+        #  @rescue: Let's execute a Task instead of our original Task in case, when our original Task fails
+        # ===================================================================================================
         if block.should_rescue_task():
             self._observer.task_rescue_attempt(scheduled_declaration)
 
             for resolved in block.resolved_rescue_tasks():
                 resolved: DeclarationScheduledToRun
-                self.execute(resolved, resolved.created_task_num)
 
-        elif block.has_action_on_error():
-            for resolved in block.resolved_error_tasks():
-                resolved: DeclarationScheduledToRun
-                self.execute(resolved, resolved.created_task_num)
+                try:
+                    self.execute(resolved, resolved.created_task_num, inherited=True)
+
+                except InterruptExecution:
+                    return False  # it is expected, that all @rescue tasks will succeed
+
+            # if there is no any InterruptException, then we rescued the Task!
+            return True
+
+        # there were no method that was able to rescue the situation
+        self.io.internal('No valid modifier found in Block to change Task result')
+
+        return False
 
     def _notify_error(self, scheduled_to_run: DeclarationScheduledToRun,
                       exception: Optional[Exception] = None):
@@ -216,7 +270,8 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
 
     def _execute_directly_or_forked(self, cmdline_become: str, task: TaskInterface, temp: TempManager,
                                     ctx: ExecutionContext):
-        """Execute directly or pass to a forked process
+        """
+        Execute directly or pass to a forked process
         """
 
         # unset incrementing variables
@@ -240,7 +295,8 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
 
     @staticmethod
     def _execute_as_forked_process(become: str, task: TaskInterface, temp: TempManager, ctx: ExecutionContext):
-        """Execute task code as a separate Python process
+        """
+        Execute task code as a separate Python process
 
         The communication between processes is with serialized data and text files.
         One text file is a script, the task code is passed with stdin together with a whole context
