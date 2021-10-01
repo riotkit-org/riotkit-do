@@ -68,7 +68,6 @@ class ArgumentBlock(object):
     _retry_counter_per_task: Dict['TaskDeclaration', int]
     _retry_counter_on_whole_block: int
     _debug_id: str
-    _failed_tasks: List['TaskDeclaration']
     _is_default_block: bool
 
     def __init__(self, body: List[str] = None, rescue: str = '', error: str = '', retry: int = 0,
@@ -98,7 +97,6 @@ class ArgumentBlock(object):
         self.on_error = []
         self._retry_counter_per_task = {}
         self._retry_counter_on_whole_block = 0
-        self._failed_tasks = []
         self._is_default_block = False
 
         # lazy-filled by TaskResolver on later stage
@@ -276,16 +274,6 @@ class ArgumentBlock(object):
     def id(self) -> str:
         return self._debug_id
 
-    def mark_as_failed_for(self, declaration):
-        """
-        Marks that Task already failed for this block, after all retries, etc.
-
-        :param declaration:
-        :return:
-        """
-
-        self._failed_tasks.append(declaration)
-
     def set_parsed_error_handler(self, tasks_arguments: List[TaskArguments]) -> None:
         """
         Stage 1: Parsing
@@ -325,9 +313,6 @@ class ArgumentBlock(object):
         """
 
         self._on_error_tasks = on_error
-
-    def is_already_failed_for(self, declaration):
-        return declaration in self._failed_tasks
 
     @property
     def is_default_empty_block(self):

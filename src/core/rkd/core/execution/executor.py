@@ -143,13 +143,6 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
                     self.io.internal('Skipping default empty block')
                     continue
 
-                # NOTE: we need to mark blocks as resolved to avoid loops, as the execution process is triggered by
-                #       upper layer - TaskResolver, that may not be aware of what is done there
-
-                if block.is_already_failed_for(scheduled_declaration.declaration):
-                    self.io.internal(f'{scheduled_declaration} already failed in {block}')
-                    continue
-
                 is_failure_repaired = self._handle_failure_in_specific_block(
                     scheduled_declaration, exception, block,
                     task_num=task_num
@@ -159,9 +152,6 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
                 # also do not process next blocks
                 if is_failure_repaired:
                     return
-
-                self.io.internal(f'Marking {scheduled_declaration} as failed in {block}')
-                block.mark_as_failed_for(scheduled_declaration)
 
         # break the whole pipeline only if not --keep-going
         if not keep_going:
