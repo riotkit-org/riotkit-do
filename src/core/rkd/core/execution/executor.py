@@ -119,6 +119,7 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
         Executed when task fails: Goes through all nested blocks and tries to rescue the situation or notify an error
 
         Separated responsibilities:
+            - Executor: Execute, retry, run other Tasks instead of current Task, etc.
             - Block: a domain logic, tracks TaskDeclaration execution. Decides if task should be retried, or rescued
               (only those declarations that are declared in that block)
             - Observer: Observes execution RESULTS to notify user, the console (to set exit code for example).
@@ -194,7 +195,7 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
                     self.execute(task_in_block, task_num, inherited=True)
 
                 except InterruptExecution:
-                    continue
+                    break
 
                 # if not raised the exception, then continue not worked
                 succeed_count += 1

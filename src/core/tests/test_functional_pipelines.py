@@ -328,6 +328,54 @@ class TestFunctionalPipelines(FunctionalTestingCase):
         self.assertIn('[1] Executing `:sh -c echo "Rocker"` [part of :example]', out)
         self.assertIn('[2] Executing `:sh -c echo Kropotkin` [part of :example]', out)
 
+    def test_simple_pipeline_in_pipeline(self):
+        makefile = dedent('''
+            version: org.riotkit.rkd/yaml/v1
+            pipelines:
+                :books:
+                    description: "List books"
+                    tasks:
+                        - task: :sh -c 'echo "The Conquest of Bread";'
+                        - task: :chapters
+
+                :chapters:
+                    tasks:
+                        - task: ":sh -c 'echo \\"Chapter 2: Well-Being for All\\";'"
+
+                :example:
+                    description: "This is an example pipeline"
+                    tasks:
+                        - task: :sh -c "echo 'Kropotkin'"
+                        - task: :books
+                        - task: :sh -c "echo 'Rocker'"
+        ''')
+
+        with self.with_temporary_workspace_containing({'.rkd/makefile.yaml': makefile}):
+            out, exit_code = self.run_and_capture_output([':example'])
+
+        parsed_log = self.filter_out_task_events_from_log(out)
+
+        self.assertEqual(
+            [
+                # outside: before
+                ">> [1] Executing `:sh -c echo 'Kropotkin'` [part of :example]",
+                "The task `:sh -c echo 'Kropotkin'` [part of :example] succeed.",
+
+                # pipeline depth: +1
+                '>> [2] Executing `:sh -c echo "The Conquest of Bread";` [part of :example]',
+                'The task `:sh -c echo "The Conquest of Bread";` [part of :example] succeed.',
+
+                # pipeline depth: +2
+                '>> [3] Executing `:sh -c echo "Chapter 2: Well-Being for All";` [part of :example]',
+                'The task `:sh -c echo "Chapter 2: Well-Being for All";` [part of :example] succeed.',
+
+                # outside: after
+                ">> [4] Executing `:sh -c echo 'Rocker'` [part of :example]",
+                "The task `:sh -c echo 'Rocker'` [part of :example] succeed."
+            ],
+            parsed_log
+        )
+
     def test_pipeline_in_pipeline_retry_attribute_inheritance(self):
         """
         Given I call :example pipeline
@@ -335,11 +383,12 @@ class TestFunctionalPipelines(FunctionalTestingCase):
         And ":sh -c 'echo "The Conquest of Bread"; exit 1'" inside :books pipeline should fail
         And :books have defined @retry 1 and @rescue :sh -c 'exit 0'
 
-        And :example has a @retry 5 defined
+        And parent :example pipeline has a @retry 5 defined
 
-        Then the @retry should be considered from :books not from :example, because :books is in :example and has priority
-        And this should result in 2x execution of 'The Conquest of Bread' then a resuce task 'exit 0'
-        And additionally 'Modern Science and Anarchism' should be printed
+        Then :books's pipeline task ":sh -c 'echo "The Conquest of Bread"; exit 1'" that failed
+        should be retried one time inside :books pipeline, then rescued inside :books pipeline
+
+        And As the Task was already rescued inside :books, then @retry=5 from :example should not be used
 
         :return:
         """
@@ -383,17 +432,20 @@ class TestFunctionalPipelines(FunctionalTestingCase):
                 ">> [2] Executing `:sh -c echo 'Kropotkin'` [part of :example]",
                 "The task `:sh -c echo 'Kropotkin'` [part of :example] succeed.",
 
-                # task inside :books is failing, and is going to be retried 1 times, not 5 times
-                # (@retry importance = closest block decides if retry is defined in it)
+                # task inside :books is failing, and is going to be retried 1 times, then rescued in same block
+                # so the @rescue=5 from parent pipeline would not be necessary
                 '>> [3] Executing `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
-                '>> [3] Retrying `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
 
-                # rescue from inside :books is called
+                # @retry=1 from :books
+                '>> [3] Retrying `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
                 'The task `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example] ended with a failure',
+
+                # @rescue=":sh -c exit 0" from inside :books is called
                 '>> [3] Task ":sh -c echo "The Conquest of Bread"; exit 1" rescue attempt started',
-                '>> [4] Executing `:sh -c exit 0`',
-                'The task `:sh -c exit 0` succeed.',
-                'The task `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example] ended with a failure'
+                '>> [4] Executing `:sh -c exit 0`', 'The task `:sh -c exit 0` succeed.',
+
+                '>> [5] Executing `:sh -c echo "Modern Science and Anarchism";` [part of :example]',
+                'The task `:sh -c echo "Modern Science and Anarchism";` [part of :example] succeed.'
              ],
             parsed_log
         )
@@ -402,11 +454,14 @@ class TestFunctionalPipelines(FunctionalTestingCase):
 
     def test_pipeline_in_pipeline_parent_rescue_block_works(self):
         """
-        Single depth @rescue block test
+        Failing Task is placed inside :books
+        And :books is placed inside :example
 
-        Given a child block does not define @rescue
-        And parent block defines @rescue
-        Then parent block @rescue should be called
+        Failing Task will be retried 3 times because:
+        - 1x in :books (then a chop outside :books happens)
+        - 2x in :example
+
+        Then the Failing Task will be rescued in parent pipeline - :example.
 
         :return:
         """
@@ -428,7 +483,7 @@ class TestFunctionalPipelines(FunctionalTestingCase):
                     tasks:
                         - task: :sh -c "echo 'Rocker'"
                         - block:
-                              retry: 2  # this should be not used for :books
+                              retry: 2 
                               rescue: ":sh -c 'echo \\"Rescue from :example\\"; exit 0'"
                               tasks:
                                   - task: :sh -c "echo 'Kropotkin'"
@@ -446,25 +501,27 @@ class TestFunctionalPipelines(FunctionalTestingCase):
             [
                 ">> [1] Executing `:sh -c echo 'Rocker'` [part of :example]",
                 "The task `:sh -c echo 'Rocker'` [part of :example] succeed.",
+
                 ">> [2] Executing `:sh -c echo 'Kropotkin'` [part of :example]",
                 "The task `:sh -c echo 'Kropotkin'` [part of :example] succeed.",
+
                 '>> [3] Executing `:sh -c echo "First book";` [part of :example]',
                 'The task `:sh -c echo "First book";` [part of :example] succeed.',
 
-                # @retry from the inherited block
                 '>> [4] Executing `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
                 '>> [4] Retrying `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
                 'The task `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example] ended with a failure',
+                '>> [4] Retrying `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
+                '>> [4] Retrying `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
                 'The task `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example] ended with a failure',
                 '>> [4] Task ":sh -c echo "The Conquest of Bread"; exit 1" rescue attempt started',
 
-                # @rescue from parent block
                 '>> [5] Executing `:sh -c echo "Rescue from :example"; exit 0`',
                 'The task `:sh -c echo "Rescue from :example"; exit 0` succeed.',
+
                 ">> [6] Executing `:sh -c echo 'Bakunin. Rescued'` [part of :example]",
                 "The task `:sh -c echo 'Bakunin. Rescued'` [part of :example] succeed.",
 
-                # after rescued action
                 ">> [7] Executing `:sh -c echo 'After rescued block'` [part of :example]",
                 "The task `:sh -c echo 'After rescued block'` [part of :example] succeed."
             ],
@@ -472,54 +529,6 @@ class TestFunctionalPipelines(FunctionalTestingCase):
         )
 
         self.assertEqual(0, exit_code)
-
-    def test_simple_pipeline_in_pipeline(self):
-        makefile = dedent('''
-            version: org.riotkit.rkd/yaml/v1
-            pipelines:
-                :books:
-                    description: "List books"
-                    tasks:
-                        - task: :sh -c 'echo "The Conquest of Bread";'
-                        - task: :chapters
-                        
-                :chapters:
-                    tasks:
-                        - task: ":sh -c 'echo \\"Chapter 2: Well-Being for All\\";'"
-
-                :example:
-                    description: "This is an example pipeline"
-                    tasks:
-                        - task: :sh -c "echo 'Kropotkin'"
-                        - task: :books
-                        - task: :sh -c "echo 'Rocker'"
-        ''')
-
-        with self.with_temporary_workspace_containing({'.rkd/makefile.yaml': makefile}):
-            out, exit_code = self.run_and_capture_output([':example'])
-
-        parsed_log = self.filter_out_task_events_from_log(out)
-
-        self.assertEqual(
-            [
-                # outside: before
-                ">> [1] Executing `:sh -c echo 'Kropotkin'` [part of :example]",
-                "The task `:sh -c echo 'Kropotkin'` [part of :example] succeed.",
-
-                # pipeline depth: +1
-                '>> [2] Executing `:sh -c echo "The Conquest of Bread";` [part of :example]',
-                'The task `:sh -c echo "The Conquest of Bread";` [part of :example] succeed.',
-
-                # pipeline depth: +2
-                '>> [3] Executing `:sh -c echo "Chapter 2: Well-Being for All";` [part of :example]',
-                'The task `:sh -c echo "Chapter 2: Well-Being for All";` [part of :example] succeed.',
-
-                # outside: after
-                ">> [4] Executing `:sh -c echo 'Rocker'` [part of :example]",
-                "The task `:sh -c echo 'Rocker'` [part of :example] succeed."
-            ],
-            parsed_log
-        )
 
     def test_both_task_and_pipeline_with_same_name_defined_ends_with_error(self):
         pass
