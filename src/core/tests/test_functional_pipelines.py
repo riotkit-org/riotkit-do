@@ -3,6 +3,7 @@ from textwrap import dedent
 import pytest
 import os
 from rkd.core.api.testing import FunctionalTestingCase
+from rkd.core.exception import TaskNameConflictException
 
 TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -531,7 +532,28 @@ class TestFunctionalPipelines(FunctionalTestingCase):
         self.assertEqual(0, exit_code)
 
     def test_both_task_and_pipeline_with_same_name_defined_ends_with_error(self):
-        pass
+        makefile = dedent('''
+            version: org.riotkit.rkd/yaml/v1
+            
+            tasks:
+                :books:
+                    steps: |
+                        echo "This Task duplicates Pipeline with same name"
+
+            pipelines:
+            
+                :books:
+                    description: "List books"
+                    tasks:
+                        - block:
+                            retry: 1
+                            tasks:
+                                - task: :sh -c 'echo "First book";'
+        ''')
+
+        with self.assertRaises(TaskNameConflictException):
+            with self.with_temporary_workspace_containing({'.rkd/makefile.yaml': makefile}):
+                self.run_and_capture_output([':books'])
 
     def test_arguments_merging(self):
         pass

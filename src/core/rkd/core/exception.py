@@ -21,6 +21,12 @@ class TaskNotFoundException(ContextException):
     pass
 
 
+class TaskNameConflictException(ContextException):
+    @classmethod
+    def from_pipeline_and_task_has_same_name(cls, name: str):
+        return cls(f'Context has Task + Pipeline with same name: {name}. Cannot resolve conflict.')
+
+
 class BlockAlreadyConnectedException(RiotKitDoException):
     pass
 

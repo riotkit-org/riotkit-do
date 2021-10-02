@@ -20,7 +20,7 @@ from .api.contract import ContextInterface
 from .api.parsing import SyntaxParsing
 from .argparsing.parser import CommandlineParsingHelper
 from .api.inputoutput import SystemIO
-from .exception import TaskNotFoundException, BlockAlreadyConnectedException
+from .exception import TaskNotFoundException, BlockAlreadyConnectedException, TaskNameConflictException
 from .exception import ContextFileNotFoundException
 from .exception import PythonContextFileNotFoundException
 from .exception import NotImportedClassException
@@ -114,6 +114,11 @@ class ApplicationContext(ContextInterface):
 
         for task in self._compiled:
             self.io.internal(f'Defined task {task} by context compilation')
+
+        # validation
+        for name, details in self._task_aliases.items():
+            if name in self._compiled.keys():
+                raise TaskNameConflictException.from_pipeline_and_task_has_same_name(name)
 
         for name, details in self._task_aliases.items():
             self.io.internal(f'Defined task alias {name}')
