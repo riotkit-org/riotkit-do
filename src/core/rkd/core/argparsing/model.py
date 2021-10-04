@@ -51,6 +51,7 @@ class ArgumentBlock(object):
     """
 
     body: List[str]
+    header: str
 
     on_rescue: List[TaskArguments]
     on_error: List[TaskArguments]
@@ -70,7 +71,7 @@ class ArgumentBlock(object):
     _debug_id: str
     _is_default_block: bool
 
-    def __init__(self, body: List[str] = None, rescue: str = '', error: str = '', retry: int = 0,
+    def __init__(self, body: List[str] = None, header: str = '{...}', rescue: str = '', error: str = '', retry: int = 0,
                  retry_block: int = 0):
         """
         :param body Can be empty - it means that block will have tasks filled up later
@@ -81,7 +82,9 @@ class ArgumentBlock(object):
         if body is None:
             body = []
 
+        self.header = header
         self.body = body
+
         try:
             self.retry_per_task = int(retry)
         except ValueError:
@@ -113,7 +116,7 @@ class ArgumentBlock(object):
         """Dummy instance"""
 
         instance = ArgumentBlock(
-            body=[], rescue='', error='', retry=0
+            body=[], header='{empty}', rescue='', error='', retry=0
         )
 
         instance.set_parsed_rescue([])

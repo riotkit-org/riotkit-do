@@ -3,7 +3,7 @@ from textwrap import dedent
 import pytest
 import os
 from rkd.core.api.testing import FunctionalTestingCase
-from rkd.core.exception import TaskNameConflictException
+from rkd.core.exception import TaskNameConflictException, ParsingException
 
 TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -541,7 +541,6 @@ class TestFunctionalPipelines(FunctionalTestingCase):
                         echo "This Task duplicates Pipeline with same name"
 
             pipelines:
-            
                 :books:
                     description: "List books"
                     tasks:
@@ -556,6 +555,27 @@ class TestFunctionalPipelines(FunctionalTestingCase):
                 self.run_and_capture_output([':books'])
 
     def test_arguments_merging(self):
-        pass
+        makefile = dedent('''
+            version: org.riotkit.rkd/yaml/v1
+            pipelines:
+                :example:
+                    tasks:
+                        - block:
+                            retry: 1
+                            tasks:
+                                - task: :sh
+                                - task: :sh -c "echo 'Second'"
+        ''')
 
-    # python -m rkd.core -p '{@error 2}' :example {/@} -> IndexError: list index out of range
+        with self.with_temporary_workspace_containing({'.rkd/makefile.yaml': makefile}):
+            out, exit_code = self.run_and_capture_output([':example', '-c', 'echo "First"'])
+
+        self.assertIn('[1] Executing `:sh -c echo "First"`', out)
+        self.assertIn('[2] Executing `:sh -c echo \'Second\' -c echo "First"`', out)
+
+    def test_block_cannot_be_empty(self):
+        with self.assertRaises(ParsingException) as exc:
+            self.run_and_capture_output(['{@error 2}', ':example', '{/@}'])
+
+        self.assertIn('Declared empty @error modifier in {@error 2} block - missing tasks', str(exc.exception))
+

@@ -191,6 +191,16 @@ class ParsingException(ContextException):
             )
         )
 
+    @classmethod
+    def from_empty_modifier_declared(cls, modifier: str, block) -> 'ParsingException':
+        return cls(f'Declared empty @{modifier} modifier in {block} block - missing tasks')
+
+    @classmethod
+    def from_previous_block_not_correctly_closed(cls, part):
+        return cls(f'Parser error. Cannot find block "{part}". Block found in commandline, '
+                   'but not parsed by parse_blocks() before. '
+                   'It could mean that previous Block was not correctly closed?')
+
 
 class DeclarationException(ContextException):
     """Something wrong with the makefile.py/makefile.yaml """

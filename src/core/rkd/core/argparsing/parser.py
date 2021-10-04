@@ -14,6 +14,7 @@ from ..api.contract import TaskDeclarationInterface
 from ..api.contract import ArgumentEnv
 from .blocks import parse_blocks, TOKEN_BLOCK_REFERENCE_OPENING, TOKEN_BLOCK_REFERENCE_CLOSING, ArgumentBlock
 from .model import TaskArguments
+from ..exception import ParsingException
 
 
 class TraceableArgumentParser(ArgumentParser):
@@ -117,8 +118,7 @@ class CommandlineParsingHelper(object):
                 self.io.internal(f'parse({part}), is_block=True, cursor={ctx.cursor}')
 
                 if part not in blocks:
-                    raise Exception(f'Parser error. Cannot find block "{part}". Block found in commandline, '
-                                    'but not parsed by parse_blocks() before')
+                    raise ParsingException.from_previous_block_not_correctly_closed(part)
 
                 block: ArgumentBlock = blocks[part]
                 self.io.internal(f'Constructing block from body {block.body}')
@@ -216,12 +216,23 @@ class CommandlineParsingHelper(object):
 
             if attributes['error']:
                 self.io.internal(f'Parsing @error in {block}')
+                parsed = self.create_grouped_arguments(split_argv(attributes['error']))
+
+                if not parsed:
+                    raise ParsingException.from_empty_modifier_declared('error', block.header)
+
                 block.set_parsed_error_handler(
-                    self.create_grouped_arguments(split_argv(attributes['error']))[0].tasks())
+                    parsed[0].tasks()
+                )
 
             if attributes['rescue']:
                 self.io.internal(f'Parsing @rescue in {block}')
-                block.set_parsed_rescue(self.create_grouped_arguments(split_argv(attributes['rescue']))[0].tasks())
+                parsed = self.create_grouped_arguments(split_argv(attributes['rescue']))
+
+                if not parsed:
+                    raise ParsingException.from_empty_modifier_declared('rescue', block.header)
+
+                block.set_parsed_rescue(parsed[0].tasks())
 
         return blocks
 
