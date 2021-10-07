@@ -11,6 +11,7 @@ STATUS_RETRIED = 'retried'
 STATUS_ERRORED = 'errored'
 STATUS_FAILURE = 'failure'
 STATUS_SUCCEED = 'succeed'
+STATUS_SKIPPED = 'skipped'
 
 """
 Can be treated as "succeed" because "in-rescue" means that we don't check task status, instead we start a new task
@@ -30,7 +31,7 @@ class TaskResult(object):
         self.time = datetime.now()
 
     def has_succeed(self) -> bool:
-        return self.status in [STATUS_SUCCEED, STATUS_RESCUE_STATE]
+        return self.status in [STATUS_SUCCEED, STATUS_RESCUE_STATE, STATUS_SKIPPED]
 
 
 class ProgressObserver(object):
@@ -68,6 +69,16 @@ class ProgressObserver(object):
         self._io.info_msg(' >> [{task_num}] {action} `{full_name}` {parent}'.format(
             task_num=self.task_num(scheduled_declaration),
             action='Retrying' if is_retry else 'Executing',
+            full_name=scheduled_declaration.repr_as_invoked_task,
+            parent=self._format_parent_task(scheduled_declaration.parent)
+        ))
+
+    def task_skipped(self, scheduled_declaration: DeclarationScheduledToRun):
+        self._set_status(scheduled_declaration, STATUS_SKIPPED)
+
+        self._io.warn_msg(' >> [{task_num}] {action} `{full_name}` {parent}'.format(
+            task_num=self.task_num(scheduled_declaration),
+            action='Skipping',
             full_name=scheduled_declaration.repr_as_invoked_task,
             parent=self._format_parent_task(scheduled_declaration.parent)
         ))
@@ -115,6 +126,11 @@ class ProgressObserver(object):
             self._io.print_opt_line()
             self._io.print_opt_line()
 
+    def rescued_inherited_block(self, failing_task: DeclarationScheduledToRun):
+        self._io.warn_msg(f' >> [!] Rescued current Block/Pipeline and skipped all remained Tasks from failing '
+                          f'inherited Pipeline/Block after failed '
+                          f'Task `{failing_task.repr_as_invoked_task}`')
+
     def execution_finished(self):
         """
         When all tasks were executed - the TaskExecutor finished its job
@@ -140,7 +156,7 @@ class ProgressObserver(object):
         self.__history.append(self.__executed_tasks[scheduled_to_run.unique_id()])
 
         # collect tasks numbering - only when task is ran first time (not a retry)
-        if status == STATUS_STARTED and scheduled_to_run not in self.__task_numbers:
+        if status in [STATUS_STARTED, STATUS_SKIPPED] and scheduled_to_run not in self.__task_numbers:
             self.__task_numbers[scheduled_to_run] = len(self.__task_numbers) + 1
 
     def is_at_least_one_task_failing(self) -> bool:

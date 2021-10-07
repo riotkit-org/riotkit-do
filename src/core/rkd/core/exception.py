@@ -120,12 +120,6 @@ class UserInputException(RiotKitDoException):
     pass
 
 
-class BlockDefinitionLogicError(RiotKitDoException):
-    @staticmethod
-    def from_both_rescue_and_error_defined(block):
-        return BlockDefinitionLogicError('Block "{0:s}" cannot define both @rescue and @error'.format(block.body))
-
-
 class NotSupportedEnvVariableError(UserInputException):
     pass
 

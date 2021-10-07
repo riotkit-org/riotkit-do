@@ -81,11 +81,6 @@ class TaskDeclaration(TaskDeclarationInterface):
     _is_internal: Optional[bool]             # task is not listed on :tasks
     _enforced_task_full_name: Optional[str]
 
-    # mutated fields
-    # todo wywalić
-    _parent: Optional['GroupDeclaration']
-    _blocks: List[ArgumentBlock]
-
     def __init__(self, task: TaskInterface, env: Dict[str, str] = None, args: List[str] = None,
                  workdir: Optional[str] = None, internal: Optional[bool] = None, name: Optional[str] = None):
 
@@ -121,8 +116,6 @@ class TaskDeclaration(TaskDeclarationInterface):
         self._project_name = ''
         self._is_internal = internal
         self._enforced_task_full_name = name
-        self._blocks = []
-        self._parent = None
 
     def to_full_name(self):
         full_name = self._enforced_task_full_name if self._enforced_task_full_name else self._task.get_full_name()
@@ -168,23 +161,6 @@ class TaskDeclaration(TaskDeclarationInterface):
 
         copy = self.clone()
         copy._user_defined_env = env_list
-
-        return copy
-
-    def with_connected_block(self, block: ArgumentBlock):
-        """
-        Immutable arguments setter. Produces new object each time
-        Block should be a REFERENCE to an object, not a copy
-        """
-
-        if block in self._blocks:
-            raise BlockAlreadyConnectedException()
-
-        copy = self.clone()
-        copy._blocks.append(block)
-
-        # todo: CONFLICT! There should be DeclarationScheduledToRun as "copy"
-        block.register_resolved_task(copy)  # register a both side relation
 
         return copy
 
@@ -260,9 +236,6 @@ class TaskDeclaration(TaskDeclarationInterface):
 
         return task.__doc__.strip() if task.__doc__ else ''
 
-    def block(self) -> ArgumentBlock:
-        return self._blocks[-1]
-
     @staticmethod
     def parse_name(name: str) -> tuple:
         split = name.split(':')
@@ -304,29 +277,12 @@ class TaskDeclaration(TaskDeclarationInterface):
     def __str__(self):
         return 'TaskDeclaration<%s>' % self.to_full_name()
 
-    def with_runtime_declaration(self, parent: Optional['GroupDeclaration'], args: List[str]):
-        """
-        # todo: Czy na pewno? Może jako osobny byt? Wydaje mi się, że tak.
-        #       ScheduledTaskToRun może?
-
-        :param parent:
-        :param args:
-        :return:
-        """
-
-    @property
-    def parent_pipeline(self) -> Optional['GroupDeclaration']:
-        """
-        Information that optionally the TaskDeclaration was defined inside GroupDeclaration (Pipeline)
-        :return:
-        """
-
-        return self._parent
-
 
 class DeclarationScheduledToRun(object):
     """
     Declaration scheduled to be executed
+
+    :internal: todo: Move
     """
 
     declaration: TaskDeclaration
@@ -441,6 +397,8 @@ class DeclarationScheduledToRun(object):
 class DeclarationBelongingToPipeline(DeclarationScheduledToRun):
     """
     Task declared inside a Pipeline
+
+    :internal: todo: Move
     """
 
     def append(self, runtime_arguments: List[str], env: Dict[str, str], user_overridden_env: List[str]):

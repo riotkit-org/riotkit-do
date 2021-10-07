@@ -236,7 +236,11 @@ class ApplicationContext(ContextInterface):
                     resolved_tasks.append(pipeline_partial)
 
         # release all collected Tasks as a group with blocks connected, environment and arguments merged
-        return GroupDeclaration(name, resolved_tasks, pipeline.get_description())
+        return GroupDeclaration(
+            name=name,
+            declarations=resolved_tasks,
+            description=pipeline.get_description()
+        )
 
     def __str__(self):
         return 'ApplicationContext<id={id}, workdir={workdir},prefix={prefix}>'.format(

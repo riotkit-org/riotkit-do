@@ -54,6 +54,11 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
         declaration = scheduled_declaration.declaration
 
         # 1. notify
+        for block in scheduled_declaration.blocks:
+            if block.should_stop_processing_rest_of_tasks:
+                self._observer.task_skipped(scheduled_declaration)
+                return
+
         self._observer.task_started(scheduled_declaration)
 
         # 2. parse arguments
@@ -144,10 +149,22 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
                     self.io.internal('Skipping default empty block')
                     continue
 
-                is_failure_repaired = self._handle_failure_in_specific_block(
-                    scheduled_declaration, exception, block,
-                    task_num=task_num
-                )
+                # Pipeline in Pipeline OR Block in Block
+                if block_num >= 2:
+                    is_failure_repaired = self._handle_failure_in_inherited_block(
+                        scheduled_declaration,
+                        exception,
+                        block,
+                        task_num=task_num,
+                        child_block=blocks[block_num - 2]
+                    )
+                else:
+                    is_failure_repaired = self._handle_failure_in_main_block(
+                        scheduled_declaration,
+                        exception,
+                        block,
+                        task_num=task_num
+                    )
 
                 # if Block modifiers worked, and the Task result is repaired, then do not raise exception at the end
                 # also do not process next blocks
@@ -158,10 +175,92 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
         if not keep_going:
             raise InterruptExecution() from exception
 
-    def _handle_failure_in_specific_block(self, scheduled_declaration: DeclarationScheduledToRun,
-                                          exception: Exception,
-                                          block: ArgumentBlock,
-                                          task_num: int) -> bool:
+    def _handle_failure_in_inherited_block(self, scheduled_declaration: DeclarationScheduledToRun,
+                                           exception: Exception,
+                                           block: ArgumentBlock,
+                                           task_num: int,
+                                           child_block: ArgumentBlock) -> bool:
+        """
+        Given structure:
+            :pipeline:
+                :first_task
+                :other_pipeline_inside:
+                    :some_task
+                :last_task
+
+        Given :some_task inside :other_pipeline_inside fails
+        And :pipeline was called
+
+        Then:
+            block = :pipeline block
+            child_block = :pipeline_inner block
+        """
+
+        # ==============================================================================
+        #  @retry: Retry whole inherited Pipeline (all tasks)
+        #          So @retry = @retry-block of inherited Pipeline
+        # ==============================================================================
+        while block.should_task_be_retried(scheduled_declaration.declaration):
+            self.io.internal(f'{block} @retry activated as @retry-block of {child_block} (due to inherited Pipeline)')
+            self.io.internal(f'Got block to retry: {child_block}')
+            block.task_retried(scheduled_declaration.declaration)
+
+            if self._retry_block(child_block, task_num):
+                return True
+
+        # ==============================================================================
+        #  @retry-block: Repeat all Tasks in current Block until success, or
+        # ==============================================================================
+        while block.should_block_be_retried():
+            if self._retry_block(block, task_num):
+                return True
+
+        # there should be a visible information that task failed
+        self._notify_error(scheduled_declaration, exception)
+
+        # ===================================================================================================
+        #  @error: Send an error notification, execute something in case of a failure
+        # ===================================================================================================
+        if block.has_action_on_error():
+            for resolved in block.resolved_error_tasks():
+                resolved: DeclarationScheduledToRun
+
+                try:
+                    self.execute(resolved, resolved.created_task_num, inherited=True)
+
+                except InterruptExecution:
+                    # immediately exit, when any of @on-error Task will fail
+                    return False
+
+        # ===================================================================================================
+        #  @rescue: Let's execute a Task instead of our original Task in case, when our original Task fails
+        # ===================================================================================================
+        if block.should_rescue_task():
+            self._observer.task_rescue_attempt(scheduled_declaration)
+
+            for resolved in block.resolved_rescue_tasks():
+                resolved: DeclarationScheduledToRun
+
+                try:
+                    self.execute(resolved, resolved.created_task_num, inherited=True)
+
+                except InterruptExecution:
+                    return False  # it is expected, that all @rescue tasks will succeed
+
+            # if there is no any InterruptException, then we rescued the inherited Pipeline
+            # and we can skip the rest of it's Tasks
+
+            self._observer.rescued_inherited_block(failing_task=scheduled_declaration)
+            child_block.whole_block_rescued()
+
+            return True
+
+        return False
+
+    def _handle_failure_in_main_block(self, scheduled_declaration: DeclarationScheduledToRun,
+                                      exception: Exception,
+                                      block: ArgumentBlock,
+                                      task_num: int) -> bool:
 
         # ==============================================================================
         #  @retry: Repeat a Task multiple times, until it hits the maximum repeat count
@@ -184,23 +283,7 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
         #  @retry-block: Repeat all Tasks in current Block until success, or
         # ==============================================================================
         while block.should_block_be_retried():
-            self.io.internal(f'Got block to retry: {block}')
-            self._observer.group_of_tasks_retried(block)
-
-            succeed_count = 0
-            expected_tasks_to_succeed = len(block.resolved_body_tasks())
-
-            for task_in_block in block.resolved_body_tasks():
-                try:
-                    self.execute(task_in_block, task_num, inherited=True)
-
-                except InterruptExecution:
-                    break
-
-                # if not raised the exception, then continue not worked
-                succeed_count += 1
-
-            if succeed_count == expected_tasks_to_succeed:
+            if self._retry_block(block, task_num):
                 return True
 
         # regardless of @error & @rescue there should be a visible information that task failed
@@ -242,6 +325,25 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
         self.io.internal('No valid modifier found in Block to change Task result')
 
         return False
+
+    def _retry_block(self, block: ArgumentBlock, task_num: int) -> bool:
+        self.io.internal(f'Got block to retry: {block}')
+        self._observer.group_of_tasks_retried(block)
+
+        succeed_count = 0
+        expected_tasks_to_succeed = len(block.resolved_body_tasks())
+
+        for task_in_block in block.resolved_body_tasks():
+            try:
+                self.execute(task_in_block, task_num, inherited=True)
+
+            except InterruptExecution:
+                break
+
+            # if not raised the exception, then continue not worked
+            succeed_count += 1
+
+        return succeed_count == expected_tasks_to_succeed
 
     def _notify_error(self, scheduled_to_run: DeclarationScheduledToRun,
                       exception: Optional[Exception] = None):

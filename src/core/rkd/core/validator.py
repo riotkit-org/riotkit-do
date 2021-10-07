@@ -2,9 +2,9 @@
 from typing import Union
 
 from .api.inputoutput import IO
-from .api.syntax import TaskDeclaration, GroupDeclaration, DeclarationScheduledToRun
+from .api.syntax import DeclarationScheduledToRun
 from .argparsing.parser import CommandlineParsingHelper
-from .exception import NotSupportedEnvVariableError, BlockDefinitionLogicError
+from .exception import NotSupportedEnvVariableError
 from .iterator import TaskIterator
 
 
@@ -22,10 +22,6 @@ class TaskDeclarationValidator(TaskIterator):
 
     def assert_declaration_is_valid(self, scheduled: DeclarationScheduledToRun):
         self.io.internal(f'Validating {scheduled.debug()}')
-
-        for block in scheduled.get_blocks_ordered_by_children_to_parent():
-            if block.has_action_on_error() and block.should_rescue_task():
-                raise BlockDefinitionLogicError.from_both_rescue_and_error_defined(block)
 
         # check if arguments are satisfied
         CommandlineParsingHelper.parse(scheduled.declaration, scheduled.args)

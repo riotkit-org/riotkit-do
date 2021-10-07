@@ -70,6 +70,7 @@ class ArgumentBlock(object):
     _retry_counter_on_whole_block: int
     _debug_id: str
     _is_default_block: bool
+    _should_stop_processing_rest_of_tasks: bool
 
     def __init__(self, body: List[str] = None, header: str = '{...}', rescue: str = '', error: str = '', retry: int = 0,
                  retry_block: int = 0):
@@ -95,11 +96,12 @@ class ArgumentBlock(object):
         except ValueError:
             self.retry_whole_block = 0
 
-        # lazy-filled by parser on later stage
+        # lazy-filled by parser and executor on later stage
         self.on_rescue = []
         self.on_error = []
         self._retry_counter_per_task = {}
         self._retry_counter_on_whole_block = 0
+        self._should_stop_processing_rest_of_tasks = False
         self._is_default_block = False
 
         # lazy-filled by TaskResolver on later stage
@@ -228,6 +230,17 @@ class ArgumentBlock(object):
 
         self._retry_counter_per_task[declaration] += 1
 
+    def whole_block_rescued(self):
+        """
+        Example case when it happens:
+          1. When Pipeline B fails inside Pipeline A
+          2. And @rescue from Pipeline A happens
+          3. Then the rest of Pipeline B tasks are skipped from execution
+        :return:
+        """
+
+        self._should_stop_processing_rest_of_tasks = True
+
     def whole_block_retried(self):
         """
         When all tasks from this block should be retried
@@ -259,6 +272,10 @@ class ArgumentBlock(object):
 
         # actual state < declared maximum
         return self._retry_counter_on_whole_block < self.retry_whole_block
+
+    @property
+    def should_stop_processing_rest_of_tasks(self) -> bool:
+        return self._should_stop_processing_rest_of_tasks
 
     @property
     def how_many_times_retried_block(self):
