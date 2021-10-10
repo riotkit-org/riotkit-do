@@ -213,7 +213,7 @@ class ArgParsingTest(BasicTestingCase):
         ])
 
         self.assertEqual(
-            {'imports': [], 'log_level': 'debug', 'silent': False, 'no_ui': False},
+            {'imports': [], 'log_level': 'debug', 'silent': False, 'no_ui': False, 'print_event_history': False},
             result
         )
 
@@ -251,7 +251,7 @@ class ArgParsingTest(BasicTestingCase):
         ])
 
         self.assertEqual(
-            {'imports': [], 'log_level': 'debug', 'silent': False, 'no_ui': False},
+            {'imports': [], 'log_level': 'debug', 'silent': False, 'no_ui': False, 'print_event_history': False},
             result
         )
 

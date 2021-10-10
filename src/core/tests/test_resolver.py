@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
 
-from typing import Union
+from typing import List
 
 from rkd.core.api.inputoutput import IO
-
 from rkd.core.api.testing import BasicTestingCase
 from rkd.core.context import ApplicationContext
 from rkd.core.resolver import TaskResolver
+from rkd.core.resolver_result import ResolvedTaskBag
 from rkd.core.standardlib.shell import ShellCommandTask
-from rkd.core.api.syntax import TaskDeclaration, GroupDeclaration, TaskAliasDeclaration
+from rkd.core.api.syntax import TaskDeclaration, TaskAliasDeclaration
 from rkd.core.argparsing.model import TaskArguments, ArgumentBlock
 from rkd.core.aliasgroups import parse_alias_groups_from_env
+
+
+def repr_list_as_invoked_task(bag: ResolvedTaskBag) -> List[str]:
+    return list(map(
+        lambda declaration: declaration.repr_as_invoked_task,
+        bag.scheduled_declarations_to_run
+    ))
 
 
 class TestResolver(BasicTestingCase):
@@ -36,25 +43,18 @@ class TestResolver(BasicTestingCase):
         context.io = IO()
         context.compile()
 
-        # results collection
-        result_tasks = []
-
-        def assertion_callback(declaration: TaskDeclaration,
-                               task_num: int,
-                               parent: Union[GroupDeclaration, None] = None,
-                               args: list = []):
-            result_tasks.append(declaration.to_full_name() + ' ' + (' '.join(declaration.get_args())))
-
         # action
         resolver = TaskResolver(context, [])
-        resolver.resolve(
+        resolved_tasks = resolver.resolve(
             [ArgumentBlock([':test', '--short']).clone_with_tasks([TaskArguments(':test', ['--short'])])],
-            assertion_callback
         )
 
-        self.assertEqual([':sh -c uname -a', ':sh -c ps aux'], result_tasks)
+        self.assertEqual(
+            [':sh -c uname -a --short', ':sh -c ps aux --short'],
+            repr_list_as_invoked_task(resolved_tasks)
+        )
 
-    def test_resoles_regular_task(self):
+    def test_resolves_regular_task(self):
         """Checks that :sh resolution works fine"""
 
         context = ApplicationContext(
@@ -68,18 +68,10 @@ class TestResolver(BasicTestingCase):
         context.io = IO()
         context.compile()
 
-        result_tasks = []
-
-        def assertion_callback(declaration: TaskDeclaration,
-                               task_num: int,
-                               parent: Union[GroupDeclaration, None] = None,
-                               args: list = []):
-            result_tasks.append(declaration.to_full_name())
-
         resolver = TaskResolver(context, [])
-        resolver.resolve([ArgumentBlock([':sh']).clone_with_tasks([TaskArguments(':sh', [])])], assertion_callback)
+        resolved_tasks = resolver.resolve([ArgumentBlock([':sh']).clone_with_tasks([TaskArguments(':sh', [])])])
 
-        self.assertEqual([':sh'], result_tasks)
+        self.assertEqual(':sh', resolved_tasks.scheduled_declarations_to_run[0].repr_as_invoked_task)
 
     def test_resolves_aliased_task(self):
         """Checks 'alias groups' feature about to resolve some group name to other group name
@@ -98,16 +90,10 @@ class TestResolver(BasicTestingCase):
         )
         context.io = IO()
         context.compile()
-        result_tasks = []
-
-        def assertion_callback(declaration: TaskDeclaration,
-                               task_num: int,
-                               parent: Union[GroupDeclaration, None] = None,
-                               args: list = []):
-            result_tasks.append(declaration.to_full_name())
 
         resolver = TaskResolver(context, parse_alias_groups_from_env(':bella-ciao->'))
-        resolver.resolve([ArgumentBlock([':bella-ciao:sh'])
-                         .clone_with_tasks([TaskArguments(':bella-ciao:sh', [])])], assertion_callback)
+        resolved_tasks = resolver.resolve([
+            ArgumentBlock([':bella-ciao:sh']).clone_with_tasks([TaskArguments(':bella-ciao:sh', [])])
+        ])
 
-        self.assertEqual([':sh'], result_tasks)
+        self.assertEqual(':sh', resolved_tasks.scheduled_declarations_to_run[0].repr_as_invoked_task)

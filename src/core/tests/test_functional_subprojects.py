@@ -45,7 +45,7 @@ class TestFunctionalSubprojects(FunctionalTestingCase):
 
             self.assertIn('Hello from testsubproject1', full_output)
 
-    def test_subproject_in_python_syntax(self):
+    def test_subproject_in_python_syntax_has_correct_workdir(self):
         """
         The structure:
         - ROOT PROJECT (makefile.yaml)
@@ -60,4 +60,3 @@ class TestFunctionalSubprojects(FunctionalTestingCase):
 
             self.assertIn('internal-samples/subprojects/testsubproject1/infrastructure/terraform', full_output)
             self.assertIn('from terraform', full_output)
-

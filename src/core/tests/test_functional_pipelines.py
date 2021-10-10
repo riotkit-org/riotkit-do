@@ -478,6 +478,7 @@ class TestFunctionalPipelines(FunctionalTestingCase):
                             tasks:
                                 - task: :sh -c 'echo "First book";'
                                 - task: :sh -c 'echo "The Conquest of Bread"; exit 1'
+                                - task: :sh -c 'echo "This will not execute";'
 
                 :example:
                     description: "This is an example pipeline"
@@ -500,30 +501,43 @@ class TestFunctionalPipelines(FunctionalTestingCase):
 
         self.assertEqual(
             [
+                # tasks before inherited Pipeline :books was called
                 ">> [1] Executing `:sh -c echo 'Rocker'` [part of :example]",
                 "The task `:sh -c echo 'Rocker'` [part of :example] succeed.",
-
                 ">> [2] Executing `:sh -c echo 'Kropotkin'` [part of :example]",
                 "The task `:sh -c echo 'Kropotkin'` [part of :example] succeed.",
-
                 '>> [3] Executing `:sh -c echo "First book";` [part of :example]',
+
                 'The task `:sh -c echo "First book";` [part of :example] succeed.',
-
                 '>> [4] Executing `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
-                '>> [4] Retrying `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
-                'The task `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example] ended with a failure',
-                '>> [4] Retrying `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
-                '>> [4] Retrying `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
-                'The task `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example] ended with a failure',
-                '>> [4] Task ":sh -c echo "The Conquest of Bread"; exit 1" rescue attempt started',
 
+                # 'The Conquest of Bread' is retried one time as part of it's MAIN BLOCK
+                '>> [4] Retrying `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
+                'The task `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example] ended with a failure',
+                '>> [3] Retrying `:sh -c echo "First book";` [part of :example]',
+
+                # Then :example's (parent Pipeline) @retry is used as a @retry-block of all :books tasks
+                'The task `:sh -c echo "First book";` [part of :example] succeed.',
+                '>> [4] Retrying `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
+                '>> [3] Retrying `:sh -c echo "First book";` [part of :example]',
+                'The task `:sh -c echo "First book";` [part of :example] succeed.',
+                '>> [4] Retrying `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example]',
+                'The task `:sh -c echo "The Conquest of Bread"; exit 1` [part of :example] ended with a failure',
+
+                # After retries there is @rescue launched from :example (parent Pipeline)
+                '>> [4] Task ":sh -c echo "The Conquest of Bread"; exit 1" rescue attempt started',
                 '>> [5] Executing `:sh -c echo "Rescue from :example"; exit 0`',
                 'The task `:sh -c echo "Rescue from :example"; exit 0` succeed.',
 
-                ">> [6] Executing `:sh -c echo 'Bakunin. Rescued'` [part of :example]",
-                "The task `:sh -c echo 'Bakunin. Rescued'` [part of :example] succeed.",
+                # this Task is skipped because previous Task in :books Pipeline failed
+                # and @rescue block was from parent - :example Pipeline, so the inherited :example Pipeline
+                # was treated as a whole thing while doing rescue on :example level
+                '>> [6] Skipping `:sh -c echo "This will not execute";` [part of :example]',
 
-                ">> [7] Executing `:sh -c echo 'After rescued block'` [part of :example]",
+                # after successful rescue the rest of Tasks are continued
+                ">> [7] Executing `:sh -c echo 'Bakunin. Rescued'` [part of :example]",
+                "The task `:sh -c echo 'Bakunin. Rescued'` [part of :example] succeed.",
+                ">> [8] Executing `:sh -c echo 'After rescued block'` [part of :example]",
                 "The task `:sh -c echo 'After rescued block'` [part of :example] succeed."
             ],
             parsed_log

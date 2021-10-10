@@ -361,7 +361,7 @@ class DeclarationScheduledToRun(object):
         :return:
         """
 
-        return self.declaration.to_full_name() + ' ' + ' '.join(self.args)
+        return (self.declaration.to_full_name() + ' ' + ' '.join(self.args)).strip()
 
     def get_blocks_ordered_by_children_to_parent(self) -> List[ArgumentBlock]:
         """

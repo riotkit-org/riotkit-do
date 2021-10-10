@@ -204,9 +204,9 @@ class ContextTest(BasicTestingCase):
 
         # :deeper = :init
         # :deep = :init :deeper = :init :init :init
-        self.assertEqual(':test', task.get_declarations()[0].to_full_name())
-        self.assertEqual(':test', task.get_declarations()[1].to_full_name())
-        self.assertEqual(':test', task.get_declarations()[2].to_full_name())
+        self.assertEqual(':test', task.get_declarations()[0].repr_as_invoked_task)
+        self.assertEqual(':test', task.get_declarations()[1].repr_as_invoked_task)
+        self.assertEqual(':test', task.get_declarations()[2].repr_as_invoked_task)
 
     def test_expand_contexts_expands_one_context(self) -> None:
         # MAIN PROJECT context

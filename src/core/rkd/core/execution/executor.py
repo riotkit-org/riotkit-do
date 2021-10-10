@@ -340,7 +340,6 @@ class OneByOneTaskExecutor(ExecutorInterface, TaskIterator):
             except InterruptExecution:
                 break
 
-            # if not raised the exception, then continue not worked
             succeed_count += 1
 
         return succeed_count == expected_tasks_to_succeed

@@ -22,10 +22,10 @@ class TestFunctional(FunctionalTestingCase):
 
         full_output, exit_code = self.run_and_capture_output([':tasks'])
 
-        self.assertIn(' >> Executing :tasks', full_output)
-        self.assertIn('[global]', full_output)
-        self.assertIn(':version', full_output)
-        self.assertIn('succeed.', full_output)
+        self.assertIn('Executing `:tasks`', full_output, msg='SYSTEM UI is expected to be visible by default')
+        self.assertIn('[global]', full_output, msg='By default groups should be visible')
+        self.assertIn(':version', full_output, msg='By default :version task should be included')
+        self.assertIn('succeed.', full_output, msg='Success message for :task exection expected')
         self.assertEqual(0, exit_code)
 
     def test_global_help_switch(self):
@@ -56,10 +56,15 @@ class TestFunctional(FunctionalTestingCase):
         self.assertIn('/var', full_output)
 
     def test_silent_switch_makes_tasks_task_to_not_show_headers(self):
+        """
+        When --silent is defined AFTER task call (as it's arguments)
+        Then the SYSTEM UI is shown (because --silent is declared later than SYSTEM UI is initialized)
+        """
+
         full_output, exit_code = self.run_and_capture_output([':tasks', '--silent', '--all'])
 
         # this is a global header
-        self.assertIn(' >> Executing :tasks', full_output)
+        self.assertIn('Executing `:tasks --silent --all`', full_output)
 
         # this is a header provided by :tasks
         self.assertNotIn('[global]', full_output)
