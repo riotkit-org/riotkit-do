@@ -76,6 +76,12 @@ Simplest modifier that retries each failed task in a block up to maximum of N ti
 
 The example actually combines **@retry** + **@rescue**. But **@retry** can be used alone.
 
+.. WARNING::
+
+    When retrying a Pipeline inside of a Pipeline, then all that child Pipeline Tasks will be repeated,
+    it will work like a @retry-block for inherited Pipeline.
+
+
 **Syntax:**
 
 .. tabs::
@@ -222,9 +228,49 @@ Works similar as **@error**, but with difference that **@rescue** changes the re
     When **@rescue** succeeds, then we assume that original Task that failed is now ok.
 
 
+.. WARNING::
+
+    When rescuing a whole Pipeline inside other Pipeline, then failing Task will be rescued and the rest of Tasks
+    from child Pipeline will be skipped.
+
+
 **Example workflow:**
 
 .. image:: rkd-pipeline-rescue.png
+
+
+Order of modifiers execution
+----------------------------
+
+1. @retry: Each task is repeated until success or repeat limit
+2. @retry-block: Whole block is repeated until success or repeat limit
+3. @rescue: A rescue attempt of given Task or inherited Pipeline is attempted
+4. @error: An error notification is sent, when all previous steps failed
+
+Pipeline in Pipeline - how modifiers behave
+-------------------------------------------
+
+Having Pipeline called inside other Pipeline, the inherited one is treated similar to a Task.
+
+.. code:: yaml
+
+    :pipeline_1 (@retry, @error, @rescue)
+        :task_1
+        :pipeline_2 (@retry, @rescue, ...)
+            :subtask_1
+            :subtask_2
+        :task_3
+
+
+When :code:`:pipeline_2` fails then at first - `:pipeline_2` modifiers are called.
+In case, when `:pipeline_2` modifiers didn't rescue the Pipeline, then modifiers from parent level :code:`:pipeline_1` are called.
+
+.. WARNING::
+
+    When modifiers on main level of Pipeline fails, then parent Pipeline modifiers are inherited that behaves differently.
+
+    1. @retry from parent becomes a @retry-block of whole Pipeline.
+    2. @rescue after rescuing a Task inside child Pipeline is skipping remaining Tasks in child Pipeline
 
 
 Python syntax reference (API)
