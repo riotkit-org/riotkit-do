@@ -253,27 +253,27 @@ A Pipeline inside a Pipeline is when we have defined a Pipeline, and one of it's
 
 .. code:: yaml
 
-        version: org.riotkit.rkd/yaml/v2
+    version: org.riotkit.rkd/yaml/v2
 
-        # ...
+    # ...
 
-        pipelines:
-            :prepare_disk_space:
-                tasks:
-                    - task: ":db:clear_buffers"
-                    - task: ":db:clear_temporary_directory"
+    pipelines:
+        :prepare_disk_space:
+            tasks:
+                - task: ":db:clear_buffers"
+                - task: ":db:clear_temporary_directory"
 
-            :upgrade:
-                tasks:
-                    - task: ":db:backup"
-                    - task: ":db:stop"
-                    - task: ":prepare_disk_space"   # HERE IS OUR INHERITED PIPELINE
-                    - block:
-                          error: [':notify', '--msg="Failed"']
-                          tasks:
-                              - task: [':db:migrate']
-                    - task: [":db:start"]
-                    - task: [":notify", '--msg', 'Finished']
+        :upgrade:
+            tasks:
+                - task: ":db:backup"
+                - task: ":db:stop"
+                - task: ":prepare_disk_space"   # HERE IS OUR INHERITED PIPELINE
+                - block:
+                      error: [':notify', '--msg="Failed"']
+                      tasks:
+                          - task: [':db:migrate']
+                - task: [":db:start"]
+                - task: [":notify", '--msg', 'Finished']
 
 
 Pipeline in Pipeline - how modifiers behave
