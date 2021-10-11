@@ -267,7 +267,7 @@ In case, when `:pipeline_2` modifiers didn't rescue the Pipeline, then modifiers
 
     When modifiers on main level of Pipeline fails, then parent Pipeline modifiers are inherited that behaves differently.
 
-    1. @retry from parent becomes a @retry-block of whole Pipeline.
+    1. @retry from parent becomes a @retry-block of whole Pipeline (we retry a Pipeline now)
     2. @rescue after rescuing a Task inside child Pipeline is skipping remaining Tasks in child Pipeline
 
 
