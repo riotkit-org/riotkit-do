@@ -9,8 +9,6 @@ Pipelines
 
     Modifiers can be used together e.g. **@retry** + **@rescue**, **@retry** + **@error**
 
-    Exceptions are: **@retry** + **@retry-block** and **@error** + **@rescue**
-
 
 Basic pipeline
 --------------
