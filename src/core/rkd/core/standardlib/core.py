@@ -10,10 +10,9 @@ from ..api.contract import TaskInterface, ArgumentEnv
 from ..api.contract import ExecutionContext
 from ..api.contract import TaskDeclarationInterface
 from ..api.syntax import TaskDeclaration
-from ..inputoutput import clear_formatting
+from ..api.inputoutput import clear_formatting
 from ..aliasgroups import parse_alias_groups_from_env, AliasGroup
 from ..packaging import find_resource_directory
-from .. import env
 from .shell import ShellCommandTask
 
 

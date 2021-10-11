@@ -6,12 +6,11 @@ CONTRACT (part of API)
 Core interfaces that should be changed WITH CAREFUL as those are parts of API.
 Any breaking change there requires to bump RKD major version (see: Semantic Versioning)
 """
-from tabulate import tabulate
 from abc import abstractmethod, ABC as AbstractClass, ABC
 from typing import Dict, List, Union, Optional, Type
 from argparse import ArgumentParser
 
-from ..inputoutput import IO
+from .inputoutput import IO
 from ..exception import UndefinedEnvironmentVariableUsageError
 from ..exception import EnvironmentVariableNotUsed
 from ..exception import MissingInputException

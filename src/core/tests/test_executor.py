@@ -13,7 +13,7 @@ from rkd.core.api.inputoutput import BufferedSystemIO, SystemIO
 from rkd.core.api.inputoutput import IO
 from rkd.core.api.contract import ExecutionContext
 from rkd.core.api.testing import BasicTestingCase
-from rkd.core.contract import TaskInterface
+from rkd.core.api.contract import TaskInterface
 from rkd.core.test import TaskForTesting
 from rkd.core.test import TaskForTestingWithRKDCallInside
 

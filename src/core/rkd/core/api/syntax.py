@@ -140,30 +140,6 @@ class TaskDeclaration(TaskDeclarationInterface):
 
         return copy
 
-    def with_env(self, envs: Dict[str, str]):
-        """ Immutable environment setter. Produces new object each time. """
-
-        copy = self.clone()
-        copy._env = envs
-
-        return copy
-
-    def with_args(self, args: List[str]):
-        """ Immutable arguments setter. Produces new object each time """
-
-        copy = self.clone()
-        copy._args = args
-
-        return copy
-
-    def with_user_overridden_env(self, env_list: list):
-        """ Immutable arguments setter. Produces new object each time """
-
-        copy = self.clone()
-        copy._user_defined_env = env_list
-
-        return copy
-
     def as_part_of_subproject(self, workdir: str, subproject_name: str) -> 'TaskDeclaration':
         copy = self.clone()
 
@@ -324,10 +300,6 @@ class DeclarationScheduledToRun(object):
         env.update(self._env)
 
         return env
-
-    @property
-    def user_overridden_env(self):
-        return self.declaration.get_list_of_user_overridden_envs() + self._user_overridden_env
 
     @property
     def task_num(self) -> int:

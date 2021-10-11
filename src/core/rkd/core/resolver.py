@@ -30,8 +30,12 @@ class TaskResolver(object):
         """
         Resolve selected blocks-of-tasks into TaskDeclaration and filled up ArgumentBlock with TaskDeclaration objects
 
-        :param requested_blocks:
+        Scenario:
+            For GIVEN call ":sh -c 'something' :process-result" resolve tasks.
+            Then ":sh" and ":process-result" should be resolved into DeclarationScheduledToRun
+            And contain all runtime parameters
 
+        :param requested_blocks:
         :return:
         """
 

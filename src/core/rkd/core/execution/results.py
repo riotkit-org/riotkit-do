@@ -2,8 +2,8 @@ from datetime import datetime
 from typing import Union, Dict, List
 from ..api.syntax import DeclarationScheduledToRun
 from ..api.syntax import GroupDeclaration
+from ..api.inputoutput import SystemIO
 from ..argparsing.model import ArgumentBlock
-from ..inputoutput import SystemIO
 
 
 STATUS_STARTED = 'started'

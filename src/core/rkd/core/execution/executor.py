@@ -13,9 +13,7 @@ from ..api.contract import TaskInterface
 from ..api.contract import ExecutorInterface
 from ..api.contract import ExecutionContext
 from ..context import ApplicationContext
-from ..inputoutput import IO
-from ..inputoutput import SystemIO
-from ..inputoutput import output_formatted_exception
+from ..api.inputoutput import IO, SystemIO, output_formatted_exception
 from ..exception import InterruptExecution
 from .results import ProgressObserver
 from ..audit import decide_about_target_log_files
