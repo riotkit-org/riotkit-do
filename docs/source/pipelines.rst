@@ -245,6 +245,37 @@ Order of modifiers execution
 3. @rescue: A rescue attempt of given Task or inherited Pipeline is attempted
 4. @error: An error notification is sent, when all previous steps failed
 
+
+Pipeline in Pipeline
+--------------------
+
+A Pipeline inside a Pipeline is when we have defined a Pipeline, and one of it's called Tasks is other Pipeline.
+
+.. code:: yaml
+
+        version: org.riotkit.rkd/yaml/v2
+
+        # ...
+
+        pipelines:
+            :prepare_disk_space:
+                tasks:
+                    - task: ":db:clear_buffers"
+                    - task: ":db:clear_temporary_directory"
+
+            :upgrade:
+                tasks:
+                    - task: ":db:backup"
+                    - task: ":db:stop"
+                    - task: ":prepare_disk_space"   # HERE IS OUR INHERITED PIPELINE
+                    - block:
+                          error: [':notify', '--msg="Failed"']
+                          tasks:
+                              - task: [':db:migrate']
+                    - task: [":db:start"]
+                    - task: [":notify", '--msg', 'Finished']
+
+
 Pipeline in Pipeline - how modifiers behave
 -------------------------------------------
 
