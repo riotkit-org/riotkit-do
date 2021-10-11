@@ -18,7 +18,7 @@ from .contract import GroupDeclarationInterface
 from .contract import TaskInterface
 from .inputoutput import get_environment_copy, ReadableStreamType
 from ..argparsing.model import ArgumentBlock
-from ..exception import DeclarationException, BlockAlreadyConnectedException
+from ..exception import DeclarationException
 
 
 this = sys.modules[__name__]

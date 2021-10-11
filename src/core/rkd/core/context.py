@@ -20,7 +20,7 @@ from .api.contract import ContextInterface
 from .api.parsing import SyntaxParsing
 from .argparsing.parser import CommandlineParsingHelper
 from .api.inputoutput import SystemIO
-from .exception import TaskNotFoundException, BlockAlreadyConnectedException, TaskNameConflictException
+from .exception import TaskNotFoundException, TaskNameConflictException
 from .exception import ContextFileNotFoundException
 from .exception import PythonContextFileNotFoundException
 from .exception import NotImportedClassException
@@ -211,6 +211,13 @@ class ApplicationContext(ContextInterface):
 
                     pipeline_env = pipeline.get_env()
                     pipeline_env['RKD_PIPELINE_DEPTH'] = str(depth)
+
+                    # todo: in the future move subprojects feature to DeclarationBelongingToPipeline?
+                    if pipeline.is_part_of_subproject():
+                        resolved_declaration = resolved_declaration.as_part_of_subproject(
+                            workdir=pipeline.workdir,
+                            subproject_name=pipeline.project_name
+                        )
 
                     if isinstance(resolved_declaration, TaskDeclaration):
                         pipeline_partial = DeclarationBelongingToPipeline(

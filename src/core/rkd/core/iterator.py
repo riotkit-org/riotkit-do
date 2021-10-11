@@ -1,5 +1,5 @@
 import abc
-from typing import List, Tuple
+from typing import List
 from .api.syntax import DeclarationScheduledToRun
 from .argparsing.model import ArgumentBlock
 from .exception import AggregatedResolvingFailure, InterruptExecution

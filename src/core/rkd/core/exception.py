@@ -27,9 +27,6 @@ class TaskNameConflictException(ContextException):
         return cls(f'Context has Task + Pipeline with same name: {name}. Cannot resolve conflict.')
 
 
-class BlockAlreadyConnectedException(RiotKitDoException):
-    pass
-
 
 # +=================================
 # + EXECUTOR and RESOLVER EXCEPTIONS
