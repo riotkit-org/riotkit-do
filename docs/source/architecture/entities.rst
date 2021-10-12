@@ -78,7 +78,7 @@ Internally RKD must wrap any :code:`TaskDeclaration` and process :code:`Pipeline
 exists during execution that takes place now.**
 
 :code:`Pipeline` is translated into :code:`GroupDeclaration` and associated :code:`ArgumentBlock` objects which are no longer strings like :code:`:db:start --listen=5432`, but are separate :code:`TaskDeclaration` objects.
-There are all :code:`@rescue` and :code:`@error` modifiers resolved into objects, so everything is calculated on very early stage and therefore can be validated without disrupting later execution with very simple errors.
+There are all :code:`@rescue` and :code:`@error` modifiers resolved into objects, so everything is calculated on very early stage and therefore can be validated without disrupting later execution by any simple errors.
 
 Each :code:`TaskDeclaration` in Pipeline is wrapped into :code:`DeclarationBelongingToPipeline` which acts very similar to :code:`DeclarationScheduledToRun`, but it was named differently
 to distinct between something that was declared in the code (:code:`DeclarationBelongingToPipeline`) from something that contains a set of information how the user invoked the command from shell (:code:`DeclarationScheduledToRun`)
