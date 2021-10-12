@@ -104,4 +104,5 @@ Keep learning
    writing-tasks
    usage/index
    rts/index
+   architecture/index
 
