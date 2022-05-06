@@ -2,47 +2,45 @@ name: Test and release a package
 on: [push]
 
 jobs:
-#    test:
-#        runs-on: ubuntu-20.04
-#        strategy:
-#            matrix:
-#                python-version: ["3.8", "3.9", "3.7"]
-#        steps:
-#            - name: Set GIT identity
-#              run: |
-#                  git config --global user.email "riotkit@example.org"
-#                  git config --global user.name "Buenaventura Durruti"
-#
-#            - name: Checkout
-#              uses: actions/checkout@v2
-#
-#            - name: Setup Python ${{ matrix.python-version }}
-#              uses: actions/setup-python@v2
-#              with:
-#                  python-version: ${{ matrix.python-version }}
-#
-#            - name: Install dependencies
-#              run: "make deps"
-#
-#            - name: Build project
-#              run: "make package"
-#
-#            - name: Run RKD tests on Python ${{ matrix.python-version }}
-#              run: "make tests"
-#
-#            - name: Archive RKD tests results
-#              uses: dorny/test-reporter@v1
-#              if: always()
-#              with:
-#                  name: "[${{ matrix.python-version }}] RKD tests"
-#                  path: src/*/build/tests.xml
-#                  reporter: java-junit
-#
-#            - name: Run rkd_python tests on Python ${{ matrix.python-version }}
-#              run: "cd subpackages/rkd_python && make tests"
+    test:
+        runs-on: ubuntu-20.04
+        strategy:
+            matrix:
+                python-version: ["3.8", "3.9", "3.7"]
+            max-parallel: 2
+        steps:
+            - name: Set GIT identity
+              run: |
+                  git config --global user.email "riotkit@example.org"
+                  git config --global user.name "Buenaventura Durruti"
+
+            - name: Checkout
+              uses: actions/checkout@v2
+
+            - name: Setup Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v2
+              with:
+                  python-version: ${{ matrix.python-version }}
+
+            - name: Install dependencies
+              run: "make deps"
+
+            - name: Build project
+              run: "make package"
+
+            - name: Run RKD tests on Python ${{ matrix.python-version }}
+              run: "make tests"
+
+            - name: Archive RKD tests results
+              uses: dorny/test-reporter@v1
+              if: always()
+              with:
+                  name: "[${{ matrix.python-version }}] RKD tests"
+                  path: src/*/build/tests.xml
+                  reporter: java-junit
 
     release:
-#        needs: [test]
+        needs: [test]
         runs-on: ubuntu-20.04
         if: always()
         steps:

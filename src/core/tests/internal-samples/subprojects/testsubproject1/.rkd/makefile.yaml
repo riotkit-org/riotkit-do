@@ -1,0 +1,13 @@
+version: org.riotkit.rkd/yaml/v1
+imports: []
+subprojects: ['docs', 'infrastructure']
+tasks:
+    :hello:
+        description: Hello world task
+        steps: |
+            pwd
+
+    :test-pwd:
+        steps:
+            - echo "Hello from testsubproject1"
+            - pwd

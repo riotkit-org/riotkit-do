@@ -84,44 +84,32 @@ class TestFunctional(FunctionalTestingCase):
 
         self.assertIn('/dev', full_output)
 
-    def test_logging_tasks_into_separate_files(self):
+    def test_logging_tasks_into_separate_files(self) -> None:
         """Checks if RKD is able to log output to file per task
         """
 
         first = NamedTemporaryFile(delete=False)
         second = NamedTemporaryFile(delete=False)
 
-        try:
-            self.run_and_capture_output([
-                ':version',
-                '--log-to-file=' + first.name,
+        self.run_and_capture_output([
+            ':tasks',
+            '--log-to-file=' + first.name,
 
-                ':tasks',
-                '--log-to-file=' + second.name
-            ])
-        finally:
-            # assertions
-            with open(first.name) as first_handle:
-                content = first_handle.read()
+            ':sh', '-c', 'ls -la',
+            '--log-to-file=' + second.name,
+        ])
 
-                self.assertIn('RKD version', content)  # RKD version globally as a tool
-                self.assertIn(':sh', content)  # one of tasks
-                self.assertIn('rkd.core.standardlib.core.VersionTask', content)
+        with open(first.name) as first_handle:
+            first_content = first_handle.read()
 
-            with open(second.name) as second_handle:
-                content = second_handle.read()
+        with open(second.name) as second_handle:
+            second_content = second_handle.read()
 
-                self.assertIn(':exec', content)
-                self.assertIn(':tasks', content)
-                self.assertNotIn('>> Executing', content, msg='Global formatting should not be present')
+        self.assertIn('setup.json', second_content)
+        self.assertIn(':sh', first_content)
 
-                # assert that there is no output from previous task
-                self.assertNotIn('RKD version', content)
-                self.assertNotIn(':sh version', content)
-
-                # clean up
-            os.unlink(first.name)
-            os.unlink(second.name)
+        os.unlink(first.name)
+        os.unlink(second.name)
 
     def test_env_variables_listed_in_help(self):
         full_output, exit_code = self.run_and_capture_output(['--help'])

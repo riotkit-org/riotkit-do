@@ -76,6 +76,8 @@ class BasicTestingCase(TestCase):
     _cwd = None
 
     def setUp(self) -> None:
+        os.environ['RKD_PATH'] = ''
+
         self._envs = deepcopy(os.environ)
         self._cwd = os.getcwd()
 
@@ -121,7 +123,7 @@ class BasicTestingCase(TestCase):
         if io is None:
             io = NullSystemIO()
 
-        ctx = ApplicationContext([], [], '')
+        ctx = ApplicationContext([], [], '', subprojects=[], workdir='', project_prefix='')
         ctx.io = io
 
         task.internal_inject_dependencies(

@@ -30,7 +30,9 @@ class TestOneByOneExecutor(BasicTestingCase):
         string_io = StringIO()
 
         temp = TempManager(chdir='/tmp/')
-        container = ApplicationContext([], [], '')
+        container = ApplicationContext([], [], '', subprojects=[],
+                                       workdir='',
+                                       project_prefix='')
         container.io = BufferedSystemIO()
         executor = OneByOneTaskExecutor(container, observer=ProgressObserver(SystemIO()))
 

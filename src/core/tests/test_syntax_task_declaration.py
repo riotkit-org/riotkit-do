@@ -43,3 +43,23 @@ class TestTaskDeclaration(BasicTestingCase):
         declaration.get_task_to_execute().__doc__ = None
 
         self.assertEqual('', declaration.get_full_description())
+
+    def test_to_full_name_includes_subproject(self):
+        declaration = get_test_declaration()
+        declaration._project_name = ':docs'
+
+        # :rkd:test comes from get_test_declaration()
+        self.assertEqual(':docs:rkd:test', declaration.to_full_name())
+
+    def test_as_part_of_subproject_appends_required_attributes(self):
+        declaration = get_test_declaration()
+
+        subproject_declaration = declaration.as_part_of_subproject('/tmp', ':docs')
+
+        # new declaration
+        self.assertEqual(':docs:rkd:test', subproject_declaration.to_full_name())
+        self.assertEqual('/tmp/', subproject_declaration.workdir)
+
+        # old should be NOT TOUCHED
+        self.assertEqual(':rkd:test', declaration.to_full_name())
+        self.assertEqual('.', declaration.workdir)

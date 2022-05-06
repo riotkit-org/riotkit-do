@@ -83,6 +83,14 @@ class NotSupportedEnvVariableError(UserInputException):
 class YamlParsingException(ContextException):
     """Logic or syntax errors in makefile.yaml"""
 
+    @classmethod
+    def from_subproject_not_a_list(cls):
+        return cls('"subprojects" should be a list containing subdirectories to subprojects')
+
+    @classmethod
+    def from_not_a_string(cls, key: str):
+        return cls(f'"{key}" should be of a string type')
+
 
 class YAMLFileValidationError(YamlParsingException):
     """Errors related to schema validation"""

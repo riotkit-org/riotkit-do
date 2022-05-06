@@ -106,7 +106,7 @@ class TestRenderDirectoryTask(BasicTestingCase):
 
         # example files (please correct if changed in filesystem)
         self.assertIn('README.', str(renderings))
-        self.assertIn('requirements.txt', str(renderings))
+        self.assertIn('setup.json', str(renderings))
         self.assertIn('__init__.py', str(renderings))
 
     def test_no_files_deleted_when_option_disabled(self):

@@ -18,14 +18,51 @@ from ..exception import DeclarationException
 from uuid import uuid4
 
 
+def parse_path_into_subproject_prefix(path: str) -> str:
+    """
+    Logic for concatenating of subproject path from filesystem path as input
+
+    :param path:
+    :return:
+    """
+
+    return ':' + path.strip().strip('/').replace('/', ':').rstrip(': /')
+
+
+def merge_workdir(task_workdir: Optional[str], subproject_workdir: Optional[str]) -> str:
+    """
+    Pure domain method that decides how the workdir merge logic should look like
+    :param task_workdir:
+    :param subproject_workdir:
+    :return:
+    """
+
+    if not task_workdir:
+        task_workdir = ''
+
+    if not subproject_workdir:
+        return task_workdir
+
+    if task_workdir.startswith('/'):
+        return task_workdir
+
+    return subproject_workdir + '/' + task_workdir
+
+
 class TaskDeclaration(TaskDeclarationInterface):
+    """
+    Task Declaration is a DECLARED USAGE of a Task (instance of TaskInterface)
+    """
+
     _task: TaskInterface
     _env: Dict[str, str]       # environment at all
     _user_defined_env: list    # list of env variables overridden by user
     _args: List[str]
     _block: ArgumentBlock = None
     _unique_id: str
-    _workdir: Optional[str]
+    _workdir: Optional[str]        # current working directory (eg. combination of subproject + task)
+    _task_workdir: Optional[str]   # original task working directory as defined in task
+    _project_name: str
 
     def __init__(self, task: TaskInterface, env: Dict[str, str] = None, args: List[str] = None, workdir: str = None):
         if env is None:
@@ -42,9 +79,14 @@ class TaskDeclaration(TaskDeclarationInterface):
         self._env = merge_env(env)
         self._args = args
         self._workdir = workdir
+        self._task_workdir = workdir
         self._user_defined_env = list(env.keys())
+        self._project_name = ''
 
     def to_full_name(self):
+        if self._project_name:
+            return self._project_name + self._task.get_full_name()
+
         return self._task.get_full_name()
 
     def with_env(self, envs: Dict[str, str]):
@@ -78,6 +120,14 @@ class TaskDeclaration(TaskDeclarationInterface):
 
         copy = self._clone()
         copy._block = block
+
+        return copy
+
+    def as_part_of_subproject(self, workdir: str, subproject_name: str) -> 'TaskDeclaration':
+        copy = self._clone()
+
+        copy._workdir = merge_workdir(copy._task_workdir, workdir)
+        copy._project_name = subproject_name
 
         return copy
 
@@ -212,7 +262,7 @@ class GroupDeclaration(GroupDeclarationInterface):
         return name
 
 
-class TaskAliasDeclaration:
+class TaskAliasDeclaration(object):
     """ Allows to define a custom task name that triggers other tasks in proper order """
 
     _name: str
@@ -220,15 +270,25 @@ class TaskAliasDeclaration:
     _env: Dict[str, str]
     _user_defined_env: list  # list of env variables overridden by user
     _description: str
+    _workdir: str
+    _project_name: str
 
-    def __init__(self, name: str, to_execute: List[str], env: Dict[str, str] = {}, description: str = ''):
+    def __init__(self, name: str, to_execute: List[str], env: Dict[str, str] = None, description: str = ''):
+        if env is None:
+            env = {}
+
         self._name = name
         self._arguments = to_execute
         self._env = merge_env(env)
         self._user_defined_env = list(env.keys())
         self._description = description
+        self._workdir = ''
+        self._project_name = ''
 
     def get_name(self):
+        if self._project_name:
+            return self._project_name + self._name
+
         return self._name
 
     def get_arguments(self) -> List[str]:
@@ -244,6 +304,30 @@ class TaskAliasDeclaration:
 
     def get_description(self) -> str:
         return self._description
+
+    def _clone(self) -> 'TaskAliasDeclaration':
+        """Clone securely the object. There fields shared across objects as references could be kept"""
+
+        return deepcopy(self)
+
+    def as_part_of_subproject(self, workdir: str, subproject_name: str) -> 'TaskAliasDeclaration':
+        copy = self._clone()
+
+        copy._workdir = merge_workdir(copy._workdir, workdir)
+        copy._project_name = subproject_name
+
+        return copy
+
+    @property
+    def workdir(self) -> str:
+        return self._workdir
+
+    @property
+    def project_name(self) -> str:
+        return self._project_name
+
+    def is_part_of_subproject(self) -> bool:
+        return isinstance(self._project_name, str) and len(self._project_name) > 1
 
 
 def merge_env(env: Dict[str, str]):

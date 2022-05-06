@@ -13,3 +13,6 @@ for module_path in glob(base_path + '/*'):
 # export environment for usage in subprocess
 os.environ['PYTHONPATH'] = os.getenv('PYTHONPATH', '') + ':' + (':'.join(module_paths))
 os.putenv('PYTHONPATH', os.environ['PYTHONPATH'])
+
+os.environ['RKD_BIN'] = 'python -m rkd.core'
+os.putenv('RKD_BIN', os.environ['RKD_BIN'])

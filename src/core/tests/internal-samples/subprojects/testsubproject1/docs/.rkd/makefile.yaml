@@ -1,0 +1,8 @@
+version: org.riotkit.rkd/yaml/v1
+imports: []
+tasks:
+    :build-docs:
+        workdir: ".rkd"
+        description: Build documentation
+        steps: |
+            pwd
