@@ -5,3 +5,5 @@ python-dotenv==0.13.*
 tabulate==0.8.*
 setuptools>=45.0.0
 riotkit.pbs >= 1.0
+virtualenv >= 20
+
