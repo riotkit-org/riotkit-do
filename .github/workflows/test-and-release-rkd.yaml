@@ -7,7 +7,7 @@ jobs:
         strategy:
             matrix:
                 python-version: ["3.8", "3.9", "3.7"]
-            max-parallel: 2
+            max-parallel: 3
         steps:
             - name: Set GIT identity
               run: |
@@ -21,6 +21,9 @@ jobs:
               uses: actions/setup-python@v2
               with:
                   python-version: ${{ matrix.python-version }}
+
+            - name: Check if the code compiles
+              run: "python -m compileall ."
 
             - name: Install dependencies
               run: "make deps"

@@ -88,6 +88,10 @@ class TaskDeclarationInterface(AbstractClass):
     def format_task_name(self, name: str) -> str:
         pass
 
+    @property
+    def is_internal(self) -> bool:
+        return False
+
 
 class GroupDeclarationInterface(AbstractClass):
     @abstractmethod
@@ -270,6 +274,7 @@ class TaskInterface(TaskUtilities):
     _ctx: ContextInterface
     _executor: ExecutorInterface
     temp: TempManager
+    _internal: bool
 
     def internal_inject_dependencies(self, io: IO, ctx: ContextInterface,
                                      executor: ExecutorInterface, temp_manager: TempManager):
@@ -482,6 +487,10 @@ class TaskInterface(TaskUtilities):
         return tabulate(body, headers=header, floatfmt=floatfmt, numalign=numalign, tablefmt=tablefmt,
                         stralign=stralign, missingval=missingval, showindex=showindex,
                         disable_numparse=disable_numparse, colalign=colalign)
+
+    @property
+    def is_internal(self) -> bool:
+        return False
 
 
 class ArgparseArgument(object):

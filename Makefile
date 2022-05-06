@@ -25,7 +25,6 @@ tests:
 	  	fi; \
 	  	echo ">> $${package_directory}"; \
 	  	mkdir -p $$BASE_PATH/src/$$package_directory/build; \
-	  	set -x; \
 		cd "$$BASE_PATH/src/$$package_directory"; pytest --junitxml=build/tests.xml ${TESTS_ARGS};\
 	done
 

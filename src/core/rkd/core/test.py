@@ -19,9 +19,11 @@ from .api.inputoutput import NullSystemIO
 class TaskForTesting(CallableTask):
     _description = 'Test task for automated tests'
     _become: str = False
+    _internal: bool
 
-    def __init__(self):
+    def __init__(self, internal: bool = False):
         self._io = NullSystemIO()
+        self._internal = internal
         super().__init__(':test', None)
 
     def get_name(self) -> str:
@@ -42,6 +44,10 @@ class TaskForTesting(CallableTask):
             'ORG_NAME': 'International Workers Association'
         }
 
+    @property
+    def is_internal(self) -> bool:
+        return self._internal
+
 
 class TaskForTestingWithRKDCallInside(TaskForTesting):
     def execute(self, context: ExecutionContext) -> bool:
@@ -49,9 +55,9 @@ class TaskForTestingWithRKDCallInside(TaskForTesting):
         return True
 
 
-def get_test_declaration(task: TaskInterface = None) -> TaskDeclaration:
+def get_test_declaration(task: TaskInterface = None, internal: bool = False) -> TaskDeclaration:
     if not task:
-        task = TaskForTesting()
+        task = TaskForTesting(internal=internal)
 
     return TaskDeclaration(task, {}, [])
 

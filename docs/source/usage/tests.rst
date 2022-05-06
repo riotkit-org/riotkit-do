@@ -1,5 +1,5 @@
-Testing with unittest
-=====================
+Testing with PyTest
+===================
 
 :code:`rkd.core.api.testing` provides methods for running tasks with output capturing, a well as mocking RKD classes for unit testing of your task methods.
 To use our API just extend one of base classes.

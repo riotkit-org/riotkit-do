@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import pytest
 from rkd.core.api.testing import BasicTestingCase
 from rkd.core.test import get_test_declaration
 
@@ -63,3 +63,15 @@ class TestTaskDeclaration(BasicTestingCase):
         # old should be NOT TOUCHED
         self.assertEqual(':rkd:test', declaration.to_full_name())
         self.assertEqual('.', declaration.workdir)
+
+    def test_is_internal_inherits_from_task_when_not_defined(self) -> None:
+        declaration = get_test_declaration(internal=True)
+        declaration._is_internal = None
+
+        self.assertTrue(declaration.is_internal)
+
+    def test_is_internal_is_not_inherited_from_task_when_defined_in_taskdeclaration(self) -> None:
+        declaration = get_test_declaration(internal=True)  # this one is overridden
+        declaration._is_internal = False       # this one overrides the second one
+
+        self.assertFalse(declaration.is_internal)

@@ -8,13 +8,13 @@ from rkd.core.standardlib import InitTask, TasksListingTask, VersionTask, Create
 
 
 IMPORTS = [
-    TaskDeclaration(ShellCommandTask()),
-    TaskDeclaration(ExecProcessCommand()),
-    TaskDeclaration(InitTask()),
+    TaskDeclaration(ShellCommandTask(), internal=True),
+    TaskDeclaration(ExecProcessCommand(), internal=True),
+    TaskDeclaration(InitTask(), internal=True),
     TaskDeclaration(TasksListingTask()),
     TaskDeclaration(VersionTask()),
     TaskDeclaration(CreateStructureTask()),
-    TaskDeclaration(LineInFileTask())
+    TaskDeclaration(LineInFileTask(), internal=True)
 ]
 
 TASKS = [
