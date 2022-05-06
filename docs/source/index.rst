@@ -51,11 +51,11 @@ The virtual environment installation is similar in concept to the Gradle wrapper
 Getting started in freshly created structure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The "Quick start" section ends up with a **.rkd** directory, a requirements.txt and setup-venv.sh
+The "Quick start" section ends up with a **.rkd** directory, a requirements.txt and ./rkdw
 
-1. Use **eval $(setup-venv.sh)** to enter shell of your project, where RKD is installed with all dependencies
-2. Each time you install anything from **pip** in your project - add it to requirements.txt, you can install additional RKD tasks from pip
-3. In **.rkd/makefile.yaml** you can start adding your first tasks and imports
+1. Call RKD using a wrapper in project directory **./rkdw**
+2. Each time you install anything from **pip** in your project - add it to requirements.txt (or Pipfile), you can install additional RKD tasks from pip
+3. In **.rkd/makefile.yaml** add your first tasks, pipelines and imports
 
 Create your first task with :ref:`READ MORE ABOUT YAML SYNTAX IN THE BEGINNERS GUIDE`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
