@@ -38,6 +38,11 @@ RKD - RiotKit-Do
 	:target: https://img.shields.io/github/issues/riotkit-org/riotkit-do.svg
 	:alt: Issues open
 
+Looking for maintainers
+-----------------------
+
+Hi! This project needs you! We are sorry - our goals have changed, we need to focus on delivering docker images and Kubernetes operators for our partner-organizations to let them host their services securely, therefore we do not have resources to maintain such big project as RKD. RKD has a potential especially with it's plugin-based architecture.
+
 
 Task executor - balance between Makefile and Gradle [see documentation_], designed with :heart:  by RiotKit for DevOps.
 -----------------------------------------------------------------------------------------------------------------------
