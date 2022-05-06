@@ -1,5 +1,5 @@
 
-from rkd.api.syntax import TaskAliasDeclaration as Task
+from rkd.core.api.syntax import TaskAliasDeclaration as Task
 
 #
 # Example of Makefile-like syntax

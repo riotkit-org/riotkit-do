@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+jsonschema = ">=3.2.0"
+python-dotenv = "==0.13.0"
+tabulate = "==0.8.7"
+Jinja2 = ">=2.11"
+PyYAML = ">=5.3.1"
+setuptools-scm = "*"
+"riotkit.pbs" = "*"
+
+[dev-packages]
+pytest = "*"
+psutil = "*"
+importlib-metadata = {version = ">=0.12", markers = "python_version<'3.8'"}
+
+[pipenv]
+name = "rkd.core"
+allow_prereleases = true

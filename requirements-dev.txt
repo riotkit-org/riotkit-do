@@ -1,3 +1,4 @@
 pipenv>=2018.11.26
 psutil==5.7.2
 pytest==6.2.*
+setuptools_scm

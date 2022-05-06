@@ -1,0 +1,5 @@
+recursive-include rkd/core/misc *
+recursive-exclude tests *
+include requirements-external.txt
+include requirements-subpackages.txt
+include setup.json

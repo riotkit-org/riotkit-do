@@ -1,0 +1,1 @@
+rkd.process >= {{ current_version }}, < {{ next_minor_version }}

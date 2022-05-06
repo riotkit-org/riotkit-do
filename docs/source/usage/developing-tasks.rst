@@ -35,7 +35,7 @@ Option 2) For Python developers - task as a class
 
 This way allows to create tasks in a structure of a Python module. Such task can be packaged, then published to eg. PyPI (or other private repository) and used in multiple projects.
 
-Each task should implement methods of **rkd.api.contract.TaskInterface** interface, that's the basic rule.
+Each task should implement methods of **rkd.core.api.contract.TaskInterface** interface, that's the basic rule.
 
 Following example task could be imported with path **rkd.standardlib.ShellCommandTask**, in your own task you would have a different package name instead of **rkd.standardlib**.
 
@@ -68,8 +68,8 @@ Let's define then a task in Python in a simplest method.
 .. code:: python
 
     import os
-    from rkd.api.syntax import TaskDeclaration
-    from rkd.api.contract import ExecutionContext
+    from rkd.core.api.syntax import TaskDeclaration
+    from rkd.core.api.contract import ExecutionContext
     from rkd.standardlib import CallableTask
 
     def union_method(context: ExecutionContext) -> bool:

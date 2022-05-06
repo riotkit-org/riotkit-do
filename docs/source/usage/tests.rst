@@ -1,7 +1,7 @@
 Testing with unittest
 =====================
 
-:code:`rkd.api.testing` provides methods for running tasks with output capturing, a well as mocking RKD classes for unit testing of your task methods.
+:code:`rkd.core.api.testing` provides methods for running tasks with output capturing, a well as mocking RKD classes for unit testing of your task methods.
 To use our API just extend one of base classes.
 
 Example: Running a task on a fully featured RKD executor
@@ -12,7 +12,7 @@ Example: Running a task on a fully featured RKD executor
     #!/usr/bin/env python3
 
     import os
-    from rkd.api.testing import FunctionalTestingCase
+    from rkd.core.api.testing import FunctionalTestingCase
 
     SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -40,8 +40,8 @@ Example: Mocking RKD-specific dependencies in TaskInterface
 
 .. code:: python
 
-    from rkd.api.inputoutput import BufferedSystemIO
-    from rkd.api.testing import FunctionalTestingCase
+    from rkd.core.api.inputoutput import BufferedSystemIO
+    from rkd.core.api.testing import FunctionalTestingCase
 
     # ...
 
@@ -60,11 +60,11 @@ Example: Mocking RKD-specific dependencies in TaskInterface
 Documentation
 -------------
 
-.. autoclass:: rkd.api.testing.BasicTestingCase
+.. autoclass:: rkd.core.api.testing.BasicTestingCase
    :members:
 
-.. autoclass:: rkd.api.testing.FunctionalTestingCase
+.. autoclass:: rkd.core.api.testing.FunctionalTestingCase
    :members:
 
-.. autoclass:: rkd.api.testing.OutputCapturingSafeTestCase
+.. autoclass:: rkd.core.api.testing.OutputCapturingSafeTestCase
    :members:

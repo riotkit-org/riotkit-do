@@ -46,63 +46,63 @@ jinja_contexts = {
         'PKG_PIP': 'rkd_python'
     },
     'shell': {
-        'PKG_NAME': 'rkd.standardlib.shell',
-        'PKG_CLASS_NAME': 'rkd.standardlib.shell.ShellCommandTask',
+        'PKG_NAME': 'rkd.core.standardlib.shell',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.shell.ShellCommandTask',
         'PKG_PIP': 'rkd'
     },
     'exec': {
-        'PKG_NAME': 'rkd.standardlib.shell',
-        'PKG_CLASS_NAME': 'rkd.standardlib.shell.ExecProcessCommand',
+        'PKG_NAME': 'rkd.core.standardlib.shell',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.shell.ExecProcessCommand',
         'PKG_PIP': 'rkd'
     },
     'j2_render': {
-        'PKG_NAME': 'rkd.standardlib.jinja',
-        'PKG_CLASS_NAME': 'rkd.standardlib.jinja.FileRendererTask',
+        'PKG_NAME': 'rkd.core.standardlib.jinja',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.jinja.FileRendererTask',
         'PKG_PIP': 'rkd'
     },
     'j2_directory_to_directory': {
-        'PKG_NAME': 'rkd.standardlib.jinja',
-        'PKG_CLASS_NAME': 'rkd.standardlib.jinja.RenderDirectoryTask',
+        'PKG_NAME': 'rkd.core.standardlib.jinja',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.jinja.RenderDirectoryTask',
         'PKG_PIP': 'rkd'
     },
     'init': {
-        'PKG_NAME': 'rkd.standardlib',
-        'PKG_CLASS_NAME': 'rkd.standardlib.InitTask',
+        'PKG_NAME': 'rkd.core.standardlib',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.InitTask',
         'PKG_PIP': 'rkd'
     },
     'tasks': {
-        'PKG_NAME': 'rkd.standardlib',
-        'PKG_CLASS_NAME': 'rkd.standardlib.TasksListingTask',
+        'PKG_NAME': 'rkd.core.standardlib',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.TasksListingTask',
         'PKG_PIP': 'rkd'
     },
     'callable_task': {
-        'PKG_NAME': 'rkd.standardlib',
-        'PKG_CLASS_NAME': 'rkd.standardlib.CallableTask',
+        'PKG_NAME': 'rkd.core.standardlib',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.CallableTask',
         'PKG_PIP': 'rkd'
     },
     'rkd_create_structure': {
-        'PKG_NAME': 'rkd.standardlib',
-        'PKG_CLASS_NAME': 'rkd.standardlib.CreateStructureTask',
+        'PKG_NAME': 'rkd.core.standardlib',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.CreateStructureTask',
         'PKG_PIP': 'rkd'
     },
     'version': {
-        'PKG_NAME': 'rkd.standardlib',
-        'PKG_CLASS_NAME': 'rkd.standardlib.VersionTask',
+        'PKG_NAME': 'rkd.core.standardlib',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.VersionTask',
         'PKG_PIP': 'rkd'
     },
     'env_get': {
-        'PKG_NAME': 'rkd.standardlib.env',
-        'PKG_CLASS_NAME': 'rkd.standardlib.env.SetEnvTask',
+        'PKG_NAME': 'rkd.core.standardlib.env',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.env.SetEnvTask',
         'PKG_PIP': 'rkd'
     },
     'env_set': {
-        'PKG_NAME': 'rkd.standardlib.env',
-        'PKG_CLASS_NAME': 'rkd.standardlib.env.GetEnvTask',
+        'PKG_NAME': 'rkd.core.standardlib.env',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.env.GetEnvTask',
         'PKG_PIP': 'rkd'
     },
     'line_in_file': {
-        'PKG_NAME': 'rkd.standardlib',
-        'PKG_CLASS_NAME': 'rkd.standardlib.LineInFileTask',
+        'PKG_NAME': 'rkd.core.standardlib',
+        'PKG_CLASS_NAME': 'rkd.core.standardlib.LineInFileTask',
         'PKG_PIP': 'rkd'
     }
 }

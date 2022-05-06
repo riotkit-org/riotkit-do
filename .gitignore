@@ -4,12 +4,10 @@
 /rkd.egg-info/
 *.pyc
 /.eggs
-/AUTHORS
-/ChangeLog
 /docs/build/
-subpackages/rkd_python/AUTHORS
-subpackages/rkd_python/ChangeLog
+AUTHORS
+ChangeLog
 
-/subpackages/rkd_python/rkd_python.egg-info/
-/subpackages/rkd_python/build/
-/subpackages/rkd_python/dist/
+*.egg-info/
+build/
+dist/

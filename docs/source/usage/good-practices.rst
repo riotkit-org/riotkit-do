@@ -7,7 +7,7 @@ Do not use os.getenv()
 *Note: Only in Python code*
 
 The ExecutionContext is providing processed environment variables. Variables could be overridden on some levels
-eg. in makefile.py - :code:`rkd.api.syntax.TaskAliasDeclaration` can take a dict of environment variables to force override.
+eg. in makefile.py - :code:`rkd.core.api.syntax.TaskAliasDeclaration` can take a dict of environment variables to force override.
 
 Use :code:`context.get_env()` instead.
 
@@ -30,7 +30,7 @@ The methods provided by RKD are buffering the output and making it possible to s
 Do not print if you do not must, use io()
 -----------------------------------------
 
-:code:`rkd.api.inputoutput.IO` provides a standardized way of printing messages. The class itself distinct importance of messages, writing them
+:code:`rkd.core.api.inputoutput.IO` provides a standardized way of printing messages. The class itself distinct importance of messages, writing them
 to proper stdout/stderr and to log files.
 
 :code:`print` is also captured by IO, but should be used only eventually.

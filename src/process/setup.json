@@ -1,0 +1,19 @@
+{
+    "name": "rkd.process",
+    "author": "RiotKit non-profit organization",
+    "author_email": "riotkit@riseup.net",
+    "description": "rkd.process provides easy process interaction and output capturing/redirecting, wraps subprocess from Python's standard library.",
+    "url": "https://github.com/riotkit-org",
+    "license": "Apache-2",
+    "classifiers": [
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "Intended Audience :: System Administrators",
+        "Intended Audience :: Information Technology",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: POSIX",
+        "Programming Language :: Python :: 3 :: Only"
+    ],
+    "keywords": ["rkd", "riotkit", "anarchism", "output capturing", "output", "subprocess"]
+}
