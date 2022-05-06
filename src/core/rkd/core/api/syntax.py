@@ -63,8 +63,11 @@ class TaskDeclaration(TaskDeclarationInterface):
     _workdir: Optional[str]        # current working directory (eg. combination of subproject + task)
     _task_workdir: Optional[str]   # original task working directory as defined in task
     _project_name: str
+    _is_internal: Optional[bool]             # task is not listed on :tasks
 
-    def __init__(self, task: TaskInterface, env: Dict[str, str] = None, args: List[str] = None, workdir: str = None):
+    def __init__(self, task: TaskInterface, env: Dict[str, str] = None, args: List[str] = None,
+                 workdir: str = None, internal: Optional[bool] = None):
+
         if env is None:
             env = {}
 
@@ -82,6 +85,7 @@ class TaskDeclaration(TaskDeclarationInterface):
         self._task_workdir = workdir
         self._user_defined_env = list(env.keys())
         self._project_name = ''
+        self._is_internal = internal
 
     def to_full_name(self):
         if self._project_name:
@@ -215,6 +219,17 @@ class TaskDeclaration(TaskDeclarationInterface):
 
         return self._workdir
 
+    @property
+    def is_internal(self) -> bool:
+        """
+        Is task considered internal? Should it be unlisted on a list of tasks for end-user?
+        """
+
+        if self._is_internal is not None:
+            return self._is_internal
+
+        return self._task.is_internal
+
     def __str__(self):
         return 'TaskDeclaration<%s>' % self.get_task_to_execute().get_full_name()
 
@@ -260,6 +275,10 @@ class GroupDeclaration(GroupDeclarationInterface):
 
     def format_task_name(self, name: str) -> str:
         return name
+
+    @property
+    def is_internal(self) -> bool:
+        return False
 
 
 class TaskAliasDeclaration(object):

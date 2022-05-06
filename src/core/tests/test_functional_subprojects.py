@@ -19,7 +19,7 @@ class TestFunctionalSubprojects(FunctionalTestingCase):
         """
 
         with switched_workdir(TESTS_DIR + '/internal-samples/subprojects'):
-            full_output, exit_code = self.run_and_capture_output([':tasks'])
+            full_output, exit_code = self.run_and_capture_output([':tasks', '-a'])
 
             # tasks are defined in internal-samples/subprojects directory
             self.assertIn('[testsubproject1]', full_output)

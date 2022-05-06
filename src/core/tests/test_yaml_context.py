@@ -2,6 +2,7 @@
 
 import os
 import yaml
+from collections import OrderedDict
 from io import StringIO
 from rkd.core.exception import YamlParsingException
 from rkd.core.yaml_context import YamlSyntaxInterpreter
@@ -39,7 +40,7 @@ class TestYamlContext(BasicTestingCase):
         io = IO()
         out = StringIO()
         factory = YamlSyntaxInterpreter(io, YamlFileLoader([]))
-        parsed_tasks = factory.parse_tasks(input_tasks, '', './makefile.yaml', {})
+        parsed_tasks = factory.parse_tasks(input_tasks, '', './makefile.yaml', OrderedDict())
 
         self.assertEqual(':resistentia', parsed_tasks[0].to_full_name(),
                          msg='Expected that the task name will be present')
@@ -51,6 +52,38 @@ class TestYamlContext(BasicTestingCase):
             declaration.get_task_to_execute().execute(ExecutionContext(declaration))
 
         self.assertIn('Resistentia!', out.getvalue(), msg='Expected that echo contents will be visible')
+
+    def test_internal_task_can_be_defined(self):
+        """
+        Internal/Normal tasks definition in YAML
+
+        A task can be marked internal, so it will be unlisted on ":tasks" listing
+        """
+
+        input_tasks = {
+            ':resistentia': {
+                'description': 'Against moving the costs of the crisis to the workers!',
+                'internal': True,
+                'arguments': {},
+                'steps': [
+                    'echo "Resistentia!"'
+                ]
+            },
+            ':resistentia-2': {
+                'description': 'Against moving the costs of the crisis to the workers!',
+                'arguments': {},
+                'steps': [
+                    'echo "Resistentia!"'
+                ]
+            }
+        }
+
+        io = IO()
+        factory = YamlSyntaxInterpreter(io, YamlFileLoader([]))
+        parsed_tasks = factory.parse_tasks(input_tasks, '', './makefile.yaml', OrderedDict())
+
+        self.assertTrue(parsed_tasks[0].is_internal)
+        self.assertFalse(parsed_tasks[1].is_internal)
 
     def test_parse_tasks_signals_error_instead_of_throwing_exception(self):
         """
