@@ -34,6 +34,10 @@
         "task": {
             "type": "object",
             "properties": {
+                "extends": {
+                    "type": "string"
+                },
+
                 "description": {
                     "type": "string"
                 },
@@ -48,7 +52,7 @@
 
                 "steps": {
                     "type": ["array", "string"],
-                    "minItems": 1
+                    "minItems": 0
                 },
 
                 "environment": {
@@ -58,6 +62,42 @@
 
                 "env_files": {
                     "type": "array"
+                },
+
+                "execute": {
+                    "type": "string"
+                },
+
+                "execute@without_parent": {
+                    "type": "string"
+                },
+
+                "execute@after_parent": {
+                    "type": "string"
+                },
+
+                "configure": {
+                    "type": "string"
+                },
+
+                "configure@without_parent": {
+                    "type": "string"
+                },
+
+                "configure@after_parent": {
+                    "type": "string"
+                },
+
+                "inner_execute": {
+                    "type": "string"
+                },
+
+                "inner_execute@without_parent": {
+                    "type": "string"
+                },
+
+                "inner_execute@after_parent": {
+                    "type": "string"
                 }
             }
         },

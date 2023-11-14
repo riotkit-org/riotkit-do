@@ -33,7 +33,7 @@ Tasks customization
 -------------------
 
 It is a good practice to split your entrypoint into multiple tasks executed one-by-one.
-This gives you a possibility to create new :code:`makefile.yaml/py` in any place and modify :code:`RKD_PATH` environment variable to add additional tasks or replace existing.
+This gives you a possibility to create new Makefile in any place and modify :code:`RKD_PATH` environment variable to add additional tasks or replace existing.
 The RKD_PATH has always higher priority than current :code:`.rkd` directory.
 
 **Possible options:**

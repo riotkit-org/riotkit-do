@@ -1,14 +1,6 @@
 Technical/Core
 ==============
 
-:init
-~~~~~
-
-.. jinja:: init
-   :file: source/templates/package-usage.rst
-
-This task runs ALWAYS. :init implements a possibility to inherit global settings to other tasks
-
 :tasks
 ~~~~~~
 
@@ -43,11 +35,14 @@ to create a task by defining a simple method as a callback.
 
 .. literalinclude:: ../../examples/callback/.rkd/makefile.py
 
-.. autoclass:: rkd.standardlib.CallableTask
+.. autoclass:: rkd.core.standardlib.CallableTask
    :members:
 
 :rkd:create-structure
 ~~~~~~~~~~~~~~~~~~~~~
+
+.. HINT::
+    This is an extendable task. Read more in :ref:`Extending tasks` chapter.
 
 .. jinja:: rkd_create_structure
    :file: source/templates/package-usage.rst
@@ -62,7 +57,7 @@ It was designed to allow to create customized installers for tools based on RKD 
 
 Look for "interface methods" in class code, those methods are guaranteed to not change from minor version to minor version.
 
-.. autoclass:: rkd.standardlib.CreateStructureTask
+.. autoclass:: rkd.core.standardlib.CreateStructureTask
    :members:
 
 :file:line-in-file

@@ -1,7 +1,18 @@
 .. _READ MORE ABOUT YAML SYNTAX IN THE BEGINNERS GUIDE:
 
-Beginners guide - on YAML syntax example
-========================================
+Getting started
+===============
+
+RKD is project-focused, which means it is designed to provide an automation in scope of a project.
+That's why we call it a DevOps tool. Project is a GIT repository with a set of tasks to manage particular thing.
+The thing could be a development project, web application, a production database server, TLS certifications issuing, cluster configuration management, almost everything.
+
+Scope of a project does not mean only GIT repository, first of all it means a runtime environment placed absolutely inside your project directory.
+Python's Virtual Environments are extensively used to provide a separated per-project environment with specific versions compatible with the currently used project.
+
+To simplify usage of a project there is a `./rkdw` wrapper that transparently creates a virtual environment and installs RKD on-the-fly.
+It was inspired by the Gradle Project's `./gradlew` wrapper.
+
 
 Where to place files
 --------------------
@@ -12,6 +23,57 @@ all of the required tasks.
 Just like in UNIX/Linux, and just like in Python - there is an environment variable :code:`RKD_PATH` that allows to define
 multiple paths to :code:`.rkd` directories placed in other places - for example outside of your project. This gives a flexibility and possibility
 to build system-wide tools installable via Python's PIP.
+
+**Tutorial**
+------------
+
+Install RKD inside a project workspace
+
+.. code:: bash
+
+    wget https://github.com/riotkit-org/riotkit-do/blob/master/src/core/rkd/core/misc/initial-structure/rkdw.py -O rkdw && chmod +x rkdw
+    ./rkdw
+
+
+As you learned already - automation files should be placed inside :code:`.rkd` directory in your project, let's create that directory and create an example Makefile.
+
+.. code:: bash
+
+    mkdir -p .rkd
+    nano .rkd/makefile.yaml
+
+
+Now put example content into your makefile.yaml
+
+.. code:: yaml
+
+    version: org.riotkit.rkd/yaml/v1
+    environment:
+        PYTHONPATH: "/project"
+    tasks:
+        :hello:
+            description: Prints variables
+            environment:
+                SOME_VAR: "HELLO"
+            steps: |
+                echo "SOME_VAR is ${SOME_VAR}, PYTHONPATH is ${PYTHONPATH}"
+
+
+Save the file and run.
+
+.. code:: bash
+
+    ./rkdw :tasks  # see if your task is there
+    ./rkdw :hello  # execute your task
+
+    # or combined :-)
+    ./rkdw :tasks :hello
+
+    # or do it multiple times!
+    ./rkdw :hello :hello :hello
+
+
+That's it, now you are ready to proceed with the documentation to start writing your dreamed automation.
 
 Environment variables
 ---------------------
@@ -138,6 +200,7 @@ Let's at the beginning start from analyzing an example.
 
     tasks:
         :check-is-using-linux:
+            extends: rkd.core.standardlib.syntax.MultiStepLanguageAgnosticTask   # this a default value
             description: Are you using Linux?
             # use sudo to become a other user, optional
             become: root
@@ -167,6 +230,8 @@ Let's at the beginning start from analyzing an example.
                 fi
 
 
+**extends** - Base Task that is going to be extended. Default value is :code:`rkd.core.standardlib.syntax.MultiStepLanguageAgnosticTask` which allows to execute multiple steps in different languages
+
 **imports** - Imports external tasks installed via Python' PIP. That's the way to easily share code across projects
 
 **environment** - Can define default values for environment variables. Environment section can be defined for all tasks, or per task
@@ -191,26 +256,5 @@ Let's at the beginning start from analyzing an example.
 
 .. _Read more about Python Makefile syntax:
 
-Extended usage - Makefile in Python syntax
-==========================================
-
-Not only tasks can be written in Python code, but Makefile too - such makefile is called :code:`makefile.py`, and placed in :code:`.rkd` directory.
-
-**Example:**
-
-.. literalinclude:: ../../.rkd/makefile.py
-
-
-- The Python syntax is very flexible
-- You can create your own local packages and import them here, create own advanced structure
-- Possibility to declare aliases and adjust TaskDeclarations for advanced usage (YAML syntax does not offer this)
-
-**Example projects using Makefile.py syntax:**
-
-- `TunMan <https://github.com/riotkit-org/tunman/blob/master/.rkd/makefile.py>`_
-- `RiotKit Harbor building scripts <https://github.com/riotkit-org/riotkit-harbor/blob/master/.rkd/makefile.py>`_
-- `RiotKit CI Utils <https://github.com/riotkit-org/ci-utils/blob/master/.rkd/makefile.yaml>`_
-
 
 Check :ref:`Detailed usage manual` page for description of all environment variables, mechanisms, good practices and more
--------------------------------------------------------------------------------------------------------------------------

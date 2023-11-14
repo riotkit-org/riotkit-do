@@ -7,6 +7,7 @@ All includes and extends are by default looking in current working directory pat
 
 :j2:render
 ~~~~~~~~~~
+
 .. jinja:: j2_render
    :file: source/templates/package-usage.rst
 
@@ -20,17 +21,48 @@ Renders a single file from JINJA2.
     rkd :j2:render -s SOURCE-FILE.yaml.j2 -o OUTPUT-FILE.yaml
 
 
+.. TIP::
+
+    This Task is ready to be imported and executed, but can be also easily extended.
+
+
+.. autoclass:: rkd.core.standardlib.jinja.FileRendererTask
+
+
+Jinja2Language
+~~~~~~~~~~~~~~
+
+.. TIP::
+
+    This class was designed especially with MultiStepLanguageAgnosticTask in mind, but can be easily used without it.
+
+.. autoclass:: rkd.core.standardlib.jinja.Jinja2Language
+
+
 :j2:directory-to-directory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. jinja:: j2_render
    :file: source/templates/package-usage.rst
 
+
 Renders all files recursively in given directory to other directory.
+
 Can remove source files after rendering them to the output files.
 
-*Note: Pattern is a regexp pattern that matches whole path, not only file name*
 
-*Note: Exclude pattern is matching on SOURCE files, not on target files*
+.. TIP::
+
+    Use this Task in a docker entrypoint to create fully customizable configurations inside docker containers.
+
+
+.. TIP::
+
+    *Note: Pattern is a regexp pattern that matches whole path, not only file name*
+
+.. TIP::
+
+    *Note: Exclude pattern is matching on SOURCE files, not on target files*
 
 
 **Example usage:**

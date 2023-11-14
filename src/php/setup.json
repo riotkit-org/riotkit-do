@@ -1,0 +1,19 @@
+{
+    "name": "rkd.php",
+    "author": "RiotKit non-profit organization",
+    "author_email": "riotkit@riseup.net",
+    "description": "rkd.php adds support for PHP language in Riotkit-Do",
+    "url": "https://github.com/riotkit-org",
+    "license": "Apache-2",
+    "classifiers": [
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "Intended Audience :: System Administrators",
+        "Intended Audience :: Information Technology",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: POSIX",
+        "Programming Language :: Python :: 3 :: Only"
+    ],
+    "keywords": ["rkd", "riotkit", "anarchism", "php"]
+}

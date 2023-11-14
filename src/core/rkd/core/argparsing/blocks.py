@@ -126,7 +126,8 @@ def parse_blocks(commandline: List[str]) -> Tuple[List[str], dict]:
             cursor = cursor - after_replace_difference  # we are RIGHT after [[[$RKT_BLOCK1]]]
 
             try:
-                collected_blocks[block_token.strip()] = ArgumentBlock(body=body, **inner_arguments)
+                collected_blocks[block_token.strip()] = ArgumentBlock(body=body, header=header + '}', **inner_arguments)
+
             except TypeError as e:
                 raise CommandlineParsingError.from_block_unknown_modifier(header, e)
 

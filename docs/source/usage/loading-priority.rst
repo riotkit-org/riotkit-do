@@ -43,7 +43,7 @@ RKD by default search for .rkd directory in current execution directory - `./.rk
 
 **The search order is following (from lower to higher load priority):**
 
-1. RKD's internals (we provide a standard tasks like `:tasks`, `:init`, `:sh`, `:exec` and more)
+1. RKD's internals (we provide a standard tasks like `:tasks`, `:sh`, `:exec` and more)
 2. `/usr/lib/rkd`
 3. User's home `~/.rkd`
 4. Current directory `./.rkd`

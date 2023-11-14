@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import pytest
 import os
 import sys
 import tempfile
@@ -10,9 +11,9 @@ from rkd.core.api.testing import FunctionalTestingCase
 SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
+@pytest.mark.e2e
 class TestFunctional(FunctionalTestingCase):
     """
-    Functional tests case of the whole application.
     Runs application like from the shell, captures output and performs assertions on the results.
     """
 
@@ -21,10 +22,10 @@ class TestFunctional(FunctionalTestingCase):
 
         full_output, exit_code = self.run_and_capture_output([':tasks'])
 
-        self.assertIn(' >> Executing :tasks', full_output)
-        self.assertIn('[global]', full_output)
-        self.assertIn(':version', full_output)
-        self.assertIn('succeed.', full_output)
+        self.assertIn('Executing `:tasks`', full_output, msg='SYSTEM UI is expected to be visible by default')
+        self.assertIn('[global]', full_output, msg='By default groups should be visible')
+        self.assertIn(':version', full_output, msg='By default :version task should be included')
+        self.assertIn('succeed.', full_output, msg='Success message for :task exection expected')
         self.assertEqual(0, exit_code)
 
     def test_global_help_switch(self):
@@ -32,12 +33,11 @@ class TestFunctional(FunctionalTestingCase):
 
         full_output, exit_code = self.run_and_capture_output(['--help'])
 
-        self.assertIn('usage: :init', full_output)
-        self.assertIn('--log-to-file', full_output)
+        self.assertIn('usage: rkd', full_output)
         self.assertIn('--log-level', full_output)
-        self.assertIn('--keep-going', full_output)
         self.assertIn('--silent', full_output)
-        self.assertIn('--become', full_output)
+        self.assertNotIn('--log-to-file', full_output)
+        self.assertNotIn('--keep-going', full_output)
         self.assertEqual(0, exit_code)
 
     def test_workdir_switch(self):
@@ -56,10 +56,15 @@ class TestFunctional(FunctionalTestingCase):
         self.assertIn('/var', full_output)
 
     def test_silent_switch_makes_tasks_task_to_not_show_headers(self):
+        """
+        When --silent is defined AFTER task call (as it's arguments)
+        Then the SYSTEM UI is shown (because --silent is declared later than SYSTEM UI is initialized)
+        """
+
         full_output, exit_code = self.run_and_capture_output([':tasks', '--silent', '--all'])
 
         # this is a global header
-        self.assertIn(' >> Executing :tasks', full_output)
+        self.assertIn('Executing `:tasks --silent --all`', full_output)
 
         # this is a header provided by :tasks
         self.assertNotIn('[global]', full_output)
@@ -182,7 +187,9 @@ class TestFunctional(FunctionalTestingCase):
                           'country\'s largest industry put profits before people', full_output)
 
     def test_help_shows_full_task_description(self):
-        """:hello --help should show full description, even if it is multiline
+        """
+        YAML - :hello --help should show full description, even if it is multiline
+        Check that "description" (get_description()) can be overridden
         """
 
         with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../../../docs/examples/env-in-yaml/.rkd'}):
@@ -193,7 +200,8 @@ class TestFunctional(FunctionalTestingCase):
             self.assertIn('#3 line: https://libcom.org/library/story-proletarian-life', full_output)
 
     def test_depth_increased(self):
-        """Test that RKD_DEPTH is increased within next calls
+        """
+        Test that RKD_DEPTH is increased within next calls (RKD -> RKD -> RKD = 0 + 1 + 1 = 2 depth)
         """
 
         full_output, exit_code = self.run_and_capture_output(
@@ -207,10 +215,9 @@ class TestFunctional(FunctionalTestingCase):
         """
 
         full_output, exit_code = self.run_and_capture_output([
-            '--no-ui', ':sh', '-c', '%RKD% :tasks'
+            '--no-ui', ':sh', '-c', '%RKD% :sh -c "env |grep DEPTH"'
         ])
 
-        self.assertIn(':tasks', full_output)
         self.assertNotIn('>> Executing', full_output)
 
     def test_env_file_is_loaded_from_cwd(self):
@@ -254,23 +261,6 @@ class TestFunctional(FunctionalTestingCase):
 
             self.assertIn('Hello world', full_output)
 
-    def test_env_variables_are_recursively_resolved(self):
-        """
-        :hello:
-            environment:
-                FIRST: "First"
-                SECOND: "Second"
-                THIRD: "Escaped one"
-                ALL: ${FIRST} ${SECOND} ${THIRD}
-            steps: |
-                echo "!!! ${ALL}"
-        """
-
-        with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../../../docs/examples/recursive-env-in-yaml/.rkd'}):
-            full_output, exit_code = self.run_and_capture_output([':hello'])
-
-            self.assertIn('First Second ${THIRD}', full_output)
-
     def test_env_variables_are_escaped_when_coming_from_external(self):
         """
         We assume that if "$" is in environment variable, then it is because it was previously escaped
@@ -298,5 +288,5 @@ class TestFunctional(FunctionalTestingCase):
             self.assertNotIn('--imports', full_output)
 
         with self.subTest('Behind tasks, but task defined'):
-            full_output, exit_code = self.run_and_capture_output(['--help', ':sh'])
+            full_output, exit_code = self.run_and_capture_output(['--help', ':sh', '-c', 'ps'])
             self.assertIn('--imports', full_output)

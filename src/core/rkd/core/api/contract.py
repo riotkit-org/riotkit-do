@@ -6,18 +6,18 @@ CONTRACT (part of API)
 Core interfaces that should be changed WITH CAREFUL as those are parts of API.
 Any breaking change there requires to bump RKD major version (see: Semantic Versioning)
 """
-from tabulate import tabulate
-from abc import abstractmethod, ABC as AbstractClass
-from typing import Dict, List, Union, Optional
+from abc import abstractmethod, ABC as AbstractClass, ABC
+from typing import Dict, List, Union, Optional, Type
 from argparse import ArgumentParser
-from ..inputoutput import IO
+
+from .inputoutput import IO
 from ..exception import UndefinedEnvironmentVariableUsageError
 from ..exception import EnvironmentVariableNotUsed
 from ..exception import MissingInputException
 from ..exception import EnvironmentVariableNameNotAllowed
 from ..taskutil import TaskUtilities
 from .temp import TempManager
-from .inputoutput import SystemIO
+from .inputoutput import SystemIO, ReadableStreamType
 
 
 def env_to_switch(env_name: str) -> str:
@@ -92,6 +92,10 @@ class TaskDeclarationInterface(AbstractClass):
     def is_internal(self) -> bool:
         return False
 
+    @abstractmethod
+    def get_input(self) -> ReadableStreamType:
+        pass
+
 
 class GroupDeclarationInterface(AbstractClass):
     @abstractmethod
@@ -140,22 +144,22 @@ class ContextInterface(AbstractClass):
 
 class ExecutorInterface(AbstractClass):
     @abstractmethod
-    def execute(self, task: TaskDeclarationInterface, task_num: int,
-                parent: Union[GroupDeclarationInterface, None] = None, args: list = []):
+    def execute(self, scheduled_declaration, task_num: int):
         pass
 
 
-class ExecutionContext:
+class ExecutionContext(object):
     """
     Defines which objects could be accessed by Task. It's a scope of a single task execution.
     """
 
-    declaration: TaskDeclarationInterface
+    __declaration: TaskDeclarationInterface
     parent: Union[GroupDeclarationInterface, None]
     args: Dict[str, str]
     env: Dict[str, str]
-    ctx: ContextInterface
+    __ctx: ContextInterface
     executor: ExecutorInterface
+    _allow_mutating_globals: bool
 
     # List of arguments definitions populated by Argparse (with limited parameters supported)
     # Read about "traced arguments"
@@ -165,16 +169,18 @@ class ExecutionContext:
                  parent: Union[GroupDeclarationInterface, None] = None, args: Dict[str, str] = {},
                  env: Dict[str, str] = {},
                  defined_args: Dict[str, dict] = {}):
-        self.declaration = declaration
+
+        self.__declaration = declaration
         self.parent = parent
         self.args = args
         self.env = env
         self.defined_args = defined_args
+        self._allow_mutating_globals = declaration.to_full_name() == ':init'
 
     def get_env(self, name: str, switch: str = '', error_on_not_used: bool = False):
         """Get environment variable value"""
-        return self.declaration.get_task_to_execute().internal_getenv(name, self.env, switch=switch,
-                                                                      error_on_not_used=error_on_not_used)
+        return self.__declaration.get_task_to_execute().internal_getenv(name, self.env, switch=switch,
+                                                                        error_on_not_used=error_on_not_used)
 
     def get_arg_or_env(self, name: str) -> Union[str, None]:
         """Provides value of user input
@@ -266,7 +272,24 @@ class ExecutionContext:
 
             return self.args[arg_name]
         except KeyError:
-            return self.args[name]
+            try:
+                return self.args[name]
+            except KeyError:
+                raise MissingInputException(name, '')
+
+    def get_input(self) -> Optional[ReadableStreamType]:
+        return self.__declaration.get_input()
+
+    def can_mutate_globals(self) -> bool:
+        """
+        Is task having a special permissions to mutate globals such as OS environment
+        :return:
+        """
+
+        return self._allow_mutating_globals
+
+    def get_args(self) -> Dict[str, str]:
+        return self.args
 
 
 class TaskInterface(TaskUtilities):
@@ -275,9 +298,10 @@ class TaskInterface(TaskUtilities):
     _executor: ExecutorInterface
     temp: TempManager
     _internal: bool
+    _extended_from: Type['TaskInterface']
 
-    def internal_inject_dependencies(self, io: IO, ctx: ContextInterface,
-                                     executor: ExecutorInterface, temp_manager: TempManager):
+    def internal_inject_dependencies(self, io: IO, ctx: ContextInterface = None,
+                                     executor: ExecutorInterface = None, temp_manager: TempManager = None):
         """"""  # sphinx: skip
 
         self._io = io
@@ -286,56 +310,94 @@ class TaskInterface(TaskUtilities):
         self.temp = temp_manager
 
     def copy_internal_dependencies(self, task):
-        """Allows to execute a task-in-task, by copying dependent services from one task to other task
+        """
+        Allows to execute a task-in-task, by copying dependent services from one task to other task
         """
 
         task.internal_inject_dependencies(self._io, self._ctx, self._executor, self.temp)
 
     @abstractmethod
     def get_name(self) -> str:
-        """Task name  eg. ":sh"
+        """
+        Task name  eg. ":sh"
         """
         pass
 
     @abstractmethod
     def get_group_name(self) -> str:
-        """Group name where the task belongs eg. ":publishing", can be empty.
+        """
+        Group name where the task belongs eg. ":publishing", can be empty.
         """
 
         pass
 
     def get_become_as(self) -> str:
-        """User name in UNIX/Linux system, optional.
-        When defined, then current task will be executed as this user (WARNING: a forked process would be started)"""
+        """
+        User name in UNIX/Linux system, optional.
+        When defined, then current task will be executed as this user (WARNING: a forked process would be started)
+        """
 
         return ''
 
     def should_fork(self) -> bool:
-        """Decides if task should be ran in a separate Python process (be careful with it)"""
+        """
+        Decides if task should be ran in a separate Python process (be careful with it)
+        """
 
         return self.get_become_as() != ''
 
     def get_description(self) -> str:
         return ''
 
+    # ====== LIFECYCLE METHODS
+
     @abstractmethod
     def execute(self, context: ExecutionContext) -> bool:
-        """ Executes a task. True/False should be returned as return """
+        """
+        Executes a task. True/False should be returned as return
+        """
         pass
 
     @abstractmethod
     def configure_argparse(self, parser: ArgumentParser):
-        """ Allows a task to configure ArgumentParser (argparse) """
+        """
+        Allows a task to configure ArgumentParser (argparse)
+
+        .. code:: python
+
+            def configure_argparse(self, parser: ArgumentParser):
+                parser.add_argument('--php', help='PHP version ("php" docker image tag)', default='8.0-alpine')
+                parser.add_argument('--image', help='Docker image name', default='php')
+        """
 
         pass
 
+    # ====== LIFECYCLE METHODS ENDS
+
     def get_full_name(self):
-        """ Returns task full name, including group name """
+        """
+        Returns task full name, including group name
+        """
 
         return self.get_group_name() + self.get_name()
 
-    def get_declared_envs(self) -> Dict[str, Union[str, ArgumentEnv]]:
-        """ Dictionary of allowed envs to override: KEY -> DEFAULT VALUE """
+    @classmethod
+    def get_declared_envs(cls) -> Dict[str, Union[str, ArgumentEnv]]:
+        """
+        Dictionary of allowed envs to override: KEY -> DEFAULT VALUE
+
+        All environment variables fetched from the ExecutionContext needs to be defined there.
+        Declared values there are automatically documented in --help
+
+        .. code:: python
+
+            @classmethod
+            def get_declared_envs(cls) -> Dict[str, Union[str, ArgumentEnv]]:
+                return {
+                    'PHP': ArgumentEnv('PHP', '--php', '8.0-alpine'),
+                    'IMAGE': ArgumentEnv('IMAGE', '--image', 'php')
+                }
+        """
         return {}
 
     def internal_normalized_get_declared_envs(self) -> Dict[str, ArgumentEnv]:
@@ -454,43 +516,70 @@ class TaskInterface(TaskUtilities):
         return super().silent_sh(cmd=cmd, verbose=verbose, strict=strict, env=env)
 
     def __str__(self):
-        return 'Task<' + self.get_full_name() + '>'
-
-    @staticmethod
-    def table(header: list, body: list, tablefmt: str = "simple",
-              floatfmt: str = 'g',
-              numalign: str = "decimal",
-              stralign:str = "left",
-              missingval: str = '',
-              showindex: str = "default",
-              disable_numparse: bool = False,
-              colalign: str = None):
-
-        """Renders a table
-
-        Parameters:
-            header:
-            body:
-            tablefmt:
-            floatfmt:
-            numalign:
-            stralign:
-            missingval:
-            showindex:
-            disable_numparse:
-            colalign:
-
-        Returns:
-            Formatted table as string
-        """
-
-        return tabulate(body, headers=header, floatfmt=floatfmt, numalign=numalign, tablefmt=tablefmt,
-                        stralign=stralign, missingval=missingval, showindex=showindex,
-                        disable_numparse=disable_numparse, colalign=colalign)
+        return 'Task<{name}, object_id={id}, extended_from={extends}>'.format(
+            name=self.get_full_name(),
+            id=id(self),
+            extends=self.extends_task()
+        )
 
     @property
     def is_internal(self) -> bool:
         return False
+
+    def extends_task(self):
+        """
+        Provides information if this Task has a Parent Task
+
+        :return:
+        """
+
+        try:
+            extends_from = self._extended_from.__module__ + '.' + self._extended_from.__name__
+        except AttributeError:
+            extends_from = 'TaskInterface'
+
+        return extends_from
+
+    def __deepcopy__(self, memodict={}):
+        """
+        Do not allow copy.deepcopy() to copy this object. Declaration can be doubled, TaskInterface implementation not.
+
+        :param memodict:
+        :return:
+        """
+
+        return self
+
+
+class ExtendableTaskInterface(TaskInterface, ABC):
+    def inner_execute(self, ctx: ExecutionContext) -> bool:
+        """
+        Method that can be executed inside execute() - if implemented.
+
+        Use cases:
+           - Allow child Task to inject code between e.g. database startup and database shutdown to execute some
+             operations on the database
+
+        :param ctx:
+        :return:
+        """
+
+        pass
+
+    def get_configuration_attributes(self) -> List[str]:
+        return []
+
+    def configure(self, event: 'ConfigurationLifecycleEvent') -> None:
+        """
+        Executes before all tasks are executed. ORDER DOES NOT MATTER, can be executed in parallel.
+        """
+        pass
+
+    def compile(self, event: 'CompilationLifecycleEvent') -> None:
+        """
+        Execute code after all tasks were collected into a single context
+        """
+        pass
 
 
 class ArgparseArgument(object):
@@ -508,3 +597,19 @@ class ArgparseArgument(object):
 
         self.args = args
         self.kwargs = kwargs
+
+
+class PipelinePartInterface(object):
+    """
+    Partial element of a Pipeline - string that is being converted to GroupDeclaration
+    """
+
+    @abstractmethod
+    def to_pipeline_part(self) -> List[str]:
+        pass
+
+
+class MultiStepLanguageExtensionInterface(ABC):
+    @abstractmethod
+    def with_predefined_details(self, code: str, name: str, step_num: int):
+        pass

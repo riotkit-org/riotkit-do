@@ -1,8 +1,11 @@
 import inspect
 import re
+import shutil
 import sys
 import os
 import subprocess
+from tabulate import tabulate
+from io import StringIO
 from traceback import format_exc as py_format_exception
 from json import dumps as json_encode
 from json import loads as json_decode
@@ -18,20 +21,27 @@ from ..exception import InterruptExecution
 this = sys.modules[__name__]
 this.IS_CAPTURING_DESCRIPTORS = False
 
-LEVEL_INTERNAL = 999
-LEVEL_DEBUG = 37
-LEVEL_INFO = 36
-LEVEL_WARNING = 33
-LEVEL_ERROR = 31
-LEVEL_FATAL = 20
+LEVEL_PRIORITY_INTERNAL = 999
+LEVEL_PRIORITY_DEBUG = 37
+LEVEL_PRIORITY_INFO = 36
+LEVEL_PRIORITY_WARNING = 33
+LEVEL_PRIORITY_ERROR = 31
+LEVEL_PRIORITY_FATAL = 20
+
+LEVEL_INTERNAL = 'internal'
+LEVEL_DEBUG = 'debug'
+LEVEL_INFO = 'info'
+LEVEL_WARNING = 'warning'
+LEVEL_ERROR = 'error'
+LEVEL_FATAL = 'fatal'
 
 LOG_LEVELS = {
-    'internal': LEVEL_INTERNAL,
-    'debug': LEVEL_DEBUG,
-    'info': LEVEL_INFO,
-    'warning': LEVEL_WARNING,
-    'error': LEVEL_ERROR,
-    'fatal': LEVEL_FATAL
+    LEVEL_INTERNAL: LEVEL_PRIORITY_INTERNAL,
+    LEVEL_DEBUG: LEVEL_PRIORITY_DEBUG,
+    LEVEL_INFO: LEVEL_PRIORITY_INFO,
+    LEVEL_WARNING: LEVEL_PRIORITY_WARNING,
+    LEVEL_ERROR: LEVEL_PRIORITY_ERROR,
+    LEVEL_FATAL: LEVEL_PRIORITY_FATAL
 }
 
 LOG_LEVEL_FORMATTING_MAPPING = {
@@ -44,6 +54,17 @@ LOG_LEVEL_FORMATTING_MAPPING = {
 }
 
 OUTPUT_PROCESSOR_CALLABLE_DEF = Callable[[Union[str, bytes], str], Union[str, bytes]]
+
+
+class ReadableStreamType(object):
+    def __init__(self, handle):
+        if isinstance(handle, str):
+            handle = StringIO(handle)
+
+        self.__handle = handle
+
+    def read(self, n: int = None):
+        return self.__handle.read(n)
 
 
 class StandardOutputReplication(object):
@@ -77,7 +98,7 @@ class IO:
     """ Interacting with input and output - stdout/stderr/stdin, logging """
 
     silent = False
-    log_level = LEVEL_INFO
+    log_level = LEVEL_PRIORITY_INFO
     output_processors: List[OUTPUT_PROCESSOR_CALLABLE_DEF]
 
     def __init__(self):
@@ -153,7 +174,7 @@ class IO:
     #
     def set_log_level(self, desired_level_name: str):
         if desired_level_name not in LOG_LEVELS:
-            raise Exception('Invalid log level name')
+            raise Exception(f'Invalid log level name "{desired_level_name}"')
 
         self.log_level = LOG_LEVELS[desired_level_name]
 
@@ -216,20 +237,33 @@ class IO:
     #
 
     def internal(self, text):
-        """Logger: internal
-           Should be used only by RKD core for more intensive logging
         """
-        if self.log_level < LEVEL_INTERNAL:
+        Logger: internal
+        Should be used only by RKD core for more intensive logging
+        """
+        if self.log_level < LEVEL_PRIORITY_INTERNAL:
             return
 
         text = inspect.stack()[1][3] + ' ~> ' + text
         self.log(text, 'internal')
 
+    def internal_lifecycle(self, text):
+        """
+        Should be used only by RKD core for more intensive logging
+        :param text:
+        :return:
+        """
+
+        if self.log_level < LEVEL_PRIORITY_INTERNAL:
+            return
+
+        self.opt_outln("\x1B[93m[LIFECYCLE] %s\x1B[0m " % text)
+
     def debug(self, text):
         """Logger: debug
 
         """
-        if self.log_level >= LEVEL_DEBUG:
+        if self.log_level >= LEVEL_PRIORITY_DEBUG:
             self.log(text, 'debug')
 
     def info(self, text):
@@ -237,7 +271,7 @@ class IO:
 
         """
 
-        if self.log_level >= LEVEL_INFO:
+        if self.log_level >= LEVEL_PRIORITY_INFO:
             self.log(text, 'info')
 
     def warn(self, text):
@@ -245,7 +279,7 @@ class IO:
 
         """
 
-        if self.log_level >= LEVEL_WARNING:
+        if self.log_level >= LEVEL_PRIORITY_WARNING:
             self.log(text, 'warn')
 
     def error(self, text):
@@ -253,7 +287,7 @@ class IO:
 
         """
 
-        if self.log_level >= LEVEL_ERROR:
+        if self.log_level >= LEVEL_PRIORITY_ERROR:
             self.err_log(text, 'error')
 
     def critical(self, text):
@@ -261,7 +295,7 @@ class IO:
 
         """
 
-        if self.log_level >= LEVEL_FATAL:
+        if self.log_level >= LEVEL_PRIORITY_FATAL:
             self.err_log(text, 'critical')
 
     def log(self, text, level: str):
@@ -302,10 +336,19 @@ class IO:
 
         self.opt_outln('')
 
-    def print_separator(self):
-        """Prints a text separator (optional output)
+    def print_separator(self, status: bool = None):
         """
-        self.opt_outln("\x1B[37m%s\x1B[0m" % '-----------------------------------')
+        Prints a text separator (optional output)
+        """
+
+        color = '37m'
+
+        if status is True:
+            color = '92m'
+        elif status is False:
+            color = '91m'
+
+        self.opt_outln(f"\x1B[{color}%s\x1B[0m" % ("-" * get_terminal_width()))
 
     #
     #  Statuses
@@ -398,12 +441,44 @@ class IO:
 
             # do not allow exceptions in core output buffering module, unless we are debugging
             except Exception:
-                if self.log_level >= LEVEL_DEBUG:
+                if self.log_level >= LEVEL_PRIORITY_DEBUG:
                     raise
 
                 pass
 
         return text
+
+    @staticmethod
+    def format_table(header: list, body: list, tablefmt: str = "simple",
+                     floatfmt: str = 'g',
+                     numalign: str = "decimal",
+                     stralign: str = "left",
+                     missingval: str = '',
+                     showindex: str = "default",
+                     disable_numparse: bool = False,
+                     colalign: str = None):
+
+        """Renders a table
+
+        Parameters:
+            header:
+            body:
+            tablefmt:
+            floatfmt:
+            numalign:
+            stralign:
+            missingval:
+            showindex:
+            disable_numparse:
+            colalign:
+
+        Returns:
+            Formatted table as string
+        """
+
+        return tabulate(body, headers=header, floatfmt=floatfmt, numalign=numalign, tablefmt=tablefmt,
+                        stralign=stralign, missingval=missingval, showindex=showindex,
+                        disable_numparse=disable_numparse, colalign=colalign)
 
 
 class SystemIO(IO):
@@ -520,7 +595,9 @@ class Wizard(object):
         return self
 
     def input(self, secret: bool = False):
-        """Extracted for unit testing to be possible easier"""
+        """
+        (Internal) Extracted for unit testing to make testing easier
+        """
 
         if os.getenv('__WIZARD_INPUT'):
             return os.getenv('__WIZARD_INPUT')
@@ -638,18 +715,19 @@ class UnbufferedStdout(object):
 
 
 def get_environment_copy() -> dict:
-    """Copy environment variables keeping the values escaped
-
-    Dollar character escaping assumptions:
-        If the dollar char is present in variable, then it means that it was escaped before
-        if it would not be escaped before passing to RKD then it would be EVALUATED.
-
-        So we keep it escaped.
+    """
+    Get a securely copied environment variables copy without allowing to modify the global state
     """
 
-    return dict(
-        map(
-            lambda kv: (kv[0], str(kv[1]).replace('$', '\\$')),
-            dict(deepcopy(os.environ)).items()
-        )
-    )
+    return dict(deepcopy(os.environ))
+
+
+# reused from PyTest
+def get_terminal_width() -> int:
+    width, _ = shutil.get_terminal_size(fallback=(80, 24))
+
+    # The Windows get_terminal_size may be bogus, let's sanify a bit.
+    if width < 40:
+        width = 80
+
+    return width

@@ -3,90 +3,17 @@ import pkg_resources
 import os
 import re
 from subprocess import CalledProcessError
-from typing import Dict
+from typing import Dict, Union
 from typing import List
 from argparse import ArgumentParser
-from typing import Callable
-from typing import Optional
-from copy import deepcopy
-from ..api.contract import TaskInterface
+from ..api.contract import TaskInterface, ArgumentEnv
 from ..api.contract import ExecutionContext
 from ..api.contract import TaskDeclarationInterface
-from ..api.contract import ArgparseArgument
 from ..api.syntax import TaskDeclaration
-from ..inputoutput import clear_formatting
+from ..api.inputoutput import clear_formatting
 from ..aliasgroups import parse_alias_groups_from_env, AliasGroup
 from ..packaging import find_resource_directory
-from .. import env
 from .shell import ShellCommandTask
-
-
-class InitTask(TaskInterface):
-    """
-    :init task is executing ALWAYS. That's a technical, core task.
-
-    The purpose of this task is to handle global settings
-    """
-
-    def get_name(self) -> str:
-        return ':init'
-
-    def get_group_name(self) -> str:
-        return ''
-
-    def get_declared_envs(self) -> Dict[str, str]:
-        return {
-            'RKD_DEPTH': '0',
-            'RKD_PATH': '',                # supported by core, here only for documentation in CLI
-            'RKD_ALIAS_GROUPS': '',        # supported by core, here only for documentation in CLI
-            'RKD_UI': 'true',
-            'RKD_SYS_LOG_LEVEL': 'info',   # supported by core, here only for documentation in CLI
-            'RKD_IMPORTS': ''              # supported by core, here only for documentation in CLI
-        }
-
-    def configure_argparse(self, parser: ArgumentParser):
-        parser.add_argument('--no-ui', '-n', action='store_true',
-                            help='Do not display RKD interface (similar to --silent, ' +
-                                 'but does not inherit --silent into next tasks)')
-
-        parser.add_argument('--imports', '-ri',
-                            help='Imports a task or list of tasks separated by ":". '
-                                 'Example: "rkt_utils.docker:rkt_ciutils.boatci:rkd_python". '
-                                 'Instead of switch there could be also environment variable "RKD_IMPORTS" used')
-
-    def execute(self, context: ExecutionContext) -> bool:
-        """
-        :init task is setting user-defined global defaults on runtime
-        It allows user to call eg. rkd --log-level debug :task1 :task2
-        to set global settings such as log level
-
-        :param context:
-        :return:
-        """
-
-        # increment RKD_DEPTH
-        os.environ['RKD_DEPTH'] = str(env.rkd_depth() + 1)
-
-        self._ctx.io.silent = context.args['silent']
-
-        # log level is optional to be set
-        if context.args['log_level']:
-            self._ctx.io.set_log_level(context.args['log_level'])
-
-        if context.get_env('RKD_UI'):
-            self._ctx.io.set_display_ui(context.get_env('RKD_UI').lower() == 'true')
-
-        if env.rkd_depth() >= 2 or context.args['no_ui']:
-            self._ctx.io.set_display_ui(False)
-
-        return True
-
-    def is_silent_in_observer(self) -> bool:
-        return True
-
-    @property
-    def is_internal(self) -> bool:
-        return True
 
 
 class TasksListingTask(TaskInterface):
@@ -105,7 +32,8 @@ class TasksListingTask(TaskInterface):
     def configure_argparse(self, parser: ArgumentParser):
         parser.add_argument('--all', '-a', help='Show all tasks, including internal tasks', action='store_true')
 
-    def get_declared_envs(self) -> Dict[str, str]:
+    @classmethod
+    def get_declared_envs(cls) -> Dict[str, Union[str, ArgumentEnv]]:
         return {
             'RKD_WHITELIST_GROUPS': '',
             'RKD_ALIAS_GROUPS': ''
@@ -195,65 +123,10 @@ class TasksListingTask(TaskInterface):
         return with_fancy_formatting + ljust_only
 
 
-class CallableTask(TaskInterface):
-    """ Executes a custom callback - allows to quickly define a short task """
-
-    _callable: Callable[[ExecutionContext, TaskInterface], bool]
-    _args_callable: Callable[[ArgumentParser], None]
-    _argparse_options: Optional[List[ArgparseArgument]]
-    _name: str
-    _group: str
-    _description: str
-    _envs: dict
-    _become: str
-
-    def __init__(self, name: str, callback: Callable[[ExecutionContext, TaskInterface], bool],
-                 args_callback: Callable[[ArgumentParser], None] = None,
-                 description: str = '',
-                 group: str = '',
-                 become: str = '',
-                 argparse_options: List[ArgparseArgument] = None):
-        self._name = name
-        self._callable = callback
-        self._args_callable = args_callback
-        self._description = description
-        self._group = group
-        self._envs = {}
-        self._become = become
-        self._argparse_options = argparse_options
-
-    def get_name(self) -> str:
-        return self._name
-
-    def get_become_as(self) -> str:
-        return self._become
-
-    def get_description(self) -> str:
-        return self._description
-
-    def get_group_name(self) -> str:
-        return self._group
-
-    def configure_argparse(self, parser: ArgumentParser):
-        if self._argparse_options:
-            for opts in self._argparse_options:
-                parser.add_argument(*opts.args, **opts.kwargs)
-
-        if self._args_callable:
-            self._args_callable(parser)
-
-    def execute(self, context: ExecutionContext) -> bool:
-        return self._callable(context, self)
-
-    def push_env_variables(self, envs: dict):
-        self._envs = deepcopy(envs)
-
-    def get_declared_envs(self) -> Dict[str, str]:
-        return self._envs
-
-
 class VersionTask(TaskInterface):
-    """ Shows version of RKD and of all loaded tasks """
+    """
+    Shows version of RKD and of all loaded tasks
+    """
 
     def get_name(self) -> str:
         return ':version'
@@ -274,7 +147,7 @@ class VersionTask(TaskInterface):
             if not isinstance(declaration, TaskDeclarationInterface):
                 continue
 
-            task = declaration.get_task_to_execute()
+            task: TaskInterface = declaration.get_task_to_execute()
             class_name = str(task.__class__)
             module = task.__class__.__module__
             parts = module.split('.')
@@ -284,18 +157,20 @@ class VersionTask(TaskInterface):
 
                 try:
                     version = pkg_resources.get_distribution(try_module_name).version
-                    table_body.append([name, version, module, class_name])
+                    table_body.append([name, version, module, class_name, task.extends_task()])
 
                     break
                 except pkg_resources.DistributionNotFound:
                     parts = parts[:-1]
                 except ValueError:
-                    table_body.append([name, 'UNKNOWN (local module?)', module, class_name])
+                    table_body.append([name, 'UNKNOWN (local module?)', module, class_name, task.extends_task()])
 
-        self.io().outln(self.table(
-            header=['Name', 'Version', 'Imported from', 'Representation'],
-            body=table_body
-        ))
+        self.io().outln(
+            self.io().format_table(
+                header=['Name', 'Version', 'Imported from', 'Representation', 'Extends'],
+                body=table_body
+            )
+        )
 
         return True
 
@@ -540,7 +415,7 @@ This task is designed to be extended, see methods marked as "interface methods".
 
         self.sh('cp %s/rkdw.py ./rkdw' % template_structure_path)
         self.sh('chmod +x ./rkdw')
-        self.sh('./rkdw :init', env={'ENVIRONMENT_TYPE': 'pipenv' if use_pipenv else 'venv'})
+        self.sh('./rkdw', env={'ENVIRONMENT_TYPE': 'pipenv' if use_pipenv else 'venv'})
 
     @staticmethod
     def _get_development_pipenv_install_str(dev_dir: str):
@@ -640,9 +515,28 @@ This task is designed to be extended, see methods marked as "interface methods".
         return self.sh('git diff --stat || true', capture=True).strip() == ''
 
 
+class DummyTask(TaskInterface):
+    """
+    Dummy task, use for testing
+    """
+
+    def get_name(self) -> str:
+        return ':dummy'
+
+    def get_group_name(self) -> str:
+        return ''
+
+    def configure_argparse(self, parser: ArgumentParser):
+        parser.add_argument('--test', action='store_true', required=False, help='Just a test boolean parameter')
+
+    def execute(self, context: ExecutionContext) -> bool:
+        self.io().info_msg(f'Hello from dummy task, test={context.get_arg("--test")}')
+
+        return True
+
+
 def imports() -> List[TaskDeclaration]:
     return [
-        TaskDeclaration(InitTask(), internal=True),
         TaskDeclaration(TasksListingTask()),
         TaskDeclaration(VersionTask()),
         TaskDeclaration(ShellCommandTask(), internal=True),

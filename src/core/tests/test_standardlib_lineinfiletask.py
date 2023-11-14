@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
+import pytest
 from tempfile import NamedTemporaryFile
 from rkd.core.api.testing import BasicTestingCase
 from rkd.core.standardlib import LineInFileTask
 from rkd.core.api.inputoutput import BufferedSystemIO
 
 
+@pytest.mark.e2e
 class LineInFileTaskTest(BasicTestingCase):
     @staticmethod
     def _execute_mocked_task(params: dict, envs: dict = {}) -> BufferedSystemIO:

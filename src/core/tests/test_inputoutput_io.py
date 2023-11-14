@@ -209,3 +209,25 @@ He was killed by shelling in 1943 before the end of the war\x1B[0m"""
             io.info('Face the facts, no thanks, "Your passport lacks stamps Please go back for war, ' +
                     'torture and the death camps" Join the ranks, labeled as illegal people, Cursed by those who ' +
                     'suck blood from golden calf’s nipple')
+
+    def test_table(self):
+        """Simply test format_table() - the table is expected to use an external library, it is expected that external library
+        will be tested already, but we need to check there if the interface matches
+        """
+
+        io = IO()
+        out = io.format_table(
+            header=['Activist', 'Born date'],
+            body=[
+                ['Mikhail Alexandrovich Bakunin', '1814'],
+                ['Errico Malatesta', '1853'],
+                ['José Buenaventura Durruti Dumange', '1896'],
+                ['Johann Rudolf Rocker', '1873']
+            ]
+        )
+
+        self.assertIn('---------------------------------', out)
+        self.assertIn('Mikhail Alexandrovich Bakunin', out)
+        self.assertIn('Johann Rudolf Rocker', out)
+        self.assertIn('Activist', out)
+        self.assertIn('Born date', out)

@@ -19,3 +19,4 @@ ADVANCED usage
    process-isolation
    docker-entrypoint
    tests
+   schema

@@ -3,8 +3,8 @@ import sys
 from abc import ABC
 from subprocess import CalledProcessError
 from argparse import ArgumentParser
-from typing import Dict
-from rkd.core.api.contract import TaskInterface, ExecutionContext
+from typing import Dict, Union
+from rkd.core.api.contract import TaskInterface, ExecutionContext, ArgumentEnv
 
 
 class BasePythonTask(TaskInterface, ABC):
@@ -18,7 +18,8 @@ class PublishTask(BasePythonTask):
     def get_name(self) -> str:
         return ':publish'
 
-    def get_declared_envs(self) -> Dict[str, str]:
+    @classmethod
+    def get_declared_envs(cls) -> Dict[str, Union[str, ArgumentEnv]]:
         return {
             'TWINE_PATH': 'twine'
         }

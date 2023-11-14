@@ -1,9 +1,19 @@
-from typing import List
+from types import FunctionType
+from typing import List, Type
 from jsonschema import ValidationError
-from .argparsing.model import TaskArguments
 
 
-class ContextException(Exception):
+class RiotKitDoException(Exception):
+    pass
+
+
+class HandledExitException(Exception):
+    """
+    Signal to exit RKD without any message, as the error was already handled
+    """
+
+
+class ContextException(RiotKitDoException):
     pass
 
 
@@ -11,7 +21,17 @@ class TaskNotFoundException(ContextException):
     pass
 
 
-class TaskExecutionException(Exception):
+class TaskNameConflictException(ContextException):
+    @classmethod
+    def from_pipeline_and_task_has_same_name(cls, name: str):
+        return cls(f'Context has Task + Pipeline with same name: {name}. Cannot resolve conflict.')
+
+
+
+# +=================================
+# + EXECUTOR and RESOLVER EXCEPTIONS
+# +=================================
+class TaskExecutionException(RiotKitDoException):
     pass
 
 
@@ -19,68 +39,89 @@ class InterruptExecution(TaskExecutionException):
     pass
 
 
-class ExecutionRetryException(TaskExecutionException):
-    """Internal signal to retry a task"""
-
-    args: List[TaskArguments]
-
-    def __init__(self, args: List[TaskArguments] = None):
-        if args is None:
-            args = []
-
-        self.args = args
-
-
-class ExecutionRescheduleException(TaskExecutionException):
-    """Internal signal to put extra task into resolve/schedule queue of TaskResolver"""
-
-    tasks_to_schedule: List[TaskArguments]
-
-    def __init__(self, tasks_to_schedule: List[TaskArguments]):
-        self.tasks_to_schedule = tasks_to_schedule
-
-
-class ExecutionRescueException(ExecutionRescheduleException):
-    """Internal signal to call a rescue set of tasks in case of given task fails"""
-
-
-class ExecutionErrorActionException(ExecutionRescheduleException):
-    """Internal signal to call an error notification in case when given task fails"""
-
-
-class TaskException(ContextException):
+class TaskResolvingException(TaskExecutionException):
     pass
 
 
-class UndefinedEnvironmentVariableUsageError(TaskException):
+class AggregatedResolvingFailure(TaskExecutionException):
+    def __init__(self, exceptions: List[Exception]):
+        self.exceptions = exceptions
+
+
+# +=============================
+# + TASK DECLARATION EXCEPTIONS
+# -----------------------------
+#   When inputs are invalid
+# +=============================
+class TaskDeclarationException(ContextException):
     pass
 
 
-class EnvironmentVariableNotUsed(TaskException):
+class LifecycleConfigurationException(TaskDeclarationException):
+    @classmethod
+    def from_invalid_method_used(cls, task_full_name: str, method_names: str) -> 'LifecycleConfigurationException':
+        return cls(f'Attributes or methods: {method_names} are not allowed ' +
+                   f'to be used in configure() of "{task_full_name}" task. Make sure you are not trying to do ' +
+                   'anything tricky. configure() method purpose is to use exposed methods by authors of base task ' +
+                   'to customize extended task with custom configuration based on specific logic')
+
+
+class UndefinedEnvironmentVariableUsageError(TaskDeclarationException):
     pass
 
 
-class EnvironmentVariableNameNotAllowed(TaskException):
+class EnvironmentVariableNotUsed(TaskDeclarationException):
+    pass
+
+
+class EnvironmentVariableNameNotAllowed(TaskDeclarationException):
     def __init__(self, var_name: str):
         super().__init__('Environment variable with this name "' + var_name + '" cannot be declared, it probably a' +
                          ' commonly reserved name by operating systems')
 
 
-class UserInputException(Exception):
+class TaskFactoryException(TaskDeclarationException):
+    @classmethod
+    def from_missing_extends(cls, func):
+        return cls(f'{func} needs to use @extends annotation')
+
+    @classmethod
+    def from_not_extendable_base_task(cls, extended_class: Type, func: FunctionType):
+        return cls(f'Class {extended_class} that is extended by {func} must implemented ExtendableTaskInterface')
+
+    @classmethod
+    def from_method_not_allowed_to_be_inherited(cls, method, origin: FunctionType):
+        return cls(f'Method {method} is not allowed to be inherited. Defined in {origin}')
+
+    @classmethod
+    def from_method_not_allowed_to_be_defined_for_inheritance(cls, method, origin: FunctionType):
+        return cls(f'Method {method} is not allowed to be defined for inheritance. Defined in {origin}')
+
+    @classmethod
+    def from_invalid_import_path(cls, class_full_path: str):
+        return cls(f'Cannot import {class_full_path}. '
+                   f'No such class? Check if package is installed in current environment')
+
+    @classmethod
+    def from_importing_not_a_class(cls, class_full_path: str):
+        return cls(f'Cannot import {class_full_path}. '
+                   f'Imported element is not a type (class)')
+
+    @classmethod
+    def from_unsupported_decorator_type(cls, method, allowed, used_decorator):
+        return cls(f'Method {method} uses unsupported annotation/marker. '
+                   f'Only {allowed} are supported, used {used_decorator}')
+
+
+class UserInputException(RiotKitDoException):
     pass
-
-
-class BlockDefinitionLogicError(Exception):
-    @staticmethod
-    def from_both_rescue_and_error_defined():
-        return BlockDefinitionLogicError('Block "{0:s}" cannot define both @rescue and @error'.format(task.block().body))
 
 
 class NotSupportedEnvVariableError(UserInputException):
     pass
 
 
-class YamlParsingException(ContextException):
+class StaticFileParsingException(ContextException):
     """Logic or syntax errors in makefile.yaml"""
 
     @classmethod
@@ -91,8 +132,27 @@ class YamlParsingException(ContextException):
     def from_not_a_string(cls, key: str):
         return cls(f'"{key}" should be of a string type')
 
+    @classmethod
+    def from_unsupported_decorator_type(cls, attribute: str, task_name: str,
+                                        makefile_path: str) -> 'StaticFileParsingException':
 
-class YAMLFileValidationError(YamlParsingException):
+        return cls(f'Unsupported decorator type (after "@") in "{attribute}" for task "{task_name}" '
+                   f'defined in {makefile_path}')
+
+    @classmethod
+    def from_not_allowed_attribute(cls, yaml_key_without_decorator: str, task_name: str):
+        return cls(f'Not allowed attribute "{yaml_key_without_decorator}" used for "{task_name}" task')
+
+    @classmethod
+    def from_attribute_not_supporting_decorators(cls, yaml_key_without_decorator: str, decorator: str):
+        return cls(f'"{yaml_key_without_decorator}" does not support decorators, "{decorator}" used')
+
+    @classmethod
+    def from_doubled_decorator(cls, yaml_key_without_decorator: str, decorator: str):
+        return cls(f'Doubled decorator "{decorator}" for {yaml_key_without_decorator}, can use only one decorator')
+
+
+class YAMLFileValidationError(StaticFileParsingException):
     """Errors related to schema validation"""
 
     def __init__(self, err: ValidationError):
@@ -121,6 +181,16 @@ class ParsingException(ContextException):
                 import_str, class_name, import_path
             )
         )
+
+    @classmethod
+    def from_empty_modifier_declared(cls, modifier: str, block) -> 'ParsingException':
+        return cls(f'Declared empty @{modifier} modifier in {block} block - missing tasks')
+
+    @classmethod
+    def from_previous_block_not_correctly_closed(cls, part):
+        return cls(f'Parser error. Cannot find block "{part}". Block found in commandline, '
+                   'but not parsed by parse_blocks() before. '
+                   'It could mean that previous Block was not correctly closed?')
 
 
 class DeclarationException(ContextException):
@@ -161,13 +231,17 @@ class EnvironmentVariablesFileNotFound(ContextException):
         )
 
 
-class RuntimeException(Exception):
+class RuntimeException(RiotKitDoException):
     pass
 
 
-class MissingInputException(RuntimeException):
+class MissingInputException(RuntimeException, KeyError):
     def __init__(self, arg_name: str, env_name: str):
-        super().__init__('Either "%s" switch not used, either "%s" was not defined in environment' % (
+        if not env_name:
+            super().__init__('"%s" switch not defined' % (arg_name))
+            return
+
+        super().__init__('Either "%s" switch not defined, either "%s" was not defined in environment' % (
             arg_name, env_name
         ))
 

@@ -1,30 +1,75 @@
 
 from argparse import ArgumentParser
+from copy import copy
 from subprocess import CalledProcessError
-from typing import Callable
+from typing import Callable, List, Optional
+
 from ..api.syntax import TaskDeclaration
-from ..api.contract import TaskInterface
+from ..api.contract import TaskInterface, ExtendableTaskInterface, MultiStepLanguageExtensionInterface
 from ..api.contract import ExecutionContext
 
 
 # <sphinx=shell-command>
-class ShellCommandTask(TaskInterface):
-    """Executes shell scripts"""
+class ShellCommandTask(ExtendableTaskInterface, MultiStepLanguageExtensionInterface):
+    """
+    Executes shell commands and scripts
+
+    Extendable in two ways:
+      - overwrite stdin()/input to execute a script
+      - overwrite execute() to execute a Python code that could contain calls to self.sh()
+    """
+
+    # to be overridden in compile()
+    is_cmd_required: bool  # Is --cmd switch required to be set?
+    code: Optional[str]    # (Optional) Execute script from a variable value
+    name: Optional[str]    # (Optional) Task name
+    step_num: int
+
+    def __init__(self):
+        self.is_cmd_required = True
+        self.code = None
+        self.name = None
+        self.step_num = 0
 
     def get_name(self) -> str:
-        return ':sh'
+        return ':sh' if not self.name else self.name
 
     def get_group_name(self) -> str:
         return ''
 
+    def get_configuration_attributes(self) -> List[str]:
+        return ['is_cmd_required']
+
     def configure_argparse(self, parser: ArgumentParser):
-        parser.add_argument('--cmd', '-c', help='Shell command', required=True)
+        parser.add_argument('--cmd', '-c', help='Shell command', required=self.is_cmd_required)
+
+    def with_predefined_details(self, code: str, name: str, step_num: int) -> 'ShellCommandTask':
+        clone = copy(self)
+        clone.code = code
+        clone.name = name
+        clone.step_num = step_num
+        clone.is_cmd_required = False
+
+        return clone
 
     def execute(self, context: ExecutionContext) -> bool:
-        # self.sh() and self.io() are part of TaskUtilities via TaskInterface
+        cmd = ''
+
+        if context.get_input():
+            cmd = context.get_input().read()
+
+        if context.get_arg('cmd'):
+            cmd = context.get_arg('cmd')
+
+        if self.code:
+            cmd = self.code
 
         try:
-            self.sh(context.get_arg('cmd'), capture=False)
+            # self.sh() and self.io() are part of the base class
+            if cmd:
+                self.sh(cmd, capture=False)
+            self.inner_execute(context)
+
         except CalledProcessError as e:
             self.io().error_msg(str(e))
             return False

@@ -1,7 +1,7 @@
 .. _Tasks development:
 
-Tasks development
-=================
+Tasks development - more examples
+=================================
 
 RKD has multiple approaches to define a task. The first one is simpler - in makefile in YAML or in Python.
 The second one is a set of tasks as a Python package.
@@ -41,7 +41,7 @@ Following example task could be imported with path **rkd.standardlib.ShellComman
 
 **Example task from RKD standardlib:**
 
-.. literalinclude:: ../../../rkd/standardlib/shell.py
+.. literalinclude:: ../../../src/core/rkd/core/standardlib/shell.py
    :start-after: <sphinx=shell-command>
    :end-before: </sphinx=shell-command>
 
@@ -65,25 +65,7 @@ Let's define then a task in Python in a simplest method.
 
 **Makefile.py**
 
-.. code:: python
-
-    import os
-    from rkd.core.api.syntax import TaskDeclaration
-    from rkd.core.api.contract import ExecutionContext
-    from rkd.standardlib import CallableTask
-
-    def union_method(context: ExecutionContext) -> bool:
-        os.system('xdg-open https://iwa-ait.org')
-        return True
-
-    IMPORTS = [
-        # just declare a task with a name + code as function! Yay, simple!
-        TaskDeclaration(CallableTask(':create-union', union_method), workdir='/var')
-    ]
-
-    TASKS = []
-
-:ref:`Read more about Python Makefile syntax`.
+.. literalinclude:: ../syntax/simplified/.rkd/makefile.py
 
 Please check :ref:`Tasks API` for interfaces description
 --------------------------------------------------------

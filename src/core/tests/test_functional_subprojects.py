@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import pytest
 import os
 from rkd.core.api.testing import FunctionalTestingCase
 from rkd.process import switched_workdir
@@ -7,6 +8,7 @@ from rkd.process import switched_workdir
 TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
+@pytest.mark.e2e
 class TestFunctionalSubprojects(FunctionalTestingCase):
     def test_subproject_tasks_are_included(self):
         """
@@ -43,7 +45,7 @@ class TestFunctionalSubprojects(FunctionalTestingCase):
 
             self.assertIn('Hello from testsubproject1', full_output)
 
-    def test_subproject_in_python_syntax(self):
+    def test_subproject_in_python_syntax_has_correct_workdir(self):
         """
         The structure:
         - ROOT PROJECT (makefile.yaml)
@@ -58,5 +60,3 @@ class TestFunctionalSubprojects(FunctionalTestingCase):
 
             self.assertIn('internal-samples/subprojects/testsubproject1/infrastructure/terraform', full_output)
             self.assertIn('from terraform', full_output)
-
-

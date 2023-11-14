@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import pytest
 from rkd.core.api.testing import BasicTestingCase
 from rkd.core.aliasgroups import parse_alias_groups_from_env
 
 
+@pytest.mark.argparsing
 class AliasGroupsTest(BasicTestingCase):
     def test_parsed_count_matches(self):
         self.assertEqual(2, len(parse_alias_groups_from_env(':harbor->:hb,:harbor->')))

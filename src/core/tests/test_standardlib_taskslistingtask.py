@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
+import pytest
 from rkd.core.api.testing import BasicTestingCase
 from rkd.core.standardlib import TasksListingTask
 from rkd.core.test import get_test_declaration
 
 
+@pytest.mark.e2e
 class TestTasksListingTask(BasicTestingCase):
     def test_ljust_task_name(self):
         """Assert that the formatting is not breaking the description alignment

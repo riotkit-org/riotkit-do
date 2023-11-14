@@ -4,13 +4,12 @@
 
 from rkd.core.api.syntax import TaskDeclaration
 from rkd.core.standardlib.shell import ShellCommandTask, ExecProcessCommand
-from rkd.core.standardlib import InitTask, TasksListingTask, VersionTask, CreateStructureTask, LineInFileTask
+from rkd.core.standardlib import TasksListingTask, VersionTask, CreateStructureTask, LineInFileTask
 
 
 IMPORTS = [
     TaskDeclaration(ShellCommandTask(), internal=True),
     TaskDeclaration(ExecProcessCommand(), internal=True),
-    TaskDeclaration(InitTask(), internal=True),
     TaskDeclaration(TasksListingTask()),
     TaskDeclaration(VersionTask()),
     TaskDeclaration(CreateStructureTask()),

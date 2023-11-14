@@ -8,8 +8,11 @@ Provides tools for easier testing of RKD-based workflows, tasks, plugins.
 """
 
 import os
+import re
+import subprocess
 import sys
-from typing import Tuple, Dict, List
+from tempfile import TemporaryDirectory
+from typing import Tuple, Dict, List, Union
 from unittest import TestCase
 from io import StringIO
 from copy import deepcopy
@@ -21,10 +24,11 @@ from rkd.core.api.contract import ExecutionContext
 from rkd.core.api.contract import TaskInterface
 from rkd.core.api.syntax import TaskDeclaration
 from rkd.core.api.temp import TempManager
-from rkd.core.api.inputoutput import IO
+from rkd.core.api.inputoutput import IO, clear_formatting
 from rkd.core.api.inputoutput import NullSystemIO
 from rkd.core.api.inputoutput import BufferedSystemIO
 from rkd.core.context import ApplicationContext
+from rkd.process import switched_workdir
 
 
 class OutputCapturingSafeTestCase(TestCase):
@@ -37,16 +41,20 @@ class OutputCapturingSafeTestCase(TestCase):
 
     _stdout = None
     _stderr = None
+    backup_stdout = True
 
     def setUp(self) -> None:
         os.environ['RKD_DEPTH'] = '0'
-        self._stdout = sys.stdout
-        self._stderr = sys.stderr
+
+        if self.backup_stdout:
+            self._stdout = sys.stdout
+            self._stderr = sys.stderr
 
         super().setUp()
 
     def tearDown(self) -> None:
-        self._restore_standard_out()
+        if self.backup_stdout:
+            self._restore_standard_out()
 
         super().tearDown()
 
@@ -74,19 +82,27 @@ class BasicTestingCase(TestCase):
 
     _envs = None
     _cwd = None
+    should_backup_env = False
+    temp: TempManager
 
     def setUp(self) -> None:
         os.environ['RKD_PATH'] = ''
+        self.temp = TempManager()
 
-        self._envs = deepcopy(os.environ)
+        if self.should_backup_env:
+            self._envs = deepcopy(os.environ)
+
         self._cwd = os.getcwd()
 
         super().setUp()
 
     def tearDown(self) -> None:
-        os.environ = self._envs
+        if self.should_backup_env:
+            os.environ = deepcopy(self._envs)
+
         os.chdir(self._cwd)
 
+        self.temp.finally_clean_up()
         super().tearDown()
 
     @contextmanager
@@ -95,8 +111,10 @@ class BasicTestingCase(TestCase):
         Mocks environment
 
         Example usage:
-            with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/env-in-yaml/.rkd'}):
-                ...
+            .. code:: python
+
+                with self.environment({'RKD_PATH': SCRIPT_DIR_PATH + '/../docs/examples/env-in-yaml/.rkd'}):
+                    # code there
 
         :param environ:
         :return:
@@ -108,7 +126,7 @@ class BasicTestingCase(TestCase):
             os.environ.update(environ)
             yield
         finally:
-            os.environ = backup
+            os.environ = deepcopy(backup)
 
     @staticmethod
     def satisfy_task_dependencies(task: TaskInterface, io: IO = None) -> TaskInterface:
@@ -136,7 +154,8 @@ class BasicTestingCase(TestCase):
         return task
 
     @staticmethod
-    def mock_execution_context(task: TaskInterface, args: Dict[str, str] = None, env: Dict[str, str] = None,
+    def mock_execution_context(task: TaskInterface, args: Dict[str, Union[str, bool]] = None,
+                               env: Dict[str, str] = None,
                                defined_args: Dict[str, dict] = None) -> ExecutionContext:
 
         """
@@ -270,3 +289,71 @@ class FunctionalTestingCase(BasicTestingCase, OutputCapturingSafeTestCase):
                 raise
 
         return ctx.io.get_value() + "\n" + str_io.getvalue() + "\nTASK_EXIT_RESULT=" + str(result)
+
+    @contextmanager
+    def with_temporary_workspace_containing(self, files: Dict[str, str]):
+        """
+        Creates a temporary directory as a workspace
+        and fills up with files specified in "file" parameter
+
+        :param files: Dict of [filename: contents to write to a file]
+        :return:
+        """
+
+        with TemporaryDirectory() as tempdir:
+            with switched_workdir(tempdir):
+
+                # create files from a predefined content
+                for filename, content in files.items():
+                    directory = os.path.dirname(filename)
+
+                    if directory:
+                        subprocess.check_call(['mkdir', '-p', directory])
+
+                    with open(filename, 'w') as f:
+                        f.write(content)
+
+                # execute code
+                yield
+
+    @classmethod
+    def filter_out_task_events_from_log(cls, out: str):
+        """
+        Produces an array of events unformatted
+
+        .. code:: python
+
+            [
+                "Executing :sh -c echo 'Rocker' [part of :example]",
+                "Executing :sh -c echo 'Kropotkin' [part of :example]",
+                'Executing :sh -c echo "The Conquest of Bread"; exit 1 [part of :example]',
+                'Retrying :sh -c echo "The Conquest of Bread"; exit 1 [part of :example]',
+                'Executing :sh -c exit 0 ',
+                'Executing :sh -c echo "Modern Science and Anarchism"; [part of :example]'
+            ]
+
+        :param out:
+        :return:
+        """
+
+        allowed_patterns = [
+            'The task `',
+            ">> \[([0-9]+)\] ",
+        ]
+
+        def is_line_to_be_output(line: str) -> bool:
+            for pattern in allowed_patterns:
+                if re.findall(pattern, line):
+                    return True
+
+            return False
+
+        return list(
+            map(
+                lambda x: clear_formatting(x).strip(),
+                filter(
+                    is_line_to_be_output,
+                    out.split("\n")
+                )
+            )
+        )

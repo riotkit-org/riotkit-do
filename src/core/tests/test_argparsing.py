@@ -1,41 +1,44 @@
 #!/usr/bin/env python3
-
+import os
+import pytest
 from argparse import ArgumentParser
-from rkd.core.api.inputoutput import IO
+from unittest import mock
+
+from rkd.core.api.inputoutput import IO, BufferedSystemIO
 from rkd.core.api.testing import BasicTestingCase
 from rkd.core.argparsing.parser import CommandlineParsingHelper
+from rkd.core.exception import CommandlineParsingError
 from rkd.core.test import get_test_declaration
 
 
+@pytest.mark.argparsing
 class ArgParsingTest(BasicTestingCase):
-    def test_creates_grouped_arguments_into_tasks__task_after_flag(self):
-        """ Test parsing arguments """
+    should_backup_env = False
 
+    def test_creates_grouped_arguments_into_tasks__task_after_flag(self):
         parsed = CommandlineParsingHelper(IO()).create_grouped_arguments([
             ':harbor:start', '--profile=test', '--fast-fail', ':status'
         ])
 
-        self.assertEqual("[\"ArgumentBlock<[':harbor:start', '--profile=test', '--fast-fail'], "
-                         "[TaskCall<:harbor:start (['--profile=test', '--fast-fail'])>]>\", "
-                         "\"ArgumentBlock<[':status'], [TaskCall<:status ([])>]>\"]",
-                         str(self.list_to_str(parsed)))
+        self.assertEqual(':harbor:start', parsed[0].tasks()[0].name())
+        self.assertEqual(['--profile=test', '--fast-fail'], parsed[0].tasks()[0].args())
 
-    def test_creates_grouped_arguments_into_tasks__no_task_defined_goes_to_rkd_initialization(self):
-        parsed = CommandlineParsingHelper(IO()).create_grouped_arguments([
-            '--help'
-        ])
-
-        self.assertEqual("[TaskCall<rkd:initialize (['--help'])>]", str(parsed[0].tasks()))
+        self.assertEqual(':status', parsed[1].tasks()[0].name())
+        self.assertEqual([], parsed[1].tasks()[0].args())
 
     def test_creates_grouped_arguments_into_tasks__tasks_only(self):
         parsed = CommandlineParsingHelper(IO()).create_grouped_arguments([
             ':harbor:start', ':harbor:status', ':harbor:stop'
         ])
 
-        self.assertEqual("[\"ArgumentBlock<[':harbor:start'], [TaskCall<:harbor:start ([])>]>\", "
-                         "\"ArgumentBlock<[':harbor:status'], [TaskCall<:harbor:status ([])>]>\", "
-                         "\"ArgumentBlock<[':harbor:stop'], [TaskCall<:harbor:stop ([])>]>\"]",
-                         str(list(map(lambda a: str(a), parsed))))
+        self.assertEqual(':harbor:start', parsed[0].tasks()[0].name())
+        self.assertEqual([], parsed[0].tasks()[0].args())
+
+        self.assertEqual(':harbor:status', parsed[1].tasks()[0].name())
+        self.assertEqual([], parsed[1].tasks()[0].args())
+
+        self.assertEqual(':harbor:stop', parsed[2].tasks()[0].name())
+        self.assertEqual([], parsed[2].tasks()[0].args())
 
     def test_add_env_variables_to_argparse(self):
         parser = ArgumentParser(':test')
@@ -62,8 +65,12 @@ class ArgParsingTest(BasicTestingCase):
             ':strike:start', 'now'
         ])
 
-        self.assertEqual("[\"ArgumentBlock<[':strike:start', 'now'], [TaskCall<:strike:start (['now'])>]>\"]",
-                         str(self.list_to_str(parsed)))
+        # there is one block with 1 task
+        self.assertEqual(1, len(parsed[0].tasks()))
+        self.assertEqual(1, len(parsed))
+
+        # assert that "now" is recognized as an argument of first task
+        self.assertEqual(['now'], parsed[0].tasks()[0].args())
 
     def test_arguments_usage_with_switch_before(self):
         """Check that arguments are recognized - variant with an additional switch"""
@@ -72,10 +79,7 @@ class ArgParsingTest(BasicTestingCase):
             ':strike:start', '--general', 'now'
         ])
 
-        self.assertEqual(
-            "[\"ArgumentBlock<[':strike:start', '--general', 'now'], "
-            "[TaskCall<:strike:start (['--general', 'now'])>]>\"]",
-            str(self.list_to_str(parsed)))
+        self.assertEqual(['--general', 'now'], parsed[0].tasks()[0].args())
 
     def test_global_arguments_are_shared_for_all_tasks(self):
         """When we define a "@" task, then it is not present as a task (removed from tasks list), but its arguments
@@ -88,11 +92,11 @@ class ArgParsingTest(BasicTestingCase):
             ':picket:start', '--at', 'exploiters-shop'
         ])
 
-        self.assertEqual(
-            "[\"ArgumentBlock<[':strike:start', '--general', 'now'], [TaskCall<:strike:start (['--general', 'now', '--grassroot'])>]>\", "
-            "\"ArgumentBlock<[':picket:start', '--at', 'exploiters-shop'], [TaskCall<:picket:start (['--at', 'exploiters-shop', '--grassroot'])>]>\"]",
-            str(self.list_to_str(parsed))
-        )
+        # first task - :strike:start
+        self.assertEqual(['--general', 'now', '--grassroot'], parsed[0].tasks()[0].args())
+
+        # second task - :picket:start
+        self.assertEqual(['--at', 'exploiters-shop', '--grassroot'], parsed[1].tasks()[0].args())
 
     def test_global_arguments_are_cleared_after_inserting_alone_at_symbol(self):
         """When we define a "@" task, then it is not present as a task (removed from tasks list), but its arguments
@@ -108,11 +112,12 @@ class ArgParsingTest(BasicTestingCase):
             ':picket:start', '--at', 'exploiters-shop'
         ])
 
-        self.assertEqual(
-            "[\"ArgumentBlock<[':strike:start', '--general', 'now'], [TaskCall<:strike:start (['--general', 'now', '--duration=30d'])>]>\", "
-            "\"ArgumentBlock<[':picket:start', '--at', 'exploiters-shop'], [TaskCall<:picket:start (['--at', 'exploiters-shop'])>]>\"]",
-            str(self.list_to_str(parsed))
-        )
+        # --duration=30d is inherited
+        self.assertEqual(['--general', 'now', '--duration=30d'], parsed[0].tasks()[0].args())
+
+        # --duration=30d is not present as just "@" was used,
+        # then a task happened - this means that global switches are cleared
+        self.assertEqual(['--at', 'exploiters-shop'], parsed[1].tasks()[0].args())
 
     def test_global_arguments_are_changed_when_using_at_symbol_twice(self):
         """When we define a "@" task, then it is not present as a task (removed from tasks list), but its arguments
@@ -136,14 +141,16 @@ class ArgParsingTest(BasicTestingCase):
             ':send:mail'
         ])
 
-        self.assertEqual(
-            "[\"ArgumentBlock<[':join:activism', '--organization', 'black-lives-matter'], "
-            "[TaskCall<:join:activism (['--organization', 'black-lives-matter', '--type', 'human-rights'])>]>\", "
-            "\"ArgumentBlock<[':join:activism', '--organization', 'international-workers-association'], "
-            "[TaskCall<:join:activism (['--organization', 'international-workers-association', '--type', 'working-class-rights'])>]>\", "
-            "\"ArgumentBlock<[':send:mail'], [TaskCall<:send:mail ([])>]>\"]",
-            str(self.list_to_str(parsed))
-        )
+        # :join:activism - first call
+        self.assertEqual(['--organization', 'black-lives-matter', '--type', 'human-rights'],
+                         parsed[0].tasks()[0].args())
+
+        # :join:activism - second call
+        self.assertEqual(['--organization', 'international-workers-association', '--type', 'working-class-rights'],
+                         parsed[1].tasks()[0].args())
+
+        # :send:mail
+        self.assertEqual([], parsed[2].tasks()[0].args())
 
     def test_preparse_args_tolerates_not_recognized_args(self):
         """
@@ -151,7 +158,7 @@ class ArgParsingTest(BasicTestingCase):
         then it works
         """
 
-        args = CommandlineParsingHelper.preparse_args(['--imports', 'rkd.pythonic', ':sh'])
+        args = CommandlineParsingHelper.preparse_global_arguments_before_tasks(['--imports', 'rkd.pythonic', ':sh'])
 
         self.assertIn('imports', args)
         self.assertEqual(['rkd.pythonic'], args['imports'])
@@ -161,7 +168,7 @@ class ArgParsingTest(BasicTestingCase):
         Arguments that could be preparsed should be placed behind any task
         """
 
-        args = CommandlineParsingHelper.preparse_args([':sh', '--imports', 'rkd_python'])
+        args = CommandlineParsingHelper.preparse_global_arguments_before_tasks([':sh', '--imports', 'rkd_python'])
 
         self.assertEqual([], args['imports'])
 
@@ -199,3 +206,119 @@ class ArgParsingTest(BasicTestingCase):
 
         with self.subTest('Not used - non empty string - :tasks --print'):
             self.assertFalse(CommandlineParsingHelper.was_help_used([':tasks', '--print']))
+
+    def test_pre_parse_arguments_parses_arguments_before_first_task(self):
+        result = CommandlineParsingHelper.preparse_global_arguments_before_tasks([
+            '--log-level=debug', ':task1', '--something'
+        ])
+
+        self.assertEqual(
+            {'imports': [], 'log_level': 'debug', 'silent': False, 'no_ui': False, 'print_event_history': False},
+            result
+        )
+
+    def test_preparse_global_arguments_before_tasks_parses_imports_from_switch(self):
+        result = CommandlineParsingHelper.preparse_global_arguments_before_tasks([
+            '--imports', 'rkd.core.something1:something2'
+        ])
+
+        self.assertEqual(
+            ['rkd.core.something1', 'something2'],
+            result['imports']
+        )
+
+    @mock.patch.dict(os.environ, {"RKD_IMPORTS": "bakunin:malatesta"}, clear=False)
+    def test_preparse_global_arguments_before_tasks_parses_imports_from_env(self):
+        result = CommandlineParsingHelper.preparse_global_arguments_before_tasks([])
+
+        self.assertEqual(
+            ['bakunin', 'malatesta'],
+            result['imports']
+        )
+
+    @mock.patch.dict(os.environ, {"RKD_SYS_LOG_LEVEL": "internal"}, clear=True)
+    def test_preparse_global_arguments_before_tasks_reacts_on_sys_log_level_env(self):
+        result = CommandlineParsingHelper.preparse_global_arguments_before_tasks([])
+
+        self.assertEqual(
+            'internal',
+            result['log_level']
+        )
+
+    def test_pre_parse_arguments_parses_arguments_before_first_block(self):
+        result = CommandlineParsingHelper.preparse_global_arguments_before_tasks([
+            '--log-level=debug', '{@retry 3}', '--something', '{/@}'
+        ])
+
+        self.assertEqual(
+            {'imports': [], 'log_level': 'debug', 'silent': False, 'no_ui': False, 'print_event_history': False},
+            result
+        )
+
+    def test_parse_blocks_when_at_least_two_tasks_in_block_and_at_least_one_outside(self):
+        io = BufferedSystemIO()
+        result = CommandlineParsingHelper(io).create_grouped_arguments(
+            [
+                ':db:dump', '--file', 'db.sql',  # block 1
+                '{@retry 3 @rescue :db:rollback}', ':db:upgrade', ':db:test', '{/@}',  # block 2
+                ':db:restart'  # block 3
+            ]
+        )
+
+        # 3 separate blocks
+        self.assertEqual(3, len(result), msg='Expected 3 blocks')
+
+        # there is @rescue parsed
+        self.assertEqual(':db:rollback', result[1].on_rescue[0].name())
+
+        # there are multiple tasks inside a defined block
+        self.assertEqual("[TaskCall<:db:upgrade ([])>, TaskCall<:db:test ([])>]", str(result[1].tasks()))
+
+    def test_create_grouped_arguments_keeps_commandline_switches_in_rescue_block(self):
+        """
+        Checks that commandline switches are not lost - e.g. {@rescue :db:rollback --version 1 --debug}
+        """
+
+        io = BufferedSystemIO()
+        result = CommandlineParsingHelper(io).create_grouped_arguments(
+            [
+                '{@retry 3 @rescue :db:rollback --version 1 --debug}', ':db:upgrade', '{/@}'
+            ]
+        )
+
+        self.assertEqual("TaskCall<:db:rollback (['--version', '1', '--debug'])>", str(result[0].on_rescue[0]))
+
+    def test_create_grouped_arguments_keeps_retry(self):
+        io = BufferedSystemIO()
+        result = CommandlineParsingHelper(io).create_grouped_arguments(
+            [
+                '{@retry 3}', ':flaky:task', '{/@}'
+            ]
+        )
+
+        self.assertEqual(0, result[0].retry_whole_block)
+        self.assertEqual(3, result[0].retry_per_task)
+
+    def test_create_grouped_arguments_keeps_retry_per_block(self):
+        io = BufferedSystemIO()
+        result = CommandlineParsingHelper(io).create_grouped_arguments(
+            [
+                '{@retry-block 3}', ':flaky:task', '{/@}'
+            ]
+        )
+
+        self.assertEqual(3, result[0].retry_whole_block)
+        self.assertEqual(0, result[0].retry_per_task)
+
+    def test_create_grouped_arguments_has_defined_unknown_modifier(self):
+        with self.assertRaises(CommandlineParsingError) as exc:
+            CommandlineParsingHelper(BufferedSystemIO()).create_grouped_arguments(
+                [
+                    '{@unknown :hehe}', ':flaky:task', '{/@}'
+                ]
+            )
+
+        self.assertEqual(
+            'Block "{@unknown :hehe" contains invalid modifier, raised error: Unknown modifier "unknown"',
+            str(exc.exception)
+         )

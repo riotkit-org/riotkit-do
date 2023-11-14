@@ -11,3 +11,5 @@ ChangeLog
 *.egg-info/
 build/
 dist/
+/src/php/tests/samples/composer.lock
+/src/php/tests/samples/vendor/

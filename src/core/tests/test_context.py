@@ -9,13 +9,13 @@ from rkd.core.context import ContextFactory
 from rkd.core.context import ApplicationContext
 from rkd.core.context import distinct_imports
 from rkd.core.api.inputoutput import NullSystemIO, IO, SystemIO
+from rkd.core.dto import StaticFileContextParsingResult
 from rkd.core.exception import ContextException
-from rkd.core.api.syntax import TaskDeclaration
+from rkd.core.api.syntax import TaskDeclaration, Pipeline
 from rkd.core.api.syntax import TaskAliasDeclaration
 from rkd.core.api.syntax import GroupDeclaration
 from rkd.core.api.testing import BasicTestingCase
 from rkd.core.test import TaskForTesting
-from rkd.core.standardlib import InitTask
 
 TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -137,16 +137,23 @@ class ContextTest(BasicTestingCase):
                 - fictional
             ''')
 
-            with unittest.mock.patch('rkd.core.context.YamlSyntaxInterpreter.parse') as parse_method:
-                parse_method.return_value = ([TaskAliasDeclaration(':hello', [':test'])], [], [])
+            with unittest.mock.patch('rkd.core.yaml_context.StaticFileSyntaxInterpreter.parse') as parse_method:
+
+                parse_method.return_value = StaticFileContextParsingResult(
+                    imports=[TaskAliasDeclaration(':hello', [':test'])],
+                    parsed=[],
+                    subprojects=[],
+                    global_environment={}
+                )
 
                 ctx_factory = ContextFactory(NullSystemIO())
-                ctx = ctx_factory._load_from_yaml(os.path.dirname(tmp_file.name), os.path.basename(tmp_file.name),
-                                                  workdir='', prefix='')
+                ctx = ctx_factory._load_from_static_file(os.path.dirname(tmp_file.name), os.path.basename(tmp_file.name),
+                                                         workdir='', prefix='')
 
                 self.assertIn(':hello', ctx._task_aliases)
 
     def test_distinct_imports_raises_exception_when_unknown_type_object_added_to_list(self):
+        # noinspection PyTypeChecker
         self.assertRaises(ContextException,
                           lambda: distinct_imports('hello', ['string-should-not-be-there-even-IDE-knows-that']))
 
@@ -181,10 +188,10 @@ class ContextTest(BasicTestingCase):
 
     def test_context_resolves_recursively_task_aliases(self):
         ctx = ApplicationContext([
-            TaskDeclaration(InitTask())
+            TaskDeclaration(TaskForTesting(), name=':test')
         ], [
-            TaskAliasDeclaration(':deeper', [':init', ':init']),
-            TaskAliasDeclaration(':deep', [':init', ':deeper'])
+            Pipeline(':deeper', [':test', ':test']),
+            Pipeline(':deep', [':test', ':deeper'])
         ], directory='',
             subprojects=[],
             workdir='',
@@ -197,15 +204,15 @@ class ContextTest(BasicTestingCase):
 
         # :deeper = :init
         # :deep = :init :deeper = :init :init :init
-        self.assertEqual(':init', task.get_declarations()[0].to_full_name())
-        self.assertEqual(':init', task.get_declarations()[1].to_full_name())
-        self.assertEqual(':init', task.get_declarations()[2].to_full_name())
+        self.assertEqual(':test', task.get_declarations()[0].repr_as_invoked_task)
+        self.assertEqual(':test', task.get_declarations()[1].repr_as_invoked_task)
+        self.assertEqual(':test', task.get_declarations()[2].repr_as_invoked_task)
 
     def test_expand_contexts_expands_one_context(self) -> None:
         # MAIN PROJECT context
         ctx = ApplicationContext(
             tasks=[
-                TaskDeclaration(InitTask())
+                TaskDeclaration(TaskForTesting())
             ],
             aliases=[
                 TaskAliasDeclaration(':kropotkin', [':init', ':init']),
@@ -219,7 +226,7 @@ class ContextTest(BasicTestingCase):
         # SUBPROJECT context
         subproject_1_ctx = ApplicationContext(
             tasks=[
-                TaskDeclaration(InitTask())
+                TaskDeclaration(TaskForTesting())
             ],
             aliases=[
                 TaskAliasDeclaration(':book', [':init', ':init']),
@@ -247,7 +254,7 @@ class ContextTest(BasicTestingCase):
     def test_expand_contexts_ignores_subprojects_if_no_any(self):
         ctx = ApplicationContext(
             tasks=[
-                TaskDeclaration(InitTask())
+                TaskDeclaration(TaskForTesting())
             ],
             aliases=[
                 TaskAliasDeclaration(':malatesta', [':init', ':init']),

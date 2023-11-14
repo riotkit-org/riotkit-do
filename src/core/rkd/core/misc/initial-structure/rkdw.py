@@ -28,6 +28,7 @@ Food Not Bombs.
 
 import os
 import sys
+import json
 import subprocess
 from glob import glob
 from time import time
@@ -127,10 +128,26 @@ class VenvSupport(PluggableEnvironmentSupport):
         for requirement_file in requirements:
             args += f" -r {requirement_file} "
 
+        if not args:
+            with open('requirements.txt', 'w') as f:
+                f.write('rkd==' + self.get_latest_rkd_stable_version())
+
+            args = " -r requirements.txt "
+
         subprocess.check_call(f'{PYTHON_BIN} -m virtualenv {VENV_CREATION_ARGS} {VENV_PATH}', shell=True)
         subprocess.check_call(f'''
-            /bin/bash -c 'set -e; pwd; find ./; source "{VENV_PATH}/bin/activate"; pip install {args}'
+            /bin/bash -c 'set -e; source "{VENV_PATH}/bin/activate"; pip install {args}'
         ''', shell=True)
+
+    @staticmethod
+    def get_latest_rkd_stable_version() -> str:
+        response = subprocess.check_output(
+            'curl --silent https://api.github.com/repos/riotkit-org/riotkit-do/releases/latest', shell=True
+        )
+
+        parsed = json.loads(response)
+
+        return parsed['tag_name'][1:]
 
     @staticmethod
     def get_name() -> str:
@@ -138,7 +155,8 @@ class VenvSupport(PluggableEnvironmentSupport):
 
 
 def debug(msg: str) -> None:
-    print(f'DEBUG >> {msg}')
+    if os.getenv('RKD_SYS_LOG_LEVEL') in ['debug', 'internal']:
+        print(f'DEBUG >> {msg}')
 
 
 def lock_exists() -> bool:

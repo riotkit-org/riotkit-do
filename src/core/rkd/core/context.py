@@ -12,20 +12,24 @@ from importlib.machinery import SourceFileLoader
 from traceback import print_exc
 from uuid import uuid4
 from . import env
-from .api.syntax import TaskDeclaration, parse_path_into_subproject_prefix
+from .api.syntax import TaskDeclaration, parse_path_into_subproject_prefix, ExtendedTaskDeclaration, Pipeline, \
+    DeclarationBelongingToPipeline
 from .api.syntax import TaskAliasDeclaration
 from .api.syntax import GroupDeclaration
 from .api.contract import ContextInterface
 from .api.parsing import SyntaxParsing
 from .argparsing.parser import CommandlineParsingHelper
 from .api.inputoutput import SystemIO
-from .exception import TaskNotFoundException
+from .exception import TaskNotFoundException, TaskNameConflictException
 from .exception import ContextFileNotFoundException
 from .exception import PythonContextFileNotFoundException
 from .exception import NotImportedClassException
 from .exception import ContextException
+from .execution.lifecycle import CompilationLifecycleEvent
 from .packaging import get_user_site_packages
-from .yaml_context import YamlSyntaxInterpreter
+from .task_factory import TaskFactory
+from .yaml_context import StaticFileSyntaxInterpreter
+from .dto import StaticFileContextParsingResult
 from .yaml_parser import YamlFileLoader
 
 
@@ -48,7 +52,7 @@ class ApplicationContext(ContextInterface):
     """
 
     _imported_tasks: Dict[str, TaskDeclaration]
-    _task_aliases: Dict[str, TaskAliasDeclaration]
+    _task_aliases: Dict[str, Pipeline]
     _compiled: Dict[str, Union[TaskDeclaration, GroupDeclaration]]
     _created_at: datetime
     _directory: str
@@ -60,7 +64,7 @@ class ApplicationContext(ContextInterface):
     id: str
 
     def __init__(self, tasks: List[TaskDeclaration],
-                 aliases: List[TaskAliasDeclaration],
+                 aliases: List[Pipeline],
                  directory: str,
                  subprojects: List[str],
                  workdir: str,
@@ -111,16 +115,23 @@ class ApplicationContext(ContextInterface):
         for task in self._compiled:
             self.io.internal(f'Defined task {task} by context compilation')
 
+        # validation
+        for name, details in self._task_aliases.items():
+            if name in self._compiled.keys():
+                raise TaskNameConflictException.from_pipeline_and_task_has_same_name(name)
+
         for name, details in self._task_aliases.items():
             self.io.internal(f'Defined task alias {name}')
             self._compiled[name] = self._resolve_pipeline(name, details)
+
+        CompilationLifecycleEvent.run_event(self.io, self._compiled)
 
     def find_task_by_name(self, name: str) -> Union[TaskDeclaration, GroupDeclaration]:
         try:
             return self._compiled[name]
         except KeyError:
-            raise TaskNotFoundException(('Task "%s" is not defined. Check if it is defined, or' +
-                                         ' imported, or if the spelling is correct.') % name)
+            raise TaskNotFoundException(('Task "%s" is not defined. Check the import, definition '
+                                         'and typed command.') % name)
 
     def find_all_tasks(self) -> Dict[str, Union[TaskDeclaration, GroupDeclaration]]:
         return self._compiled
@@ -147,7 +158,7 @@ class ApplicationContext(ContextInterface):
 
         self._imported_tasks[task.to_full_name()] = task
 
-    def _add_pipeline(self, pipeline: TaskAliasDeclaration, parent_ctx: Optional['ApplicationContext'] = None) -> None:
+    def _add_pipeline(self, pipeline: Pipeline, parent_ctx: Optional['ApplicationContext'] = None) -> None:
         if not parent_ctx:
             parent_ctx = self
 
@@ -156,12 +167,15 @@ class ApplicationContext(ContextInterface):
 
         self._task_aliases[pipeline.get_name()] = pipeline
 
-    def _resolve_pipeline(self, name: str, pipeline: TaskAliasDeclaration) -> GroupDeclaration:
+    def _resolve_pipeline(self, name: str, pipeline: Pipeline, depth: int = 0) -> GroupDeclaration:
         """
         Parse commandline args to fetch list of tasks to join into a group
 
         Produced result will be available to fetch via find_task_by_name()
         This brings a support for "Pipelines" (also called Task Aliases)
+
+        Pipelines inherited in Pipelines will be resolved as one long set of tasks with merged
+        blocks, arguments and environment.
 
         Scenario:
             Given as input a list of chained tasks eg. ":task1 :task2 --arg1=value :task3"
@@ -169,59 +183,71 @@ class ApplicationContext(ContextInterface):
         """
 
         cmdline_parser = CommandlineParsingHelper(self.io)
+
+        self.io.internal(f'Resolving pipeline {pipeline} (depth={depth})')
         args = cmdline_parser.create_grouped_arguments(pipeline.get_arguments())
         resolved_tasks = []
 
         for block in args:
             for argument_group in block.tasks():
-                # single TaskDeclaration
-                resolved_declarations = [self.find_task_by_name(argument_group.name())]
+                is_a_sub_pipeline = argument_group.name() in self._task_aliases
 
-                # or GroupDeclaration (multiple)
-                if isinstance(resolved_declarations[0], GroupDeclaration):
-                    resolved_declarations = self._resolve_recursively(resolved_declarations[0])
+                # inherit tasks from Pipeline defined inside currently processed Pipeline (do a recursion)
+                if is_a_sub_pipeline:
+                    inherited_pipeline = self._resolve_pipeline(
+                        argument_group.name(),
+                        self._task_aliases[argument_group.name()],
+                        depth=depth + 1
+                    )
+                    resolved_declarations = inherited_pipeline.get_declarations()
 
+                # just include Tasks for this Pipeline
+                else:
+                    resolved_declarations = [self.find_task_by_name(argument_group.name())]
+
+                # create wrappers that will contain inherited environment, arguments etc.
                 for resolved_declaration in resolved_declarations:
-                    resolved_declaration: TaskDeclaration
+                    resolved_declaration: Union[TaskDeclaration, DeclarationBelongingToPipeline]
 
-                    # preserve original task env, and append alias env in priority
-                    merged_env = resolved_declaration.get_env()
-                    merged_env.update(pipeline.get_env())
+                    pipeline_env = pipeline.get_env()
+                    pipeline_env['RKD_PIPELINE_DEPTH'] = str(depth)
 
-                    new_task = resolved_declaration \
-                        .with_env(merged_env) \
-                        .with_args(argument_group.args() + resolved_declaration.get_args()) \
-                        .with_user_overridden_env(
-                            pipeline.get_user_overridden_envs() + resolved_declaration.get_user_overridden_envs()
-                        ) \
-                        .with_connected_block(block)
-
+                    # todo: in the future move subprojects feature to DeclarationBelongingToPipeline?
                     if pipeline.is_part_of_subproject():
-                        new_task = new_task.as_part_of_subproject(
+                        resolved_declaration = resolved_declaration.as_part_of_subproject(
                             workdir=pipeline.workdir,
                             subproject_name=pipeline.project_name
                         )
 
-                    resolved_tasks.append(new_task)
+                    if isinstance(resolved_declaration, TaskDeclaration):
+                        pipeline_partial = DeclarationBelongingToPipeline(
+                            declaration=resolved_declaration,
+                            runtime_arguments=argument_group.args(),
+                            parent=None,
+                            env=pipeline_env,
+                            user_overridden_env=pipeline.get_user_overridden_envs()
+                        )
+                    else:
+                        # we have a Pipeline in Pipeline that needs to have Tasks merged
+                        resolved_declaration.append(
+                            runtime_arguments=argument_group.args(),
+                            env=pipeline_env,
+                            user_overridden_env=pipeline.get_user_overridden_envs()
+                        )
 
-        return GroupDeclaration(name, resolved_tasks, pipeline.get_description())
+                        pipeline_partial = resolved_declaration
 
-    def _resolve_recursively(self, group: GroupDeclaration) -> List[TaskDeclaration]:
-        """
-        Returns:
-            List[Tuple[bool, TaskDeclaration]] - the "bool" means if task was resolved from a group
-        """
+                    pipeline_partial.connect_block(block)
 
-        tasks = []
+                    self.io.internal(f'Resolved pipeline {pipeline_partial} inside {block} (depth={depth})')
+                    resolved_tasks.append(pipeline_partial)
 
-        for declaration in group.get_declarations():
-            if isinstance(declaration, GroupDeclaration):
-                tasks += self._resolve_recursively(declaration)
-                continue
-
-            tasks.append(declaration)
-
-        return tasks
+        # release all collected Tasks as a group with blocks connected, environment and arguments merged
+        return GroupDeclaration(
+            name=name,
+            declarations=resolved_tasks,
+            description=pipeline.get_description()
+        )
 
     def __str__(self):
         return 'ApplicationContext<id={id}, workdir={workdir},prefix={prefix}>'.format(
@@ -236,8 +262,12 @@ class ContextFactory(object):
     Takes responsibility of loading all tasks defined in USER PROJECT, USER HOME and GLOBALLY
     """
 
+    _task_factory: TaskFactory
+    _io: SystemIO
+
     def __init__(self, io: SystemIO):
         self._io = io
+        self._task_factory = TaskFactory(io)
 
     def _load_context_from_directory(self, path: str, workdir: Optional[str] = None,
                                      subproject: str = None) -> List[ApplicationContext]:
@@ -253,14 +283,14 @@ class ContextFactory(object):
                                                                  prefix=subproject))
 
         if os.path.isfile(path + '/makefile.yaml'):
-            contexts += self._expand_contexts(self._load_from_yaml(path, 'makefile.yaml',
-                                                                   workdir=workdir,
-                                                                   prefix=subproject))
+            contexts += self._expand_contexts(self._load_from_static_file(path, 'makefile.yaml',
+                                                                          workdir=workdir,
+                                                                          prefix=subproject))
 
         if os.path.isfile(path + '/makefile.yml'):
-            contexts += self._expand_contexts(self._load_from_yaml(path, 'makefile.yml',
-                                                                   workdir=workdir,
-                                                                   prefix=subproject))
+            contexts += self._expand_contexts(self._load_from_static_file(path, 'makefile.yml',
+                                                                          workdir=workdir,
+                                                                          prefix=subproject))
         if not contexts:
             raise ContextFileNotFoundException(path)
 
@@ -308,13 +338,33 @@ class ContextFactory(object):
 
         return contexts
 
-    def _load_from_yaml(self, path: str, filename: str, workdir: str, prefix: str) -> ApplicationContext:
+    def _load_from_static_file(self, path: str, filename: str, workdir: str, prefix: str) -> ApplicationContext:
+        """
+        Load Tasks and build an ApplicationContext basing on a static configuration file (eg. YAML)
+
+        :param path:
+        :param filename:
+        :param workdir:
+        :param prefix:
+        :return:
+        """
+
         makefile_path = path + '/' + filename
 
         with open(makefile_path, 'rb') as handle:
-            imported, tasks, subprojects = YamlSyntaxInterpreter(self._io, YamlFileLoader([])).parse(
-                handle.read().decode('utf-8'), path, makefile_path
-            )
+            parsing_result: StaticFileContextParsingResult = StaticFileSyntaxInterpreter(self._io, YamlFileLoader([]))\
+                .parse(
+                    content=handle.read().decode('utf-8'),
+                    rkd_path=path,
+                    file_path=makefile_path
+                )
+
+            imported = parsing_result.imports
+
+            for parsed in parsing_result.parsed:
+                imported.append(self._task_factory.create_task_with_declaration_after_parsing(parsed, parsing_result))
+
+            imported = unpack_extended_task_declarations(imported, self._task_factory)
 
             # Issue 33: Support mixed declarations in imports()
             imports, aliases = distinct_imports(makefile_path, imported)
@@ -323,8 +373,8 @@ class ContextFactory(object):
                 f'Building context from YAML workdir={workdir}, project_prefix={prefix}, directory={path}'
             )
 
-            return ApplicationContext(tasks=imports, aliases=tasks + aliases, directory=path,
-                                      subprojects=subprojects, workdir=workdir, project_prefix=prefix)
+            return ApplicationContext(tasks=imports, aliases=aliases, directory=path,
+                                      subprojects=parsing_result.subprojects, workdir=workdir, project_prefix=prefix)
 
     def _load_from_py(self, path: str, workdir: str, prefix: str):
         makefile_path = path + '/makefile.py'
@@ -348,7 +398,10 @@ class ContextFactory(object):
 
         # Issue 33: Support mixed declarations in imports()
         # noinspection PyUnresolvedReferences
-        imports, aliases = distinct_imports(makefile_path, makefile.IMPORTS if "IMPORTS" in dir(makefile) else [])
+        imports, aliases = distinct_imports(
+            makefile_path,
+            unpack_extended_task_declarations(makefile.IMPORTS, self._task_factory) if "IMPORTS" in dir(makefile) else []
+        )
         # noinspection PyUnresolvedReferences
         subprojects = makefile.SUBPROJECTS if "SUBPROJECTS" in dir(makefile) else []
 
@@ -447,8 +500,33 @@ class ContextFactory(object):
         return ctx
 
 
-def distinct_imports(file_path: str, imported: List[Union[TaskDeclaration, TaskAliasDeclaration]]) \
-        -> Tuple[List[TaskDeclaration], List[TaskAliasDeclaration]]:
+def unpack_declaration(declaration: Union[TaskDeclaration, ExtendedTaskDeclaration],
+                       task_factory: TaskFactory) -> TaskDeclaration:
+    """
+    Converts ExtendedTaskDeclaration into a regular TaskDeclaration.
+    Existing TaskDeclarations are not touched.
+
+    :param declaration:
+    :param task_factory:
+    :return:
+    """
+
+    if isinstance(declaration, ExtendedTaskDeclaration):
+        task, stdin = task_factory.create_task_from_func(declaration.func, name=declaration.name)
+
+        return declaration.create_declaration(task, stdin)
+
+    return declaration
+
+
+def unpack_extended_task_declarations(declarations: List[Union[TaskDeclaration, ExtendedTaskDeclaration]],
+                                      task_factory: TaskFactory) -> List[TaskDeclaration]:
+
+    return list(map(lambda x: unpack_declaration(x, task_factory), declarations))
+
+
+def distinct_imports(file_path: str, imported: List[Union[TaskDeclaration, TaskAliasDeclaration, Pipeline]]) \
+        -> Tuple[List[TaskDeclaration], List[Union[Pipeline, TaskAliasDeclaration]]]:
 
     """Separates TaskDeclaration and TaskAliasDeclaration into separate lists, doing validation by the way
 
@@ -459,7 +537,7 @@ def distinct_imports(file_path: str, imported: List[Union[TaskDeclaration, TaskA
     imports = []
 
     for declaration in imported:
-        if isinstance(declaration, TaskAliasDeclaration):
+        if isinstance(declaration, TaskAliasDeclaration) or isinstance(declaration, Pipeline):
             aliases.append(declaration)
         elif isinstance(declaration, TaskDeclaration):
             imports.append(declaration)
